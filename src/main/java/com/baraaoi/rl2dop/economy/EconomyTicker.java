@@ -68,7 +68,8 @@ public final class EconomyTicker {
 			if (Rl2dopConfig.autoBuild && settlement.buildProgress < 100) {
 				SettlementBuilds.build(level, settlement, Math.max(1, Rl2dopConfig.buildBlocksPerTick));
 			}
-			if (!settlement.hasMayor() && SettlementBuilds.hallStanding(settlement)) {
+			// глава нужен поселению с первого дня: без ратуши он стоит у временных табличек
+			if (!settlement.hasMayor()) {
 				com.baraaoi.rl2dop.entity.CitizenEntity mayor = SettlementService.spawnMayor(level, settlement);
 				if (mayor != null) {
 					state.log("поселение " + settlement.id + ": главой стал " + mayor.getCitizenName()
