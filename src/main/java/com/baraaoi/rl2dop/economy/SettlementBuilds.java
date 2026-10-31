@@ -83,9 +83,6 @@ public final class SettlementBuilds {
 	public static final int WORK_ROW_Z = -34;
 	public static final int[] WORK_X_FARM = {-30};
 	public static final int WORK_STEP_X = 20;
-	/** Насколько улица может отойти от уровня площади, подстраиваясь под рельеф (в блоках). */
-	private static final int ROAD_TILT = 4;
-
 	/**
 	 * Уровень пола: верхний блок грунта под точкой ратуши. Мерим именно природный/чужой блок,
 	 * а не максимум по пятну застройки — иначе собственные крыши поднимали бы поселение на
@@ -1893,6 +1890,13 @@ public final class SettlementBuilds {
 			}
 			for (int yy = low + 1; yy < y; yy++) {
 				plan.set(new BlockPos(x, yy, z), fill);
+			}
+			// опора под полом: natural() считает «верх колонки» по heightmap, а там может стоять
+			// чужой забор или фонарь — тогда под настилом остаётся вода. Подсыпаем одну клетку пола.
+			BlockPos foot = new BlockPos(x, y - 1, z);
+			if (y - 1 > level.getMinBuildHeight()
+					&& (level.getBlockState(foot).isAir() || !level.getFluidState(foot).isEmpty())) {
+				plan.set(foot, fill);
 			}
 			plan.set(new BlockPos(x, y, z), top);
 			planned.put(k, y);
