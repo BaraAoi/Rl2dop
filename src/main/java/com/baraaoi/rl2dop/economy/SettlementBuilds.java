@@ -10,6 +10,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.block.state.properties.Half;
+import net.minecraft.world.level.block.state.properties.SlabType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -236,8 +237,7 @@ public final class SettlementBuilds {
 						: Blocks.COBBLED_DEEPSLATE.defaultBlockState());
 				BlockPos top = base.offset(dx, 1, dz);
 				if (shop && dz == 0) {
-					plan.set(top, Blocks.OAK_SLAB.defaultBlockState()
-							.setValue(BlockStateProperties.DOUBLE_BLOCK_HALF, DoubleBlockHalf.UPPER));
+					plan.set(top, topSlab(Blocks.OAK_SLAB.defaultBlockState()));
 				} else if (dx != 1) {
 					plan.set(top, shop ? Blocks.BARREL.defaultBlockState()
 							: Blocks.CHEST.defaultBlockState()
@@ -267,8 +267,7 @@ public final class SettlementBuilds {
 		for (int dx = 0; dx <= 1; dx++) {
 			for (int dz = 0; dz <= 1; dz++) {
 				plan.set(center.offset(dx, 0, dz), Blocks.OAK_FENCE.defaultBlockState());
-				plan.set(center.offset(dx, 1, dz), Blocks.OAK_SLAB.defaultBlockState()
-						.setValue(BlockStateProperties.DOUBLE_BLOCK_HALF, DoubleBlockHalf.UPPER));
+				plan.set(center.offset(dx, 1, dz), topSlab(Blocks.OAK_SLAB.defaultBlockState()));
 			}
 		}
 	}
@@ -279,6 +278,11 @@ public final class SettlementBuilds {
 			return Blocks.POLISHED_ANDESITE.defaultBlockState();
 		}
 		return (x + z) % 2 == 0 ? Blocks.OAK_PLANKS.defaultBlockState() : Blocks.SPRUCE_PLANKS.defaultBlockState();
+	}
+
+	/** В 1.21.1 у slab одно свойство `type` (bottom/top/double) — DOUBLE_BLOCK_HALF к нему не применять. */
+	private static BlockState topSlab(BlockState state) {
+		return state.setValue(BlockStateProperties.SLAB_TYPE, SlabType.TOP);
 	}
 
 	private static BlockState stairs(Direction facing) {

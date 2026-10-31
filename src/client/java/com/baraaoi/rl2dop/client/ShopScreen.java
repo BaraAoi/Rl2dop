@@ -24,6 +24,7 @@ import java.util.List;
  */
 public class ShopScreen extends Screen {
 	private static final int ROW_HEIGHT = 16;
+	private static final int LIST_TOP = 30;
 	private static final int[] AMOUNTS = {1, 8, 16, 32, 64};
 
 	private int citizenId;
@@ -78,30 +79,39 @@ public class ShopScreen extends Screen {
 		}
 	}
 
+	private int layoutHeight() {
+		return Math.min(this.height - 20, LIST_TOP + rows.size() * ROW_HEIGHT + 76);
+	}
+
 	@Override
 	protected void init() {
-		this.panelWidth = Math.min(this.width - 20, 320);
-		this.panelHeight = Math.min(this.height - 20, 30 + rows.size() * ROW_HEIGHT + 74);
+		this.panelWidth = Math.min(this.width - 20, 340);
+		this.panelHeight = layoutHeight();
 		this.panelX = (this.width - this.panelWidth) / 2;
 		this.panelY = (this.height - this.panelHeight) / 2;
-		this.listTop = this.panelY + 30;
+		this.listTop = this.panelY + LIST_TOP;
 
 		int y = this.panelY + this.panelHeight - 44;
 		int x = this.panelX + 10;
 		for (int value : AMOUNTS) {
-			this.addRenderableWidget(Button.builder(Component.literal(String.valueOf(value)),
-							pressed -> this.pickAmount(value))
+			boolean active = amount() == value;
+			this.addRenderableWidget(Button.builder(
+							Component.literal(active ? "§e" + value : "§8" + value),
+							pressed -> {
+								pickAmount(value);
+								rebuildWidgets();
+							})
 					.bounds(x, y, 22, 20)
 					.build());
 			x += 25;
 		}
-		this.addRenderableWidget(action("Купить", TradeService.ACTION_BUY, 0xFFFFFF, x + 8, y, 62));
-		this.addRenderableWidget(action("Продать", TradeService.ACTION_SELL, 0xFFE0A0, x + 74, y, 62));
-		this.addRenderableWidget(action("Торг", TradeService.ACTION_HAGGLE, 0xA0FFC0, x + 140, y, 46));
+		this.addRenderableWidget(action("Купить", TradeService.ACTION_BUY, panelX + 145, y, 62));
+		this.addRenderableWidget(action("Продать", TradeService.ACTION_SELL, panelX + 211, y, 62));
+		this.addRenderableWidget(action("Торг", TradeService.ACTION_HAGGLE, panelX + 277, y, 46));
 	}
 
-	private Button action(String label, int action, int textColor, int x, int y, int width) {
-		return Button.builder(Component.literal(label), pressed -> perform(action, AMOUNTS[amountIndex]))
+	private Button action(String label, int action, int x, int y, int width) {
+		return Button.builder(Component.literal(label), pressed -> perform(action, amount()))
 				.bounds(x, y, width, 20)
 				.build();
 	}
@@ -134,7 +144,7 @@ public class ShopScreen extends Screen {
 
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
-		if (this.panelHeight != Math.min(this.height - 20, 30 + rows.size() * ROW_HEIGHT + 74)) {
+		if (this.panelHeight != layoutHeight() || this.panelWidth != Math.min(this.width - 20, 340)) {
 			rebuildWidgets();
 		}
 		drawPanel(graphics);
@@ -175,6 +185,8 @@ public class ShopScreen extends Screen {
 		super.render(graphics, mouseX, mouseY, delta);
 
 		graphics.drawString(font, "§7Кошелёк: §f" + purse, panelX + 10, panelY + panelHeight - 60, 0xFFFFFF, false);
+		graphics.drawString(font, "§8ЛКМ — выбрать, ПКМ — продать, колесо/стрелки — список",
+				panelX + panelWidth - 232, panelY + panelHeight - 18, 0xFFFFFF, false);
 		graphics.drawString(font, "§8" + (rows.isEmpty() ? "—" : rows.get(selected).name())
 						+ " §8· §7" + amount() + " шт §8| §7Esc — закрыть",
 				panelX + 10, panelY + panelHeight - 18, 0xFFFFFF, false);
