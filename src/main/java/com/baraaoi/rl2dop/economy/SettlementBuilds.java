@@ -176,6 +176,22 @@ public final class SettlementBuilds {
 	 *
 	 * @return человекочитаемый отчёт; нарушений быть не должно
 	 */
+	/** Что реально стоит в колонке вокруг точки — выводим в аудит, чтобы не гадать по логам. */
+	private static String column(ServerLevel level, BlockPos spot) {
+		StringBuilder out = new StringBuilder();
+		for (int dy = -2; dy <= 2; dy++) {
+			BlockPos pos = spot.above(dy);
+			BlockState state = level.getBlockState(pos);
+			out.append(dy == -2 ? "" : " ").append(pos.getY()).append('=')
+					.append(net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(state.getBlock())
+							.getPath());
+			if (!level.getFluidState(pos).isEmpty()) {
+				out.append("(жидкость)");
+			}
+		}
+		return out.toString();
+	}
+
 	/**
 	 * Лежит ли в колонке дорожное покрытие — только такие клетки участвуют в замере шага улицы.
 	 * Иначе аудит звал «обрывом» и луг, и место, куда дорога просто не дошла.
@@ -196,6 +212,7 @@ public final class SettlementBuilds {
 		int houses = 0;
 		int uneven = 0;
 		int floating = 0;
+		int waterlog = 0;
 		int noPath = 0;
 		List<String> marks = new ArrayList<>();   // адреса нарушений, чтобы искать их глазами
 		// Ровность и опору проверяем у ратуши и жилых домов: у мастерской-шахты во дворе
@@ -226,9 +243,12 @@ public final class SettlementBuilds {
 			}
 			BlockPos under = spot.below();
 			if (level.getBlockState(under).isAir() || !level.getFluidState(under).isEmpty()) {
-				floating++;   // под постройкой пустота или вода — здание «висит»
-				marks.add("под " + spot.getX() + "," + spot.getY() + "," + spot.getZ()
-						+ (level.getBlockState(under).isAir() ? " пусто" : " вода"));
+				waterlog++;   // под настилом вода/пустота: красиво ли это — вопрос, но пол важнее
+				marks.add("под " + spot.toShortString() + " столб: " + column(level, spot));
+			}
+			if (level.getBlockState(spot).isAir()) {
+				floating++;   // в клетке пола ничего нет — дом не построился, это нарушение
+				marks.add("пол пуст в " + spot.toShortString());
 			}
 			if (spot == origin) {
 				continue;   // у ратуши выходы свои, их в «дорожке к калитке» не мешаем
@@ -273,8 +293,10 @@ public final class SettlementBuilds {
 			}
 		}
 		int violations = uneven + floating + noPath + (roadMaxStep > 3 ? 1 : 0);
-		return "площадок " + pads + " (домов " + houses + "), кривых " + uneven + ", висячих " + floating
-				+ ", без дорожки " + noPath + " · шагов дороги " + cells + ", макс перепад " + roadMaxStep
+		// вода под площадкой сама по себе нарушением не считается: настил над мокрым грунтом —
+		// косметика; а вот пустой или кривой пол и обрыв дороги — нет
+		return "площадок " + pads + " (домов " + houses + "), кривых " + uneven + ", без пола " + floating
+				+ ", вода под " + waterlog + ", без дорожки " + noPath + " · шагов дороги " + cells + ", макс перепад " + roadMaxStep
 				+ (roadMaxStep > 3 ? " в " + worstX + "," + worstZ : "") + ", разрывов " + gaps
 				+ " · нарушений " + violations
 				+ (marks.isEmpty() ? "" : " · " + String.join(" | ", marks.subList(0, Math.min(3, marks.size()))));
