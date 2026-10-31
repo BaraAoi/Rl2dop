@@ -52,7 +52,7 @@ public class Settlement {
 		settlement.treasury = 400L;
 		settlement.coinLimit = Rl2dopConfig.mintLimit;
 		for (Rl2dopConfig.Good good : Rl2dopConfig.goods.values()) {
-			settlement.stock.put(good.item, Math.max(8, good.targetStock / 2));
+			settlement.stock.put(good.item, good.targetStock);
 			settlement.prices.put(good.item, good.base);
 			settlement.demand.put(good.item, 0);
 		}
@@ -226,7 +226,7 @@ public class Settlement {
 		readStringList(tag.getList("Shelves", 8), settlement.shelves);
 		// если конфиг поменялся — добить недостающие товары
 		for (Rl2dopConfig.Good good : Rl2dopConfig.goods.values()) {
-			settlement.stock.putIfAbsent(good.item, Math.max(8, good.targetStock / 2));
+			settlement.stock.putIfAbsent(good.item, good.targetStock);
 			settlement.prices.putIfAbsent(good.item, good.base);
 			settlement.demand.putIfAbsent(good.item, 0);
 		}

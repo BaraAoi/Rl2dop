@@ -77,42 +77,43 @@ jobs:
       - name: setup gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: run dedicated server
+      - name: run dedicated server (fresh world + economy commands)
         run: |
           chmod +x ./gradlew
           mkdir -p run ci
           echo "eula=true" > run/eula.txt
           printf 'online-mode=false\nlevel-type=minecraft\\:flat\nspawn-protection=0\nmax-tick-time=-1\n' > run/server.properties
-          rm -f /tmp/cmd; mkfifo /tmp/cmd
-          (./gradlew runServer --console=plain < /tmp/cmd > ci/smoke.log 2>&1 &)
-          exec 3> /tmp/cmd
-          for i in $(seq 1 150); do
-            if grep -q "Done (" ci/smoke.log 2>/dev/null; then echo "SERVER_STARTED" >> ci/smoke.log; break; fi
-            if grep -qE "Failed to start the minecraft server|ModResolutionException" ci/smoke.log 2>/dev/null; then echo "SERVER_FAILED" >> ci/smoke.log; break; fi
-            sleep 2
-          done
+          rm -f /tmp/cmd1; mkfifo /tmp/cmd1
+          (./gradlew runServer --console=plain < /tmp/cmd1 > ci/smoke.log 2>&1 &)
+          exec 3> /tmp/cmd1
+          for i in $(seq 1 150); do grep -q "Done (" ci/smoke.log 2>/dev/null && break; sleep 2; done
           sleep 3
-          for cmd in "settle_spawn SmokeTown" "give_coins 500" "spawn_npc farmer" "spawn_npc trader" "spawn_npc guard" "spawn_npc cook" "market_dump" "npc_list" "salary_set farmer 15" "price_set minecraft:bread 5" "shelf_add minecraft:bread" "hall_board" "shop_marker" "npc_profession lumberjack" "settle_bind SmokeVillage" "market_dump smoketown" "econ_log 8"; do
-            echo "=== CMD: $cmd ===" >> ci/smoke.log
+          for cmd in "settle_spawn SmokeTown" "give_coins 500" "spawn_npc farmer" "spawn_npc trader" "spawn_npc guard" "spawn_npc cook" "market_dump" "npc_list" "salary_set farmer 15" "price_set minecraft:bread 5" "shelf_add minecraft:bread" "hall_board" "shop_marker" "npc_profession lumberjack" "settle_bind SmokeVillage" "econ_log 8"; do
             echo "$cmd" >&3
             sleep 2
           done
-          sleep 20
+          sleep 15
           echo "stop" >&3 || true
           sleep 15
+          exec 3>&-
           pkill -f devlaunchinjector || true
-          pkill -f "net.minecraft.server" || true
+          sleep 2
+
+      - name: run dedicated server (restart: persistence check)
+        run: |
+          rm -f /tmp/cmd2; mkfifo /tmp/cmd2
+          (./gradlew runServer --console=plain < /tmp/cmd2 > ci/smoke2.log 2>&1 &)
+          exec 3> /tmp/cmd2
+          for i in $(seq 1 150); do grep -q "Done (" ci/smoke2.log 2>/dev/null && break; sleep 2; done
           sleep 3
-          {
-            echo "=== файлы мода ==="
-            ls -la run/config/rl2dop.json run/world/data/ 2>&1 || true
-            head -c 900 run/config/rl2dop.json 2>&1 || true
-            echo ""
-            echo "=== rl2dop: строки мода ==="
-            grep -a "rl2dop" ci/smoke.log | tail -30 || true
-            echo "=== ошибки/исключения ==="
-            grep -aE "ERROR|Exception|Caused by" ci/smoke.log | grep -av "ExceptionHandler" | tail -60 || true
-          } >> ci/smoke.log
+          echo "market_dump" >&3; sleep 3
+          echo "npc_list" >&3; sleep 3
+          echo "econ_log 6" >&3; sleep 3
+          echo "stop" >&3 || true
+          sleep 15
+          exec 3>&-
+          pkill -f devlaunchinjector || true
+          sleep 2
 
       - name: save smoke log
         if: always()
