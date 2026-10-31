@@ -115,7 +115,6 @@ public final class Displays {
 		stand.setNoGravity(true);
 		stand.setInvulnerable(true);
 		stand.setSilent(true);
-		stand.setMarker(true);
 		stand.setCustomNameVisible(true);
 		stand.addTag(tag);
 		level.addFreshEntity(stand);

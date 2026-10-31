@@ -14,9 +14,9 @@ public class Rl2dopClient implements ClientModInitializer {
 		EntityRendererRegistry.register(ModEntities.CITIZEN, CitizenRenderer::new);
 		HudRenderCallback.EVENT.register(EconomyHud::render);
 
-		ClientPlayNetworking.registerGlobalReceiver(SyncPayload.ID, (payload, context) ->
+		ClientPlayNetworking.registerGlobalReceiver(SyncPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> ClientEconomy.update(payload)));
-		ClientPlayNetworking.registerGlobalReceiver(ShopPayload.ID, (payload, context) ->
+		ClientPlayNetworking.registerGlobalReceiver(ShopPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> ShopScreen.handle(payload)));
 	}
 }

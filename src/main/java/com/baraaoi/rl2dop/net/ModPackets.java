@@ -19,11 +19,11 @@ public final class ModPackets {
 	}
 
 	public static void init() {
-		PayloadTypeRegistry.playS2C().register(SyncPayload.ID, SyncPayload.CODEC);
-		PayloadTypeRegistry.playS2C().register(ShopPayload.ID, ShopPayload.CODEC);
-		PayloadTypeRegistry.playC2S().register(TradeActionPayload.ID, TradeActionPayload.CODEC);
+		PayloadTypeRegistry.playS2C().register(SyncPayload.TYPE, SyncPayload.CODEC);
+		PayloadTypeRegistry.playS2C().register(ShopPayload.TYPE, ShopPayload.CODEC);
+		PayloadTypeRegistry.playC2S().register(TradeActionPayload.TYPE, TradeActionPayload.CODEC);
 
-		ServerPlayNetworking.registerGlobalReceiver(TradeActionPayload.ID, (payload, context) -> {
+		ServerPlayNetworking.registerGlobalReceiver(TradeActionPayload.TYPE, (payload, context) -> {
 			ServerPlayer player = context.player();
 			context.server().execute(() -> TradeService.handle(player, payload.citizenId(), payload.itemId(),
 					payload.amount(), payload.action()));

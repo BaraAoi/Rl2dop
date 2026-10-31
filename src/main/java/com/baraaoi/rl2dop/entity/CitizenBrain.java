@@ -29,6 +29,9 @@ public final class CitizenBrain {
 			return;
 		}
 		EconomyState state = EconomyState.get(level.getServer());
+		if (citizen.getCitizenName().isEmpty()) {
+			citizen.setCitizenName(EconomyState.randomName(citizen.getRandom()));
+		}
 		Settlement settlement = state.settlement(citizen.getSettlementId());
 		if (settlement == null) {
 			citizen.setCitizenState(CitizenState.IDLE);

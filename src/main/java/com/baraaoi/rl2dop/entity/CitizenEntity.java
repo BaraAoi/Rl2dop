@@ -33,7 +33,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 
-import javax.annotation.Nullable;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -56,11 +55,8 @@ public class CitizenEntity extends PathfinderMob {
 	private int professionCooldown;
 	private int guardVariant;
 
-	@Nullable
 	private BlockPos homePos;
-	@Nullable
 	private BlockPos workPos;
-	@Nullable
 	private BlockPos shopPos;
 
 	private final Map<String, Integer> carried = new LinkedHashMap<>();
@@ -219,30 +215,27 @@ public class CitizenEntity extends PathfinderMob {
 		applyEquipment();
 	}
 
-	@Nullable
 	public BlockPos getHomePos() {
 		return homePos;
 	}
 
-	public void setHomePos(@Nullable BlockPos homePos) {
+	public void setHomePos(BlockPos homePos) {
 		this.homePos = homePos;
 	}
 
-	@Nullable
 	public BlockPos getWorkPos() {
 		return workPos;
 	}
 
-	public void setWorkPos(@Nullable BlockPos workPos) {
+	public void setWorkPos(BlockPos workPos) {
 		this.workPos = workPos;
 	}
 
-	@Nullable
 	public BlockPos getShopPos() {
 		return shopPos;
 	}
 
-	public void setShopPos(@Nullable BlockPos shopPos) {
+	public void setShopPos(BlockPos shopPos) {
 		this.shopPos = shopPos;
 	}
 
@@ -419,15 +412,6 @@ public class CitizenEntity extends PathfinderMob {
 		}
 		applyEquipment();
 		refreshNameTag();
-	}
-
-	@Override
-	public void onAddedToLevel() {
-		super.onAddedToLevel();
-		if (!this.level().isClientSide && citizenName.isEmpty()) {
-			citizenName = EconomyState.randomName(this.getRandom());
-			refreshNameTag();
-		}
 	}
 
 }

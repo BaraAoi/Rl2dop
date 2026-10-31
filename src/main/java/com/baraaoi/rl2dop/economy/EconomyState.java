@@ -38,7 +38,7 @@ public class EconomyState extends SavedData {
 	public static EconomyState get(MinecraftServer server) {
 		ServerLevel overworld = server.overworld();
 		return overworld.getDataStorage().computeIfAbsent(
-				new SavedData.Factory<>(EconomyState::new, EconomyState::load), FILE_ID);
+				new SavedData.Factory<>(EconomyState::new, EconomyState::load, null), FILE_ID);
 	}
 
 	public Settlement settlement(String id) {

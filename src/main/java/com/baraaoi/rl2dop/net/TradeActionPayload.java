@@ -8,8 +8,8 @@ import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 /** C2S: "хочу купить/продать/поторговаться". Сервер всё пересчитывает сам. */
 public record TradeActionPayload(int citizenId, String itemId, int amount, int action) implements CustomPacketPayload {
-	public static final CustomPacketPayload.Id<TradeActionPayload> ID =
-			new CustomPacketPayload.Id<>(Rl2dop.id("trade_action"));
+	public static final CustomPacketPayload.Type<TradeActionPayload> TYPE =
+			new CustomPacketPayload.Type<>(Rl2dop.id("trade_action"));
 
 	public static final StreamCodec<RegistryFriendlyByteBuf, TradeActionPayload> CODEC = StreamCodec.composite(
 			ByteBufCodecs.VAR_INT, TradeActionPayload::citizenId,
@@ -19,7 +19,7 @@ public record TradeActionPayload(int citizenId, String itemId, int amount, int a
 			TradeActionPayload::new);
 
 	@Override
-	public CustomPacketPayload.Id<? extends CustomPacketPayload> getId() {
-		return ID;
+	public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
+		return TYPE;
 	}
 }

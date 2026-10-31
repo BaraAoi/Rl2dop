@@ -14,8 +14,8 @@ import java.util.List;
  * Строки ленты: {@code itemId|buyPrice|sellPrice|stock|demand}.
  */
 public record ShopPayload(int citizenId, String title, List<String> goods) implements CustomPacketPayload {
-	public static final CustomPacketPayload.Id<ShopPayload> ID =
-			new CustomPacketPayload.Id<>(Rl2dop.id("shop"));
+	public static final CustomPacketPayload.Type<ShopPayload> TYPE =
+			new CustomPacketPayload.Type<>(Rl2dop.id("shop"));
 
 	public static final StreamCodec<RegistryFriendlyByteBuf, ShopPayload> CODEC = StreamCodec.composite(
 			ByteBufCodecs.VAR_INT, ShopPayload::citizenId,
@@ -24,7 +24,7 @@ public record ShopPayload(int citizenId, String title, List<String> goods) imple
 			ShopPayload::new);
 
 	@Override
-	public CustomPacketPayload.Id<? extends CustomPacketPayload> getId() {
-		return ID;
+	public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
+		return TYPE;
 	}
 }
