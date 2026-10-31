@@ -176,6 +176,16 @@ public final class SettlementBuilds {
 	 *
 	 * @return человекочитаемый отчёт; нарушений быть не должно
 	 */
+	/**
+	 * Лежит ли в колонке дорожное покрытие — только такие клетки участвуют в замере шага улицы.
+	 * Иначе аудит звал «обрывом» и луг, и место, куда дорога просто не дошла.
+	 */
+	private static boolean roadLike(BlockState state) {
+		return state.is(Blocks.DIRT_PATH) || state.is(Blocks.GRAVEL) || state.is(Blocks.COARSE_DIRT)
+				|| state.is(Blocks.COBBLESTONE) || state.is(Blocks.MOSSY_COBBLESTONE)
+				|| state.is(Blocks.GRASS_BLOCK) || state.is(Blocks.DIRT);
+	}
+
 	public static String audit(ServerLevel level, Settlement settlement) {
 		if (level == null || settlement == null) {
 			return "нет поселения";
@@ -187,6 +197,7 @@ public final class SettlementBuilds {
 		int uneven = 0;
 		int floating = 0;
 		int noPath = 0;
+		List<String> marks = new ArrayList<>();   // адреса нарушений, чтобы искать их глазами
 		// Ровность и опору проверяем у ратуши и жилых домов: у мастерской-шахты во дворе
 		// законный провал, у таверны крыльцо плитами — считать их «кривыми» было бы ложняком.
 		List<BlockPos> spots = new ArrayList<>();
@@ -211,10 +222,13 @@ public final class SettlementBuilds {
 			pads++;
 			if (ground.floorSpread(spot.getX(), spot.getZ(), spot.getY(), 3) > 1) {
 				uneven++;
+				marks.add("пол " + spot.getX() + "," + spot.getY() + "," + spot.getZ());
 			}
 			BlockPos under = spot.below();
-			if (!level.getBlockState(under).isRedstoneConductor(level, under)) {
-				floating++;   // под постройкой пустота/несплошной блок — «висит»
+			if (level.getBlockState(under).isAir() || !level.getFluidState(under).isEmpty()) {
+				floating++;   // под постройкой пустота или вода — здание «висит»
+				marks.add("под " + spot.getX() + "," + spot.getY() + "," + spot.getZ()
+						+ (level.getBlockState(under).isAir() ? " пусто" : " вода"));
 			}
 			if (spot == origin) {
 				continue;   // у ратуши выходы свои, их в «дорожке к калитке» не мешаем
@@ -223,21 +237,36 @@ public final class SettlementBuilds {
 			int outside = groundTopY(level, spot.getX(), gateZ, spot.getY());
 			if (Math.abs(outside - spot.getY()) > 2) {
 				noPath++;   // за калиткой обрыв: дорожка до улицы не построена или не дотянута
+				marks.add("калитка " + spot.getX() + "," + gateZ);
 			}
 		}
 		// шаг улицы: перепад соседних колонок; незагруженные чанки пропускаем — там дороги нет по делу
 		int roadMaxStep = 0;
 		int cells = 0;
+		int gaps = 0;
+		int worstX = 0;
+		int worstZ = 0;
 		for (int z : new int[]{origin.getZ() + STREET_SOUTH_Z, origin.getZ() + STREET_NORTH_Z}) {
 			int prev = Integer.MIN_VALUE;
 			for (int x = origin.getX() - ROAD_X; x <= origin.getX() + ROAD_X; x++) {
-				if (!level.hasChunkAt(new BlockPos(x, origin.getY(), z))) {
+				BlockPos pos = new BlockPos(x, origin.getY(), z);
+				if (!level.hasChunkAt(pos)) {
 					prev = Integer.MIN_VALUE;
 					continue;
 				}
 				int now = ground.level(x, z);
+				if (!roadLike(level.getBlockState(new BlockPos(x, now, z)))) {
+					gaps++;   // дороги здесь нет (не дошла или помешало чужое пятно) — шаг не считаем
+					prev = Integer.MIN_VALUE;
+					continue;
+				}
 				if (prev != Integer.MIN_VALUE) {
-					roadMaxStep = Math.max(roadMaxStep, Math.abs(now - prev));
+					int d = Math.abs(now - prev);
+					if (d > roadMaxStep) {
+						roadMaxStep = d;
+						worstX = x;
+						worstZ = z;
+					}
 					cells++;
 				}
 				prev = now;
@@ -246,7 +275,9 @@ public final class SettlementBuilds {
 		int violations = uneven + floating + noPath + (roadMaxStep > 3 ? 1 : 0);
 		return "площадок " + pads + " (домов " + houses + "), кривых " + uneven + ", висячих " + floating
 				+ ", без дорожки " + noPath + " · шагов дороги " + cells + ", макс перепад " + roadMaxStep
-				+ " · нарушений " + violations;
+				+ (roadMaxStep > 3 ? " в " + worstX + "," + worstZ : "") + ", разрывов " + gaps
+				+ " · нарушений " + violations
+				+ (marks.isEmpty() ? "" : " · " + String.join(" | ", marks.subList(0, Math.min(3, marks.size()))));
 	}
 
 	/**
@@ -1789,6 +1820,10 @@ public final class SettlementBuilds {
 			if (!force && planned.containsKey(k)) {
 				return;
 			}
+			if (!level.hasChunkAt(new BlockPos(x, y, z))) {
+				// чанка нет: писать бесполезно, а отметка в planned потом мешала бы достроить дорогу
+				return;
+			}
 			int ground = natural(x, z);
 			for (int yy = y + 1; yy <= ground; yy++) {
 				BlockPos pos = new BlockPos(x, yy, z);
@@ -1819,12 +1854,20 @@ public final class SettlementBuilds {
 				return;
 			}
 			boolean alongX = Math.abs(x1 - x0) >= Math.abs(z1 - z0);
-			int prevY = level(x0, z0);
+			// prevY неизвестен до первой загруженной клетки: иначе дорога на холмах стартует от
+			// «уровня поселения из пустоты» и первые блоки уходят на 6-13 блоков ниже грунта
+			int prevY = Integer.MIN_VALUE;
 			for (int i = 0; i <= steps; i++) {
 				double t = steps == 0 ? 1.0D : (double) i / (double) steps;
 				int cx = x0 + (int) Math.round((x1 - x0) * t);
 				int cz = z0 + (int) Math.round((z1 - z0) * t);
+				if (!level.hasChunkAt(new BlockPos(cx, baseY, cz))) {
+					continue;
+				}
 				int want = level(cx, cz);
+				if (prevY == Integer.MIN_VALUE) {
+					prevY = want;
+				}
 				int y = Math.max(prevY - 1, Math.min(prevY + 1, want));
 				for (int w = -halfWidth; w <= halfWidth; w++) {
 					int px = alongX ? cx : cx + w;
