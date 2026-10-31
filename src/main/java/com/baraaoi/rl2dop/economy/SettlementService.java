@@ -175,6 +175,7 @@ public final class SettlementService {
 		}
 		Map<String, Integer> used = new java.util.HashMap<>();
 		int settled = 0;
+		int unresolved = settlement.npcs.size() - people.size();
 		for (CitizenEntity citizen : people) {
 			String current = settlement.houseKeyNear(citizen.getHomePos());
 			if (current != null && used.getOrDefault(current, 0) < perHouse) {
@@ -205,8 +206,39 @@ public final class SettlementService {
 			used.merge(freeKey, 1, Integer::sum);
 			settled++;
 		}
-		EconomyState.get(level.getServer()).setDirty();
+		EconomyState state = EconomyState.get(level.getServer());
+		state.setDirty();
+		if (settled == 0 && !settlement.houses.isEmpty()) {
+			// аномалия: дома есть, но никто в них не размещён — без неё посёлок вечно «хочет дом»
+			state.log("поселение " + settlement.id + ": жильё не разобралось — коек "
+					+ (settlement.houses.size() * perHouse) + ", жителей " + people.size()
+					+ ", неразличённых записей " + unresolved + ", без дома " + (people.size() - settled));
+		}
 		return settled;
+	}
+
+	/** Сводка по жилью: [коек, жителей, размещено, неразличённых записей]. */
+	public static int[] housingSummary(ServerLevel level, Settlement settlement) {
+		int perHouse = Math.max(1, Rl2dopConfig.villagersPerHouse);
+		int beds = settlement.houses.size() * perHouse;
+		int people = 0;
+		int housed = 0;
+		for (String raw : new ArrayList<>(settlement.npcs)) {
+			net.minecraft.world.entity.Entity entity;
+			try {
+				entity = level == null ? null : level.getEntity(java.util.UUID.fromString(raw));
+			} catch (IllegalArgumentException e) {
+				entity = null;
+			}
+			if (!(entity instanceof CitizenEntity citizen) || citizen.isRemoved() || citizen.isMayor()) {
+				continue;
+			}
+			people++;
+			if (settlement.hasHouseNear(citizen.getHomePos())) {
+				housed++;
+			}
+		}
+		return new int[]{beds, people, housed, settlement.npcs.size() - people - (settlement.hasMayor() ? 1 : 0)};
 	}
 
 	public static CitizenEntity spawnCitizen(ServerLevel level, Settlement settlement, Profession profession,

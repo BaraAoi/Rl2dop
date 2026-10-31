@@ -536,6 +536,23 @@ public final class Rl2dopCommands {
 								+ " · поселение " + citizen.getSettlementId();
 						source.sendSuccess(() -> Component.literal(line), false);
 					}
+					Settlement primary = null;
+					for (CitizenEntity citizen : citizens) {
+						if (citizen.getSettlementId() == null) {
+							continue;
+						}
+						primary = economy.settlement(citizen.getSettlementId());
+						if (primary != null) {
+							break;
+						}
+					}
+					if (primary != null) {
+						int[] summary = SettlementService.housingSummary(level, primary);
+						source.sendSuccess(() -> Component.literal("§7" + primary.id + ": коек "
+								+ summary[0] + " из " + primary.houses.size() + " дом(ов) · размещено "
+								+ summary[2] + "/" + summary[1] + " · без дома " + (summary[1] - summary[2])
+								+ " · записей без NPC " + summary[3]), false);
+					}
 					return citizens.size();
 				}));
 	}

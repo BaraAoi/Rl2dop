@@ -231,6 +231,9 @@ public class Settlement {
 
 	/** Жилой дом стоит рядом с этой точкой (чтобы не переселять NPC каждый такт). */
 	public boolean hasHouseNear(BlockPos pos) {
+		if (pos == null) {
+			return false;
+		}
 		for (String record : houses) {
 			String[] parts = record.split(";");
 			if (parts.length != 3) {
