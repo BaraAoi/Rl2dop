@@ -5,6 +5,8 @@ import com.baraaoi.rl2dop.entity.Profession;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
+import net.minecraft.nbt.Tag;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -215,13 +217,13 @@ public class Settlement {
 		settlement.treasury = tag.getLong("Treasury");
 		settlement.coinLimit = tag.contains("CoinLimit") ? tag.getInt("CoinLimit") : Rl2dopConfig.mintLimit;
 		settlement.buildProgress = tag.getInt("Build");
-		readIntMap(tag.getList("Stock", 10), settlement.stock);
-		readIntMap(tag.getList("Warehouse", 10), settlement.warehouse);
-		readIntMap(tag.getList("Demand", 10), settlement.demand);
-		readIntMap(tag.getList("Salaries", 10), settlement.salaries);
-		readIntMap(tag.getList("Jobs", 10), settlement.jobs);
-		readIntMap(tag.getList("Reputation", 10), settlement.reputation);
-		readDoubleMap(tag.getList("Prices", 10), settlement.prices);
+		readIntMap(tag, "Stock", settlement.stock);
+		readIntMap(tag, "Warehouse", settlement.warehouse);
+		readIntMap(tag, "Demand", settlement.demand);
+		readIntMap(tag, "Salaries", settlement.salaries);
+		readIntMap(tag, "Jobs", settlement.jobs);
+		readIntMap(tag, "Reputation", settlement.reputation);
+		readDoubleMap(tag, "Prices", settlement.prices);
 		readStringList(tag.getList("Npcs", 8), settlement.npcs);
 		readStringList(tag.getList("Shelves", 8), settlement.shelves);
 		// если конфиг поменялся — добить недостающие товары
@@ -251,35 +253,34 @@ public class Settlement {
 	private static ListTag stringList(List<String> values) {
 		ListTag list = new ListTag();
 		for (String value : values) {
-			CompoundTag entry = new CompoundTag();
-			entry.putString("V", value);
-			list.add(entry);
+			list.add(StringTag.valueOf(value));
 		}
 		return list;
 	}
 
-	private static void readIntMap(ListTag list, Map<String, Integer> target) {
-		for (int i = 0; i < list.size(); i++) {
-			CompoundTag entry = list.getCompound(i);
-			for (String key : new ArrayList<>(entry.getAllKeys())) {
-				target.put(key, entry.getInt(key));
-			}
+	private static void readIntMap(CompoundTag root, String key, Map<String, Integer> target) {
+		CompoundTag map = root.getCompound(key);
+		for (String entry : new ArrayList<>(map.getAllKeys())) {
+			target.put(entry, map.getInt(entry));
 		}
 	}
 
-	private static void readDoubleMap(ListTag list, Map<String, Double> target) {
-		for (int i = 0; i < list.size(); i++) {
-			CompoundTag entry = list.getCompound(i);
-			for (String key : new ArrayList<>(entry.getAllKeys())) {
-				target.put(key, entry.getDouble(key));
-			}
+	private static void readDoubleMap(CompoundTag root, String key, Map<String, Double> target) {
+		CompoundTag map = root.getCompound(key);
+		for (String entry : new ArrayList<>(map.getAllKeys())) {
+			target.put(entry, map.getDouble(entry));
 		}
 	}
 
 	private static void readStringList(ListTag list, List<String> target) {
 		for (int i = 0; i < list.size(); i++) {
-			CompoundTag entry = list.getCompound(i);
-			target.add(entry.getString("V"));
+			Tag entry = list.get(i);
+			if (entry instanceof StringTag stringTag) {
+				target.add(stringTag.getAsString());
+			} else if (entry instanceof CompoundTag compoundTag) {
+				// старый формат
+				target.add(compoundTag.getString("V"));
+			}
 		}
 	}
 

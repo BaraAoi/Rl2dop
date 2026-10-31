@@ -339,7 +339,10 @@ public class CitizenEntity extends PathfinderMob {
 			if (settlement != null) {
 				settlement.unregisterNpc(this.getUUID());
 				settlement.adjustJob(profession, -1);
-				EconomyState.get(this.level().getServer()).setDirty();
+				EconomyState state = EconomyState.get(this.level().getServer());
+				state.setDirty();
+				state.log("NPC " + citizenName + " (" + profession.id() + ", " + settlement.id + ") погиб: "
+						+ source.getMsgId());
 			}
 		}
 	}

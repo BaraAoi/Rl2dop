@@ -244,6 +244,14 @@ public final class Rl2dopCommands {
 		} else {
 			lines.addAll(state.summary());
 		}
+		List<CitizenEntity> loaded = source.getLevel().getEntitiesOfClass(CitizenEntity.class,
+				new net.minecraft.world.phys.AABB(targetPos(source)).inflate(256.0D));
+		List<String> registered = new ArrayList<>();
+		for (CitizenEntity citizen : loaded) {
+			registered.add(citizen.getCitizenName() + "/" + citizen.getProfession().id() + "/"
+					+ citizen.getSettlementId());
+		}
+		lines.add("загружено NPC рядом: " + loaded.size() + " " + registered);
 		for (String line : lines) {
 			source.sendSuccess(() -> Component.literal("§7" + line), false);
 		}
@@ -322,6 +330,7 @@ public final class Rl2dopCommands {
 									if (settlement != null) {
 										settlement.prices.put(item, good.base);
 									}
+									Rl2dopConfig.save();
 									EconomyState.get(context.getSource().getServer()).setDirty();
 									context.getSource().sendSuccess(() -> Component.literal(
 											"§aБазовая цена " + item + " = " + (int) good.base + "м"), true);
