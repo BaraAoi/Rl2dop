@@ -32,14 +32,18 @@ CI покрывает серверную часть (строительство,
 | Что | Ссылка |
 |---|---|
 | 🟢 **Последняя сборка (jar)** | **[releases/download/latest/rl2dop-latest.jar](https://github.com/BaraAoi/Rl2dop/releases/download/latest/rl2dop-latest.jar)** |
-| Эта версия (0.3.0) | [releases/download/latest/rl2dop-0.3.0.jar](https://github.com/BaraAoi/Rl2dop/releases/download/latest/rl2dop-0.3.0.jar) |
+| Эта версия (0.3.1) | [releases/download/latest/rl2dop-0.3.1.jar](https://github.com/BaraAoi/Rl2dop/releases/download/latest/rl2dop-0.3.1.jar) |
 | Все сборки / releases | [github.com/BaraAoi/Rl2dop/releases](https://github.com/BaraAoi/Rl2dop/releases) |
 | Исходники | [github.com/BaraAoi/Rl2dop](https://github.com/BaraAoi/Rl2dop) |
 | CI (сборка) | [Actions](https://github.com/BaraAoi/Rl2dop/actions) |
 
 Ссылка `rl2dop-latest.jar` не меняется — она всегда ведёт на последнюю сборку ветки.
-Версия в `fabric.mod.json` и в имени файла растёт на каждое обновление (`mod_version` в
-`gradle.properties`: 0.1.0 → 0.2.0 → …), поэтому можно проверить, что у тебя свежий jar.
+Версия в `fabric.mod.json` и в имени файла растёт на каждое обновление (`version` в
+`gradle.properties`: 0.1.0 → 0.2.0 → 0.3.0 → 0.3.1 → …), поэтому можно проверить, что у тебя свежий jar.
+
+Коротко про 0.3.1: ратуша больше не «строится» (сразу готовая), поселение рождается с четырьмя
+мастерскими, мастерские работают сами, на ферме появилась канавка воды (иначе грядки высыхали),
+в окне торговли добавлена кнопка «Подарить», а деньги NPC временно бесконечны.
 ### Установка
 
 1. Minecraft **1.21.1**, [Fabric Loader](https://fabricmc.net/use/installer/) ≥ 0.16.

@@ -102,6 +102,16 @@ public final class SettlementBuilds {
 	}
 
 	/** Полный план застройки для точки ратуши. */
+	/**
+	 * Точку работы профессии привязываем один раз: `ground()` после постройки считает грунт по
+	 * крыше готовой мастерской, и при каждой перестройке координаты «прыгали» бы на несколько блоков.
+	 */
+	private static void site(Settlement settlement, Profession profession, BlockPos pos) {
+		if (!settlement.workSites.containsKey(profession.id())) {
+			settlement.setWorkSite(profession, pos);
+		}
+	}
+
 	public static List<Entry> plan(ServerLevel level, Settlement settlement) {
 		BlockPos origin = settlement.hall();
 		Plan plan = new Plan();
@@ -449,7 +459,7 @@ public final class SettlementBuilds {
 		plan.set(base.offset(halfX - 1, 1, 0), Blocks.WATER_CAULDRON.defaultBlockState());
 		plan.set(base.offset(-halfX + 1, 1, halfZ - 1), Blocks.BARREL.defaultBlockState());
 		hut(plan, level, base.offset(-halfX + 2, 0, -halfZ - 4), Blocks.OAK_PLANKS.defaultBlockState());
-		settlement.setWorkSite(Profession.FARMER, base.offset(0, 1, 1));
+		site(settlement, Profession.FARMER, base.offset(0, 1, 1));
 	}
 
 	/** Дом лесоруба: избушка, поленница, пни и саженцы вокруг. */
@@ -472,7 +482,7 @@ public final class SettlementBuilds {
 		}
 		plan.set(base.offset(-3, 1, 3), Blocks.CRAFTING_TABLE.defaultBlockState());
 		lampPost(plan, base.offset(4, 1, 4), level);
-		settlement.setWorkSite(Profession.LUMBERJACK, base.offset(0, 1, 4));
+		site(settlement, Profession.LUMBERJACK, base.offset(0, 1, 4));
 	}
 
 	/** Шахта: ствол с лестницей, рудные блоки в породе, крепь, свет, бытовка. */
@@ -523,7 +533,7 @@ public final class SettlementBuilds {
 			plan.set(base.offset(dx, 1, 3 + dx / 2), Blocks.COBBLESTONE.defaultBlockState());
 		}
 		hut(plan, level, base.offset(-4, 0, 4), Blocks.COBBLESTONE.defaultBlockState());
-		settlement.setWorkSite(Profession.MINER, base.offset(0, 1, 1));
+		site(settlement, Profession.MINER, base.offset(0, 1, 1));
 	}
 
 	/** Мастерская строителя: станок, леса, штабель кирпича и камня. */
@@ -544,7 +554,7 @@ public final class SettlementBuilds {
 			}
 		}
 		lampPost(plan, base.offset(-4, 1, -3), level);
-		settlement.setWorkSite(Profession.BUILDER, base.offset(0, 1, 4));
+		site(settlement, Profession.BUILDER, base.offset(0, 1, 4));
 	}
 
 	/** Построить дом мгновенно (команда /house_add). */
