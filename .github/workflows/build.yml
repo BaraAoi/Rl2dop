@@ -17,8 +17,8 @@ jobs:
       - name: setup jdk
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
-          distribution: 'temurin'
+          java-version: '25'
+          distribution: 'microsoft'
 
       - name: setup gradle
         uses: gradle/actions/setup-gradle@v4
@@ -27,7 +27,17 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: build
-        run: ./gradlew build --stacktrace
+        run: ./gradlew build --stacktrace --console=plain 2>&1 | tee ci/build.log; exit ${PIPESTATUS[0]}
+
+      - name: save build log
+        if: failure()
+        run: |
+          mkdir -p ci
+          git config user.name "rl2dop-ci"
+          git config user.email "ci@users.noreply.github.com"
+          git add -A ci
+          git commit -m "ci: build log [skip ci]" || true
+          git push || true
 
       - name: capture build artifacts
         uses: actions/upload-artifact@v4
