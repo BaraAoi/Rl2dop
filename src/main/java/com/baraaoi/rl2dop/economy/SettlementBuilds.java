@@ -212,7 +212,7 @@ public final class SettlementBuilds {
 				continue;
 			}
 			pads++;
-			if (ground.spread(spot.getX(), spot.getZ(), 3, 3) > 1) {
+			if (ground.floorSpread(spot.getX(), spot.getZ(), spot.getY(), 3) > 1) {
 				uneven++;
 			}
 			BlockPos under = spot.below();
@@ -1202,6 +1202,34 @@ public final class SettlementBuilds {
 	}
 
 	/** Построить всё сразу (команды, отладка, CI). */
+	/** План застройки, применённый сразу; ошибки не выпускаем наружу — см. {@link #applySafely}. */
+	public static int buildInstantSafe(ServerLevel level, Settlement settlement) {
+		return applySafely(level, settlement, 0);
+	}
+
+	/**
+	 * Применить план целиком (budget = 0) или частью, не роняя ни команду, ни тик сервера:
+	 * кривой рельеф или невыгруженный чанок должны остаться в логе, а не в краше мира.
+	 */
+	public static int buildSafe(ServerLevel level, Settlement settlement, int budget) {
+		return applySafely(level, settlement, budget);
+	}
+
+	private static int applySafely(ServerLevel level, Settlement settlement, int budget) {
+		try {
+			return budget <= 0 ? buildInstant(level, settlement) : build(level, settlement, budget);
+		} catch (RuntimeException e) {
+			com.baraaoi.rl2dop.Rl2dop.LOGGER.error("[rl2dop] поселение {}: план застройки не применился",
+					settlement.id, e);
+			settlement.buildProgress = 100;
+			EconomyState.get(level.getServer()).log("поселение " + settlement.id
+					+ ": застройка остановилась на ошибке (" + e.getClass().getSimpleName()
+					+ ") — остальное можно достроить /settle_build " + settlement.id + " instant");
+			EconomyState.get(level.getServer()).setDirty();
+			return settlement.buildProgress;
+		}
+	}
+
 	public static int buildInstant(ServerLevel level, Settlement settlement) {
 		settlement.buildProgress = 0;
 		int progress = build(level, settlement, 0);
@@ -1549,15 +1577,21 @@ public final class SettlementBuilds {
 		 * (окна 2 блока), не выше +8 и не ниже -8 от уровня поселения.
 		 */
 		int padLevel(int cx, int cz, int halfX, int halfZ) {
-			int[] counts = new int[33];
+			// шаг выборки 2 блока → (halfX+1)×(halfZ+1) колонок; массивы размеряем по пятну,
+			// иначе площадка мастерской (9×8) уже ломала сборку выборки за границы массива
+			int nx = halfX + 1;   // шаг выборки 2 → ровно halfX+1 колонок вдоль оси X
+			int nz = halfZ + 1;
+			int[] samples = new int[nx * nz];
+			int n = 0;
 			int min = Integer.MAX_VALUE;
 			int max = Integer.MIN_VALUE;
-			int[] samples = new int[9 * 9];
-			int n = 0;
 			for (int z = cz - halfZ; z <= cz + halfZ; z += 2) {
 				for (int x = cx - halfX; x <= cx + halfX; x += 2) {
 					int y = level(x, z);
-					samples[n++] = y;
+					if (n < samples.length) {
+						samples[n] = y;
+					}
+					n++;
 					min = Math.min(min, y);
 					max = Math.max(max, y);
 				}
@@ -1565,11 +1599,12 @@ public final class SettlementBuilds {
 			if (n == 0) {
 				return baseY;
 			}
-			if (max - min >= 32) {
+			if (max - min >= 64) {
 				return clampBase(min);
 			}
-			for (int i = 0; i < n; i++) {
-				counts[samples[i] - min + 16]++;
+			int[] counts = new int[max - min + 1];
+			for (int i = 0; i < Math.min(n, samples.length); i++) {
+				counts[samples[i] - min]++;
 			}
 			int best = 0;
 			int bestCount = -1;
@@ -1579,11 +1614,28 @@ public final class SettlementBuilds {
 					best = i;
 				}
 			}
-			return clampBase(min + best - 16);
+			return clampBase(min + best);
 		}
 
 		private int clampBase(int y) {
 			return Math.max(baseY - 8, Math.min(baseY + 8, y));
+		}
+
+		/**
+		 * Перепад «пола» над пятном: высоту каждой колонки ищем ОТ уровня y вниз, поэтому крыши,
+		 * заборы и фонари над площадкой не считаются кривизной (иначе аудит ругался бы на ратушу).
+		 */
+		int floorSpread(int cx, int cz, int y, int half) {
+			int min = Integer.MAX_VALUE;
+			int max = Integer.MIN_VALUE;
+			for (int z = cz - half; z <= cz + half; z++) {
+				for (int x = cx - half; x <= cx + half; x++) {
+					int v = groundTopY(level, x, z, y);
+					min = Math.min(min, v);
+					max = Math.max(max, v);
+			}
+			}
+			return max == Integer.MIN_VALUE ? 0 : max - min;
 		}
 
 		/** Перепад высот над пятном (0 = идеально ровно). */

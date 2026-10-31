@@ -356,7 +356,7 @@ public final class SettlementService {
 		}
 		Displays.ensureBoard(level, settlement, hallPos.offset(0, 2, 0));
 		SignBoards.install(level, settlement);
-		SettlementBuilds.build(level, settlement, Rl2dopConfig.buildBlocksPerTick);
+		SettlementBuilds.buildSafe(level, settlement, Rl2dopConfig.buildBlocksPerTick);
 		state.log("привязка к ванильной деревне: " + name + " (" + (bell != null ? "колокол" : "точка игрока") + ")");
 		return "Поселение «" + settlement.displayName() + "» создано в " + hallPos.toShortString()
 				+ (bell != null ? " (у колокола)" : "") + ". NPC: " + String.join(", ", spawned);

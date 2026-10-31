@@ -225,7 +225,7 @@ public final class Rl2dopCommands {
 		Displays.ensureBoard(level, settlement, pos.above(2));
 		// таблички нужд вывешиваем сразу: потребности порождает стройка, а не «пустое место»
 		SignBoards.install(level, settlement);
-		int progress = Rl2dopConfig.autoBuild ? SettlementBuilds.buildInstant(level, settlement)
+		int progress = Rl2dopConfig.autoBuild ? SettlementBuilds.buildInstantSafe(level, settlement)
 				: settlement.buildProgress;
 		EconomyTicker.settlementStep(source.getServer(), EconomyState.get(source.getServer()));
 		int houses = settlement.houses.size();
@@ -640,7 +640,7 @@ public final class Rl2dopCommands {
 		settlement.hallPos = site.asLong();
 		SettlementBuilds.forgetPlots(settlement);
 		settlement.buildProgress = 0;
-		int progress = SettlementBuilds.buildInstant(level, settlement);
+		int progress = SettlementBuilds.buildInstantSafe(level, settlement);
 		EconomyState.get(source.getServer()).setDirty();
 		source.sendSuccess(() -> Component.literal("§aПоселение перенесено на ровное место: §f"
 				+ before.toShortString() + "§a → §f" + site.toShortString() + "§a (перепад §f"
@@ -800,7 +800,8 @@ public final class Rl2dopCommands {
 				return 1;
 			}
 			case "grow" -> {
-				int progress = SettlementBuilds.build(level, settlement, Math.max(1, Rl2dopConfig.buildBlocksPerTick));
+				int progress = SettlementBuilds.buildSafe(level, settlement,
+						Math.max(1, Rl2dopConfig.buildBlocksPerTick));
 				EconomyTicker.settlementStep(source.getServer(), EconomyState.get(source.getServer()));
 				source.sendSuccess(() -> Component.literal("§aПостроено до §f" + progress + "%§a (шаг §f"
 						+ Rl2dopConfig.buildBlocksPerTick + "§a блоков), материалов съедено на этом шаге: §f"
@@ -808,7 +809,7 @@ public final class Rl2dopCommands {
 				return 1;
 			}
 			default -> {
-				int progress = SettlementBuilds.buildInstant(level, settlement);
+				int progress = SettlementBuilds.buildInstantSafe(level, settlement);
 				EconomyTicker.settlementStep(source.getServer(), EconomyState.get(source.getServer()));
 				SignBoards.refresh(level, settlement);
 				EconomyState.get(source.getServer()).setDirty();
