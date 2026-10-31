@@ -102,7 +102,7 @@ jobs:
           exec 3> /tmp/cmd1
           for i in $(seq 1 150); do grep -q "Done (" ci/smoke.log 2>/dev/null && break; sleep 2; done
           sleep 3
-          for cmd in "settle_spawn SmokeTown" "settle_build" "settle_mayor" "house_add" "give_coins 500" "wallet" "spawn_npc farmer" "spawn_npc trader" "spawn_npc guard" "spawn_npc cook" "market_dump" "npc_list" "salary_set farmer 15" "price_set minecraft:bread 5" "shelf_add minecraft:bread" "hall_board" "shop_marker" "npc_profession lumberjack" "settle_bind SmokeVillage" "econ_log 8"; do
+          for cmd in "settle_spawn SmokeTown" "settle_build" "settle_mayor" "house_add" "give_coins 500" "wallet" "spawn_npc farmer" "spawn_npc trader" "spawn_npc guard" "spawn_npc cook" "spawn_npc miner" "spawn_npc builder" "market_dump" "npc_list" "salary_set farmer 15" "price_set minecraft:bread 5" "shelf_add minecraft:bread" "hall_board" "shop_marker" "npc_profession lumberjack" "settle_bind SmokeVillage" "econ_log 8"; do
             echo "$cmd" >&3
             sleep 2
           done
