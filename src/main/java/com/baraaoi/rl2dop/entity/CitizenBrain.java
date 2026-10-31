@@ -192,10 +192,11 @@ public final class CitizenBrain {
 			citizen.setCitizenState(CitizenState.IDLE);
 			return;
 		}
-		if (citizen.blockPosition().distSqr(home) > 4.0D) {
+		BlockPos bed = bedSpot(citizen, home);
+		if (citizen.blockPosition().distSqr(bed) > 4.0D) {
 			citizen.setCitizenState(CitizenState.WALKING);
 			if (citizen.getNavigation().isDone()) {
-				walkTo(citizen, home);
+				walkTo(citizen, bed);
 			}
 		} else {
 			citizen.getNavigation().stop();
@@ -350,6 +351,14 @@ public final class CitizenBrain {
 
 	// ---------- сон ----------
 
+	/**
+	 * Дом для навигации: в `homePos` хранится уровень двери дома (та же точка, по которой поселение
+	 * считает жильё), а идти нужно на блок, где можно стоять, — иначе житель упирается в пол.
+	 */
+	private static BlockPos bedSpot(CitizenEntity citizen, BlockPos home) {
+		return citizen.level() instanceof ServerLevel level ? SettlementBuilds.safeStand(level, home) : home;
+	}
+
 	private static void handleSleep(CitizenEntity citizen) {
 		citizen.setCitizenState(CitizenState.SLEEPING);
 		BlockPos home = citizen.getHomePos();
@@ -357,9 +366,10 @@ public final class CitizenBrain {
 			citizen.getNavigation().stop();
 			return;
 		}
-		if (citizen.blockPosition().distSqr(home) > 4.0D) {
+		BlockPos bed = bedSpot(citizen, home);
+		if (citizen.blockPosition().distSqr(bed) > 4.0D) {
 			if (citizen.getNavigation().isDone()) {
-				walkTo(citizen, home);
+				walkTo(citizen, bed);
 			}
 		} else {
 			citizen.getNavigation().stop();
