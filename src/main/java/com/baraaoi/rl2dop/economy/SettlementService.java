@@ -99,11 +99,16 @@ public final class SettlementService {
 		return level == null ? at : SettlementBuilds.safeStand(level, at);
 	}
 
-	/** Точка сна: первый свободный дом, а пока домов нет — таверна/площадь. */
+	/**
+	 * Точка сна: первый свободный дом, а пока домов нет — таверна/площадь.
+	 * Дом отдаётся ровно таким, каким его хранит поселение (`houseFor` = блок у двери): `assignHomes`
+	 * и «есть ли жильё» (`hasHouseNear`) считают по этим же координатам, поэтому «подбор безопасной
+	 * точки» здесь сбивал учёт — житель считался бездомным, хотя спал у своей двери.
+	 */
 	public static BlockPos houseSpot(ServerLevel level, Settlement settlement, int index, BlockPos fallback) {
 		BlockPos house = settlement == null ? null : settlement.houseFor(index);
 		if (house != null && level != null && level.isLoaded(house)) {
-			return SettlementBuilds.safeStand(level, house);
+			return house;
 		}
 		if (settlement != null && settlement.hasTavern()) {
 			// без дома житель ночует в таверне: у него всё равно есть куда пойти ночью

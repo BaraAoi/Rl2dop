@@ -243,7 +243,7 @@ public class Settlement {
 				BlockPos house = new BlockPos(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]),
 						Integer.parseInt(parts[2]));
 				if (Math.abs(pos.getX() - house.getX()) <= 5 && Math.abs(pos.getZ() - house.getZ()) <= 5
-						&& Math.abs(pos.getY() - house.getY()) <= 4) {
+						&& Math.abs(pos.getY() - house.getY()) <= 6) {
 					return true;
 				}
 			} catch (NumberFormatException ignored) {
@@ -301,8 +301,10 @@ public class Settlement {
 			}
 			try {
 				int x = Integer.parseInt(parts[0]);
+				int y = Integer.parseInt(parts[1]);
 				int z = Integer.parseInt(parts[2]);
-				if (Math.abs(pos.getX() - x) <= 5 && Math.abs(pos.getZ() - z) <= 5) {
+				if (Math.abs(pos.getX() - x) <= 5 && Math.abs(pos.getZ() - z) <= 5
+						&& Math.abs(pos.getY() - y) <= 6) {
 					return x + ";" + z;
 				}
 			} catch (NumberFormatException ignored) {
