@@ -33,18 +33,18 @@ duplicate input class net/fabricmc/fabric/mixin/tag/package-info, from /home/run
 > Task :processResources
 
 > Task :compileJava
-/home/runner/work/Rl2dop/Rl2dop/src/main/java/com/baraaoi/rl2dop/economy/SettlementBuilds.java:279: error: cannot find symbol
-			return Blocks.POLISHED_STONE.defaultBlockState();
-			             ^
-  symbol:   variable POLISHED_STONE
-  location: class Blocks
+/home/runner/work/Rl2dop/Rl2dop/src/main/java/com/baraaoi/rl2dop/economy/TradeService.java:184: error: cannot find symbol
+		if (institution) {
+		    ^
+  symbol:   variable institution
+  location: class TradeService
 Note: Some input files use or override a deprecated API.
 Note: Recompile with -Xlint:deprecation for details.
 1 error
 
 > Task :compileJava FAILED
 > Task :remapSourcesJar
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1793449447475.json
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1793454497918.json
 
 [Incubating] Problems report is available at: file:///home/runner/work/Rl2dop/Rl2dop/build/reports/problems/problems-report.html
 
@@ -53,11 +53,11 @@ FAILURE: Build failed with an exception.
 * What went wrong:
 Execution failed for task ':compileJava' (registered by plugin class 'org.gradle.api.plugins.JavaBasePlugin').
 > Compilation failed; see the compiler output below.
-  /home/runner/work/Rl2dop/Rl2dop/src/main/java/com/baraaoi/rl2dop/economy/SettlementBuilds.java:279: error: cannot find symbol
-  			return Blocks.POLISHED_STONE.defaultBlockState();
-  			             ^
-    symbol:   variable POLISHED_STONE
-    location: class Blocks
+  /home/runner/work/Rl2dop/Rl2dop/src/main/java/com/baraaoi/rl2dop/economy/TradeService.java:184: error: cannot find symbol
+  		if (institution) {
+  		    ^
+    symbol:   variable institution
+    location: class TradeService
   Note: Some input files use or override a deprecated API.
   Note: Recompile with -Xlint:deprecation for details.
   1 error
@@ -97,11 +97,11 @@ org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':compile
 	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:65)
 	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:47)
 Caused by: org.gradle.api.internal.tasks.compile.CompilationFailedException: Compilation failed; see the compiler output below.
-/home/runner/work/Rl2dop/Rl2dop/src/main/java/com/baraaoi/rl2dop/economy/SettlementBuilds.java:279: error: cannot find symbol
-			return Blocks.POLISHED_STONE.defaultBlockState();
-			             ^
-  symbol:   variable POLISHED_STONE
-  location: class Blocks
+/home/runner/work/Rl2dop/Rl2dop/src/main/java/com/baraaoi/rl2dop/economy/TradeService.java:184: error: cannot find symbol
+		if (institution) {
+		    ^
+  symbol:   variable institution
+  location: class TradeService
 Note: Some input files use or override a deprecated API.
 Note: Recompile with -Xlint:deprecation for details.
 1 error
@@ -239,6 +239,6 @@ Note: Recompile with -Xlint:deprecation for details.
 	... 25 more
 
 
-BUILD FAILED in 41s
+BUILD FAILED in 58s
 5 actionable tasks: 5 executed
 Configuration cache entry stored.
