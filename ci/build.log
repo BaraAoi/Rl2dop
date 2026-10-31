@@ -33,18 +33,14 @@ duplicate input class net/fabricmc/fabric/mixin/tag/package-info, from /home/run
 > Task :processResources
 
 > Task :compileJava
-/home/runner/work/Rl2dop/Rl2dop/src/main/java/com/baraaoi/rl2dop/economy/SettlementBuilds.java:501: error: cannot find symbol
-					.setValue(BlockStateProperties.AXIS, Direction.X));
-					                                              ^
-  symbol:   variable X
-  location: class Direction
-Note: Some input files use or override a deprecated API.
-Note: Recompile with -Xlint:deprecation for details.
+/home/runner/work/Rl2dop/Rl2dop/src/main/java/com/baraaoi/rl2dop/command/Rl2dopCommands.java:590: error: ')' or ',' expected
+										IntegerArgumentType.getInteger(context, "count")))));
+										                                                    ^
 1 error
 
 > Task :compileJava FAILED
 > Task :remapSourcesJar
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1793458140600.json
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1793463304322.json
 
 [Incubating] Problems report is available at: file:///home/runner/work/Rl2dop/Rl2dop/build/reports/problems/problems-report.html
 
@@ -53,13 +49,9 @@ FAILURE: Build failed with an exception.
 * What went wrong:
 Execution failed for task ':compileJava' (registered by plugin class 'org.gradle.api.plugins.JavaBasePlugin').
 > Compilation failed; see the compiler output below.
-  /home/runner/work/Rl2dop/Rl2dop/src/main/java/com/baraaoi/rl2dop/economy/SettlementBuilds.java:501: error: cannot find symbol
-  					.setValue(BlockStateProperties.AXIS, Direction.X));
-  					                                              ^
-    symbol:   variable X
-    location: class Direction
-  Note: Some input files use or override a deprecated API.
-  Note: Recompile with -Xlint:deprecation for details.
+  /home/runner/work/Rl2dop/Rl2dop/src/main/java/com/baraaoi/rl2dop/command/Rl2dopCommands.java:590: error: ')' or ',' expected
+  										IntegerArgumentType.getInteger(context, "count")))));
+  										                                                    ^
   1 error
 
 * Try:
@@ -97,13 +89,9 @@ org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':compile
 	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:65)
 	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:47)
 Caused by: org.gradle.api.internal.tasks.compile.CompilationFailedException: Compilation failed; see the compiler output below.
-/home/runner/work/Rl2dop/Rl2dop/src/main/java/com/baraaoi/rl2dop/economy/SettlementBuilds.java:501: error: cannot find symbol
-					.setValue(BlockStateProperties.AXIS, Direction.X));
-					                                              ^
-  symbol:   variable X
-  location: class Direction
-Note: Some input files use or override a deprecated API.
-Note: Recompile with -Xlint:deprecation for details.
+/home/runner/work/Rl2dop/Rl2dop/src/main/java/com/baraaoi/rl2dop/command/Rl2dopCommands.java:590: error: ')' or ',' expected
+										IntegerArgumentType.getInteger(context, "count")))));
+										                                                    ^
 1 error
 	at org.gradle.api.internal.tasks.compile.JdkJavaCompiler.execute(JdkJavaCompiler.java:88)
 	at org.gradle.api.internal.tasks.compile.JdkJavaCompiler.execute(JdkJavaCompiler.java:49)
