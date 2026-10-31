@@ -759,7 +759,7 @@ public final class SettlementBuilds {
 			}
 		}
 		// застраивается ближний круг, дальний — когда места рядом кончатся
-		out.sort(java.util.Comparator.comparingLong(pos -> pos.distSqr(origin)));
+		out.sort(java.util.Comparator.<BlockPos>comparingDouble(pos -> pos.distSqr(origin)));
 		return out;
 	}
 
