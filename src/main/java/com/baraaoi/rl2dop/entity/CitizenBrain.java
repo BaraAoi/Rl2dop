@@ -123,7 +123,9 @@ public final class CitizenBrain {
 	/** Полуденный перерыв: идут к таверне, едят то, что есть на складе, болтают. */
 	private static void handleBreak(CitizenEntity citizen, ServerLevel level, Settlement settlement) {
 		BlockPos spot = gatherSpot(citizen, level, settlement);
-		if (citizen.blockPosition().distSqr(spot) > 4.0D) {
+		// «пришёл» — это 5 блоков, а не 2: на перерыв собирается вся деревня, и с узким окном
+		// жители только толкались у таверны, так и не переходя к еде и разговорам
+		if (citizen.blockPosition().distSqr(spot) > 25.0D) {
 			citizen.setCitizenState(CitizenState.WALKING);
 			if (citizen.getNavigation().isDone()) {
 				walkTo(citizen, spot);
@@ -167,7 +169,7 @@ public final class CitizenBrain {
 	/** Вечерняя сходка (ванильный «meet»): у колокола, новости, настроение и репутация игрокам рядом. */
 	private static void handleMeet(CitizenEntity citizen, ServerLevel level, Settlement settlement) {
 		BlockPos spot = gatherSpot(citizen, level, settlement);
-		if (citizen.blockPosition().distSqr(spot) > 4.0D) {
+		if (citizen.blockPosition().distSqr(spot) > 25.0D) {   // та же ширина «я на месте», что и на перерыве
 			citizen.setCitizenState(CitizenState.WALKING);
 			if (citizen.getNavigation().isDone()) {
 				walkTo(citizen, spot);
