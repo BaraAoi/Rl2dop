@@ -1410,8 +1410,11 @@ public final class SettlementBuilds {
 			return false;
 		}
 		BlockState current = level.getBlockState(pos);
+		// воду и лаву планировщик вытесняет всегда: иначе площадка, подсыпанная над топью,
+		// оставалась бы «на весу» — настил не класть, а под ним жидкость
+		boolean liquid = !level.getFluidState(pos).isEmpty();
 		if (entry.state().isAir()) {
-			if (!current.isAir() && removable(level, pos)) {
+			if (liquid || (!current.isAir() && removable(level, pos))) {
 				level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
 				return true;
 			}
@@ -1420,7 +1423,7 @@ public final class SettlementBuilds {
 		if (current.equals(entry.state())) {
 			return false;
 		}
-		if (!(current.isAir() || current.canBeReplaced() || naturalOnly(current))) {
+		if (!(liquid || current.isAir() || current.canBeReplaced() || naturalOnly(current))) {
 			return false;
 		}
 		level.setBlockAndUpdate(pos, entry.state());
@@ -1855,8 +1858,9 @@ public final class SettlementBuilds {
 			int ground = natural(x, z);
 			for (int yy = y + 1; yy <= ground; yy++) {
 				BlockPos pos = new BlockPos(x, yy, z);
-				if (removable(level, pos) && !level.getBlockState(pos).isAir()) {
-					plan.air(pos);
+				BlockState state = level.getBlockState(pos);
+				if ((removable(level, pos) || !level.getFluidState(pos).isEmpty()) && !state.isAir()) {
+					plan.air(pos);   // срез: природное выше уровня площадки, включая воду
 				}
 			}
 			int low = ground;
