@@ -108,6 +108,8 @@ public final class TradeService {
 
 		refresh(player, citizen, settlement);
 		ModPackets.syncTo(player);
+		// инвентарь менялся на сервере — принудительно синхронизируем слоты клиента
+		Money.syncInventory(player);
 		if (!ok) {
 			return;
 		}

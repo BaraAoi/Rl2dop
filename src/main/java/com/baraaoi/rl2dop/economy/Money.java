@@ -32,6 +32,11 @@ public final class Money {
 				return stack;
 			}
 		}
+		for (ItemStack stack : player.getInventory().offhand) {
+			if (!stack.isEmpty() && stack.is(ModItems.WALLET)) {
+				return stack;
+			}
+		}
 		return ItemStack.EMPTY;
 	}
 
@@ -103,6 +108,17 @@ public final class Money {
 				}
 			}
 		}
+		// монета во второй руке тоже деньги — иначе её «не видно» для учёта
+		for (ItemStack stack : player.getInventory().offhand) {
+			if (stack.isEmpty()) {
+				continue;
+			}
+			for (CoinType type : CoinType.values()) {
+				if (stack.is(type.item())) {
+					counts[type.ordinal()] += stack.getCount();
+				}
+			}
+		}
 		return counts;
 	}
 
@@ -126,6 +142,7 @@ public final class Money {
 		ItemStack wallet = findWallet(player);
 		if (!wallet.isEmpty()) {
 			setWalletCounts(wallet, canonical);
+			syncInventory(player);
 			return;
 		}
 		CoinType[] types = CoinType.values();
@@ -140,6 +157,7 @@ public final class Money {
 				left -= chunk;
 			}
 		}
+		syncInventory(player);
 	}
 
 	public static boolean take(ServerPlayer player, int bronzeValue) {
@@ -170,7 +188,7 @@ public final class Money {
 		if (!player.getInventory().add(stack)) {
 			player.drop(stack, false);
 		}
-		player.getInventory().setChanged();
+		syncInventory(player);
 		return true;
 	}
 
@@ -195,6 +213,7 @@ public final class Money {
 			return false;
 		}
 		setWalletCounts(wallet, new int[CoinType.values().length]);
+		syncInventory(player);
 		CoinType[] types = CoinType.values();
 		for (int i = types.length - 1; i >= 0; i--) {
 			int left = counts[i];
@@ -224,16 +243,33 @@ public final class Money {
 
 	private static void removeCoinItems(ServerPlayer player) {
 		for (int slot = 0; slot < player.getInventory().items.size(); slot++) {
-			ItemStack stack = player.getInventory().items.get(slot);
-			if (stack.isEmpty()) {
-				continue;
-			}
-			for (CoinType type : CoinType.values()) {
-				if (stack.is(type.item())) {
-					player.getInventory().items.set(slot, ItemStack.EMPTY);
-					break;
-				}
+			if (isCoin(player.getInventory().items.get(slot))) {
+				player.getInventory().items.set(slot, ItemStack.EMPTY);
 			}
 		}
+		for (int slot = 0; slot < player.getInventory().offhand.size(); slot++) {
+			if (isCoin(player.getInventory().offhand.get(slot))) {
+				player.getInventory().offhand.set(slot, ItemStack.EMPTY);
+			}
+		}
+		syncInventory(player);
+	}
+
+	/** Сообщаем клиенту, что слоты изменились (иначе монеты «пропадут» из вида до следующего открытия инвентаря). */
+	public static void syncInventory(ServerPlayer player) {
+		player.getInventory().setChanged();
+		player.containerMenu.broadcastChanges();
+	}
+
+	private static boolean isCoin(ItemStack stack) {
+		if (stack.isEmpty()) {
+			return false;
+		}
+		for (CoinType type : CoinType.values()) {
+			if (stack.is(type.item())) {
+				return true;
+			}
+		}
+		return false;
 	}
 }
