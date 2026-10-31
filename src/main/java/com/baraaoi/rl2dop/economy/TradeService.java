@@ -167,8 +167,9 @@ public final class TradeService {
 	}
 
 	private static boolean sell(ServerPlayer player, Settlement settlement, Rl2dopConfig.Good good, int amount,
-								int reputation, double haggle, boolean hall) {
-		if (!good.sellable) {
+								int reputation, double haggle, boolean institution) {
+		// ратуша и глава поселения скупают всё, даже то, что лавка не принимает
+		if (!institution && !good.sellable) {
 			message(player, "§cЭтот товар не принимают.");
 			return false;
 		}
