@@ -902,7 +902,7 @@ public final class SettlementBuilds {
 			for (int x : PLOT_ROW_X[row]) {
 				BlockPos ideal = origin.offset(x, 0, PLOT_ROW_Z[row]);
 				if (!level.hasChunkAt(ideal)) {
-					continue;   // участок за выгруженной зокой пока не считается местом для дома
+					continue;   // участок за выгруженной зоной пока не считается местом для дома
 				}
 				BlockPos spot = ground.pick(ideal.getX(), ideal.getZ(), HOUSE_HALF + 2, HOUSE_HALF + 2);
 				out.add(spot != null ? spot : ideal);
@@ -1757,8 +1757,15 @@ public final class SettlementBuilds {
 		 * @param step   шаг поиска: 2 — точечно под дом, 3 — обзор под весь посёлок
 		 */
 		BlockPos pick(int cx, int cz, int halfX, int halfZ, int radius, int step) {
-			BlockPos ideal = new BlockPos(cx, baseY, cz);
-			if (!level.hasChunkAt(ideal)) {
+			// сначала ищем сухое ровное место; топь берём только если вокруг вообще нет суши —
+			// штраф в очках с этим не справлялся, и дом вставал настил над водой
+			BlockPos dry = pickRound(cx, cz, halfX, halfZ, radius, step, true);
+			return dry != null ? dry : pickRound(cx, cz, halfX, halfZ, radius, step, false);
+		}
+
+		private BlockPos pickRound(int cx, int cz, int halfX, int halfZ, int radius, int step,
+							boolean dryOnly) {
+			if (!level.hasChunkAt(new BlockPos(cx, baseY, cz))) {
 				return null;
 			}
 			BlockPos best = null;
@@ -1768,6 +1775,9 @@ public final class SettlementBuilds {
 					int x = cx + dx * step;
 					int z = cz + dz * step;
 					if (!level.hasChunkAt(new BlockPos(x, baseY, z))) {
+						continue;
+					}
+					if (dryOnly && wet(x, z, halfX, halfZ)) {
 						continue;
 					}
 					int y = padLevel(x, z, halfX, halfZ);
@@ -1831,7 +1841,13 @@ public final class SettlementBuilds {
 					plan.air(pos);
 				}
 			}
-			for (int yy = ground + 1; yy < y; yy++) {
+			int low = ground;
+			BlockPos lowPos = new BlockPos(x, low, z);
+			if (!level.getFluidState(lowPos).isEmpty()) {
+				// грунт под водой: подсыпаем и саму воду, иначе площадка ляжет на топь провалом
+				low--;
+			}
+			for (int yy = low + 1; yy < y; yy++) {
 				plan.set(new BlockPos(x, yy, z), fill);
 			}
 			plan.set(new BlockPos(x, y, z), top);
