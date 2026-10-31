@@ -51,12 +51,12 @@ public final class SignBoards {
 	}
 
 	/** Точка, где стоит глава поселения: лицом к табличкам, в проходе зала. */
-	public static BlockPos mayorPost(Settlement settlement) {
+	public static BlockPos mayorPost(ServerLevel level, Settlement settlement) {
 		BlockPos hall = settlement.hall();
-		if (SettlementBuilds.hallStanding(settlement)) {
-			return hall.offset(0, 1, INSIDE_Z_OFFSET + 2);
-		}
-		return hall.offset(0, 1, OUTSIDE_Z - 2);
+		BlockPos post = SettlementBuilds.hallStanding(settlement)
+				? hall.offset(0, 1, INSIDE_Z_OFFSET + 2)
+				: hall.offset(0, 1, OUTSIDE_Z - 2);
+		return level == null ? post : SettlementBuilds.safeStand(level, post);
 	}
 
 	/**

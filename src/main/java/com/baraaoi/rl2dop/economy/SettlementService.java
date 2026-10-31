@@ -77,7 +77,7 @@ public final class SettlementService {
 		Profession profession = citizen.getProfession();
 		citizen.setHomePos(houseSpot(level, settlement, settlement.npcs.size(), pos));
 		citizen.setWorkPos(workSpot(level, settlement, profession));
-		citizen.setShopPos(settlement.shop());
+		citizen.setShopPos(SettlementBuilds.safeStand(level, settlement.shop()));
 		citizen.setWallet(Math.max(citizen.getWallet(), 20));
 		citizen.setProfessionCooldown(Rl2dopConfig.autoProfessionCooldownTicks);
 		settlement.registerNpc(citizen.getUUID());
@@ -89,9 +89,9 @@ public final class SettlementService {
 	public static BlockPos houseSpot(ServerLevel level, Settlement settlement, int index, BlockPos fallback) {
 		BlockPos house = settlement == null ? null : settlement.houseFor(index);
 		if (house != null && level != null && level.isLoaded(house)) {
-			return house;
+			return SettlementBuilds.safeStand(level, house);
 		}
-		return jitter(level, fallback == null ? settlement.hall() : fallback, 6);
+		return SettlementBuilds.safeStand(level, jitter(level, fallback == null ? settlement.hall() : fallback, 6));
 	}
 
 	/** Глава поселения: ставит его у табличек; один на поселение, переживает перезагрузку. */
@@ -103,7 +103,7 @@ public final class SettlementService {
 		if (existing != null) {
 			return existing;
 		}
-		BlockPos post = SignBoards.mayorPost(settlement);
+		BlockPos post = SignBoards.mayorPost(level, settlement);
 		CitizenEntity mayor = spawnCitizen(level, settlement, Profession.MAYOR, post,
 				EconomyState.randomName(level.random));
 		if (mayor == null) {
@@ -167,7 +167,9 @@ public final class SettlementService {
 		if (citizen == null) {
 			return null;
 		}
-		citizen.moveTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, level.random.nextFloat() * 360.0F, 0.0F);
+		BlockPos stand = SettlementBuilds.safeStand(level, pos);
+		citizen.moveTo(stand.getX() + 0.5, stand.getY() + 0.05, stand.getZ() + 0.5,
+				level.random.nextFloat() * 360.0F, 0.0F);
 		citizen.setProfession(profession);
 		citizen.setCitizenName(name != null && !name.isBlank() ? name : EconomyState.randomName(level.random));
 		// не даём свежеспавненному NPC сразу бежать менять профессию
@@ -175,7 +177,7 @@ public final class SettlementService {
 		citizen.setSettlementId(settlement.id);
 		citizen.setHomePos(houseSpot(level, settlement, settlement.npcs.size(), settlement.hall()));
 		citizen.setWorkPos(workSpot(level, settlement, profession));
-		citizen.setShopPos(settlement.shop());
+		citizen.setShopPos(SettlementBuilds.safeStand(level, settlement.shop()));
 		citizen.setWallet(30);
 		settlement.registerNpc(citizen.getUUID());
 		citizen.refreshNameTag();
@@ -189,7 +191,7 @@ public final class SettlementService {
 		double angle = profession.ordinal() * (Math.PI * 2.0D / Profession.values().length);
 		int x = hall.getX() + (int) Math.round(Math.cos(angle) * 7.0D);
 		int z = hall.getZ() + (int) Math.round(Math.sin(angle) * 7.0D);
-		return surface(level, x, z, hall.getY());
+		return SettlementBuilds.safeStand(level, surface(level, x, z, hall.getY()));
 	}
 
 	public static BlockPos jitter(ServerLevel level, BlockPos center, int radius) {

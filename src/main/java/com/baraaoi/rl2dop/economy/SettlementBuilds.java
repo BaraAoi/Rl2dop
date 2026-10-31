@@ -357,12 +357,14 @@ public final class SettlementBuilds {
 			}
 		}
 		if (settlement.shopPos == Long.MIN_VALUE) {
-			settlement.setShop(origin.offset(SHOP_X - 2, 0, 1));
+			// прилавок стоит на настиле y=0, значит торговцу нужно y=+1, иначе он в_block'е
+			settlement.setShop(origin.offset(SHOP_X - 2, 1, 1));
 		}
 		settlement.buildProgress = Math.min(100, end * 100 / total);
 		if (settlement.buildProgress >= 100) {
 			SignBoards.install(level, settlement);
 			registerStarterHouses(settlement);
+			rescueBuried(level, settlement);
 		}
 		return settlement.buildProgress;
 	}
@@ -399,6 +401,60 @@ public final class SettlementBuilds {
 
 	public static boolean pending(Settlement settlement) {
 		return Rl2dopConfig.autoBuild && settlement.buildProgress < 100;
+	}
+
+	// ---------- безопасные точки для жителей ----------
+
+	/** Блок мешает пройти/стоять? */
+	public static boolean blocked(ServerLevel level, BlockPos pos) {
+		return !level.hasChunkAt(pos) || level.getBlockState(pos).blocksMotion();
+	}
+
+	/** Точка, где житель помещается целиком: поднимаем вверх, пока ноги и голова не станут свободны. */
+	public static BlockPos safeStand(ServerLevel level, BlockPos pos) {
+		BlockPos p = pos;
+		for (int i = 0; i < 5; i++) {
+			if (!blocked(level, p) && !blocked(level, p.above())) {
+				return p;
+			}
+			p = p.above();
+		}
+		return p;
+	}
+
+	/**
+	 * Стройка не должна закапывать жителей: тех, кто оказался внутри блока, поднимаем наверх.
+	 * Иначе Minecraft убивает их «inWall», и поселение теряет людей из-за одного /settle_build.
+	 */
+	public static int rescueBuried(ServerLevel level, Settlement settlement) {
+		int saved = 0;
+		for (String raw : new ArrayList<>(settlement.npcs)) {
+			net.minecraft.world.entity.Entity entity;
+			try {
+				entity = level.getEntity(java.util.UUID.fromString(raw));
+			} catch (IllegalArgumentException e) {
+				continue;
+			}
+			if (!(entity instanceof com.baraaoi.rl2dop.entity.CitizenEntity citizen)) {
+				continue;
+			}
+			BlockPos feet = citizen.blockPosition();
+			if (!blocked(level, feet)) {
+				continue;
+			}
+			BlockPos free = safeStand(level, feet);
+			if (blocked(level, free)) {
+				free = settlement.hall().offset(0, 1, HALL_HALF_Z + 2);
+			}
+			citizen.teleportTo(free.getX() + 0.5D, free.getY() + 0.05D, free.getZ() + 0.5D);
+			citizen.setHomePos(null);
+			saved++;
+		}
+		if (saved > 0) {
+			EconomyState.get(level.getServer()).log("поселение " + settlement.id
+					+ ": стройка закопала жителей, спасено: " + saved);
+		}
+		return saved;
 	}
 
 	/** Зарегистрировать в поселении стартовые дома из плана (идемпотентно). */
