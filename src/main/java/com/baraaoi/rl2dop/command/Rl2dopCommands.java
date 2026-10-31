@@ -587,7 +587,7 @@ public final class Rl2dopCommands {
 						.then(Commands.argument("count", IntegerArgumentType.integer(1, 8))
 								.executes(context -> settleSettlers(context,
 										StringArgumentType.getString(context, "settlement"),
-										IntegerArgumentType.getInteger(context, "count")))));
+										IntegerArgumentType.getInteger(context, "count"))))));
 	}
 
 	private static int settleSettlers(CommandContext<CommandSourceStack> context, String settlementId, int count)
