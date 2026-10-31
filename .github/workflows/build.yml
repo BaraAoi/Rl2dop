@@ -27,7 +27,7 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: build
-        run: ./gradlew build --stacktrace --console=plain 2>&1 | tee ci/build.log; exit ${PIPESTATUS[0]}
+        run: mkdir -p ci && (./gradlew build --stacktrace --console=plain 2>&1 | tee ci/build.log; exit ${PIPESTATUS[0]})
 
       - name: save build log
         if: failure()
