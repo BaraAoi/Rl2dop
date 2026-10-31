@@ -549,6 +549,11 @@ public final class Rl2dopCommands {
 					if (primary != null) {
 						final Settlement report = primary;
 						final int[] summary = SettlementService.housingSummary(level, report);
+						final long dayTime = level.getDayTime() % 24000L;
+						source.sendSuccess(() -> Component.literal("§7время дня §f" + dayTime
+								+ "§7 (перерыв с §f" + Rl2dopConfig.dayBreakStart + "§7, сходка с §f"
+								+ Rl2dopConfig.dayMeetStart + "§7, расписание §f" + Rl2dopConfig.citizenSchedule + "§7)"),
+								false);
 						source.sendSuccess(() -> Component.literal("§7" + report.id + ": коек "
 								+ summary[0] + " из " + report.houses.size() + " дом(ов) · размещено "
 								+ summary[2] + "/" + summary[1] + " · без дома " + (summary[1] - summary[2])
