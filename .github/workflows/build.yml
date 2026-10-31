@@ -99,7 +99,7 @@ jobs:
           pkill -f devlaunchinjector || true
           sleep 2
 
-      - name: run dedicated server (restart: persistence check)
+      - name: run dedicated server (restart, persistence check)
         run: |
           rm -f /tmp/cmd2; mkfifo /tmp/cmd2
           (./gradlew runServer --console=plain < /tmp/cmd2 > ci/smoke2.log 2>&1 &)
@@ -114,6 +114,19 @@ jobs:
           exec 3>&-
           pkill -f devlaunchinjector || true
           sleep 2
+
+      - name: collect smoke summary
+        if: always()
+        run: |
+          {
+            echo "=== файлы мода ==="
+            ls -la run/config/rl2dop.json run/world/data/ 2>&1 || true
+            echo ""
+            echo "=== перезапуск: что прочиталось ==="
+            grep -aE "сохранение загружено|казна=|NPC |Эмиссия|Поселение" ci/smoke2.log 2>/dev/null | tail -30 || true
+            echo "=== ошибки/исключения (оба запуска) ==="
+            grep -aE "ERROR|Exception|Caused by" ci/smoke.log ci/smoke2.log 2>/dev/null | grep -avE "ExceptionHandler|No key layers" | tail -60 || true
+          } >> ci/smoke.log
 
       - name: save smoke log
         if: always()
