@@ -77,7 +77,7 @@ public final class SettlementService {
 		Profession profession = citizen.getProfession();
 		citizen.setHomePos(jitter(level, pos, 6));
 		citizen.setWorkPos(workSpot(level, settlement, profession));
-		citizen.setShopPos(settlement.hall().offset(2, 0, 2));
+		citizen.setShopPos(settlement.shop());
 		citizen.setWallet(Math.max(citizen.getWallet(), 20));
 		settlement.registerNpc(citizen.getUUID());
 		citizen.refreshNameTag();
@@ -98,7 +98,7 @@ public final class SettlementService {
 		citizen.setSettlementId(settlement.id);
 		citizen.setHomePos(jitter(level, settlement.hall(), 8));
 		citizen.setWorkPos(workSpot(level, settlement, profession));
-		citizen.setShopPos(settlement.hall().offset(2, 0, 2));
+		citizen.setShopPos(settlement.shop());
 		citizen.setWallet(30);
 		settlement.registerNpc(citizen.getUUID());
 		citizen.refreshNameTag();

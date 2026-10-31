@@ -25,6 +25,7 @@ public class Settlement {
 	public String dimension = "minecraft:overworld";
 	public long hallPos;
 	public long boardPos = Long.MIN_VALUE;
+	public long shopPos = Long.MIN_VALUE;
 	public long treasury;
 	public int coinLimit = Rl2dopConfig.mintLimit;
 	public int buildProgress;
@@ -63,6 +64,15 @@ public class Settlement {
 
 	public BlockPos hall() {
 		return BlockPos.of(hallPos);
+	}
+
+	/** Точка входа магазина: явный маркер игрока или угол ратуши. */
+	public BlockPos shop() {
+		return shopPos != Long.MIN_VALUE ? BlockPos.of(shopPos) : hall().offset(2, 0, 2);
+	}
+
+	public void setShop(BlockPos pos) {
+		shopPos = pos.asLong();
 	}
 
 	public int jobCount(Profession profession) {
@@ -178,6 +188,7 @@ public class Settlement {
 		tag.putString("Dim", dimension);
 		tag.putLong("Hall", hallPos);
 		tag.putLong("Board", boardPos);
+		tag.putLong("ShopPos", shopPos);
 		tag.putLong("Treasury", treasury);
 		tag.putInt("CoinLimit", coinLimit);
 		tag.putInt("Build", buildProgress);
@@ -200,6 +211,7 @@ public class Settlement {
 		settlement.dimension = tag.contains("Dim") ? tag.getString("Dim") : "minecraft:overworld";
 		settlement.hallPos = tag.getLong("Hall");
 		settlement.boardPos = tag.contains("Board") ? tag.getLong("Board") : Long.MIN_VALUE;
+		settlement.shopPos = tag.contains("ShopPos") ? tag.getLong("ShopPos") : Long.MIN_VALUE;
 		settlement.treasury = tag.getLong("Treasury");
 		settlement.coinLimit = tag.contains("CoinLimit") ? tag.getInt("CoinLimit") : Rl2dopConfig.mintLimit;
 		settlement.buildProgress = tag.getInt("Build");

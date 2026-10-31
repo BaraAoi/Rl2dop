@@ -64,7 +64,7 @@ public final class TradeService {
 				return;
 			}
 			double hallRange = Rl2dopConfig.shopRange * 2.0D;
-			if (settlement.hall().distSqr(player.blockPosition()) > hallRange * hallRange) {
+			if (settlement.shop().distSqr(player.blockPosition()) > hallRange * hallRange) {
 				message(player, "§cСлишком далеко от ратуши.");
 				return;
 			}

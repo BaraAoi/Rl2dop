@@ -47,6 +47,7 @@ public final class Rl2dopCommands {
 			registerShopOpen(dispatcher);
 			registerShelfAdd(dispatcher);
 			registerHallBoard(dispatcher);
+			registerShopMarker(dispatcher);
 			registerNpcList(dispatcher);
 			registerEconLog(dispatcher);
 			registerRoot(dispatcher);
@@ -377,6 +378,26 @@ public final class Rl2dopCommands {
 				}));
 	}
 
+	private static void registerShopMarker(CommandDispatcher<CommandSourceStack> dispatcher) {
+		dispatcher.register(Commands.literal("shop_marker")
+				.requires(source -> source.hasPermission(2))
+				.executes(context -> {
+					CommandSourceStack source = context.getSource();
+					ServerPlayer player = source.getPlayerOrException();
+					Settlement settlement = SettlementService.forPlayer(player);
+					if (settlement == null) {
+						source.sendFailure(Component.literal("Нет поселения."));
+						return 0;
+					}
+					BlockPos pos = player.blockPosition();
+					settlement.setShop(pos);
+					EconomyState.get(source.getServer()).setDirty();
+					source.sendSuccess(() -> Component.literal("§aМагазин поселения «" + settlement.displayName()
+							+ "» привязан к " + pos.toShortString()), true);
+					return 1;
+				}));
+	}
+
 	private static void registerNpcList(CommandDispatcher<CommandSourceStack> dispatcher) {
 		dispatcher.register(Commands.literal("npc_list")
 				.requires(source -> source.hasPermission(2))
@@ -435,6 +456,7 @@ public final class Rl2dopCommands {
 							"§f/market_dump [settlement]§7 — цены, сток, спрос",
 							"§f/shop_open§7 — открыть торговый экран",
 							"§f/shelf_add <item>§7 — полка с живым стоком",
+							"§f/shop_marker§7 — точка входа магазина поселения",
 							"§f/salary_set <profession> <amount>§7 — зарплата",
 							"§f/price_set <item> <base>§7 — базовая цена",
 							"§f/npc_list§7, §f/econ_log [n]§7, §f/reset_economy confirm"
