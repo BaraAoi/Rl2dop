@@ -1,6 +1,6 @@
 {
   "parent": "item/generated",
   "textures": {
-    "layer0": "rl2dop:item/coin"
+    "layer0": "rl2dop:item/iron_coin"
   }
 }

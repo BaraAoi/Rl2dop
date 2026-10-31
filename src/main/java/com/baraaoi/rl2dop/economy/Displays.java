@@ -34,7 +34,7 @@ public final class Displays {
 			if (level == null) {
 				continue;
 			}
-			if (settlement.boardPos != Long.MIN_VALUE) {
+			if (settlement.boardPos != Long.MIN_VALUE && !Rl2dopConfig.needsOnSigns) {
 				BlockPos pos = BlockPos.of(settlement.boardPos);
 				if (level.hasChunkAt(pos)) {
 					ArmorStand stand = findOrCreate(level, pos, BOARD_TAG);
@@ -50,6 +50,13 @@ public final class Displays {
 	}
 
 	public static void ensureBoard(ServerLevel level, Settlement settlement, BlockPos pos) {
+		if (Rl2dopConfig.needsOnSigns) {
+			// нужды видны на настоящих табличках у ратуши — невидимую стойку не дублируем
+			settlement.boardPos = pos.asLong();
+			SignBoards.install(level, settlement);
+			EconomyState.get(level.getServer()).setDirty();
+			return;
+		}
 		settlement.boardPos = pos.asLong();
 		ArmorStand stand = findOrCreate(level, pos, BOARD_TAG);
 		if (stand != null) {

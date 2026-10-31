@@ -41,6 +41,8 @@ public class Settlement {
 	public final Map<String, Integer> reputation = new LinkedHashMap<>();
 	public final List<String> npcs = new ArrayList<>();
 	public final List<String> shelves = new ArrayList<>();
+	/** Таблички с нуждами/ценами: "x;y;z;kind". */
+	public final List<String> boards = new ArrayList<>();
 
 	public Settlement(String id, String name) {
 		this.id = id;
@@ -203,6 +205,7 @@ public class Settlement {
 		tag.put("Prices", doubleMap(prices));
 		tag.put("Npcs", stringList(npcs));
 		tag.put("Shelves", stringList(shelves));
+		tag.put("Boards", stringList(boards));
 		return tag;
 	}
 
@@ -226,6 +229,7 @@ public class Settlement {
 		readDoubleMap(tag, "Prices", settlement.prices);
 		readStringList(tag.getList("Npcs", 8), settlement.npcs);
 		readStringList(tag.getList("Shelves", 8), settlement.shelves);
+		readStringList(tag.getList("Boards", 8), settlement.boards);
 		// если конфиг поменялся — добить недостающие товары
 		for (Rl2dopConfig.Good good : Rl2dopConfig.goods.values()) {
 			settlement.stock.putIfAbsent(good.item, good.targetStock);

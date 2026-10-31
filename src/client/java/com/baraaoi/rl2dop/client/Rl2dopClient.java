@@ -2,6 +2,7 @@ package com.baraaoi.rl2dop.client;
 
 import com.baraaoi.rl2dop.net.ShopPayload;
 import com.baraaoi.rl2dop.net.SyncPayload;
+import com.baraaoi.rl2dop.net.WalletPayload;
 import com.baraaoi.rl2dop.registry.ModEntities;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -18,5 +19,10 @@ public class Rl2dopClient implements ClientModInitializer {
 				context.client().execute(() -> ClientEconomy.update(payload)));
 		ClientPlayNetworking.registerGlobalReceiver(ShopPayload.TYPE, (payload, context) ->
 				context.client().execute(() -> ShopScreen.handle(payload)));
+		ClientPlayNetworking.registerGlobalReceiver(WalletPayload.TYPE, (payload, context) ->
+				context.client().execute(() -> {
+					ClientEconomy.update(payload);
+					WalletScreen.handleOpen();
+				}));
 	}
 }

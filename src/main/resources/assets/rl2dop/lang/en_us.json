@@ -1,5 +1,8 @@
 {
-  "item.rl2dop.coin": "Coin",
+  "item.rl2dop.bronze_coin": "Bronze Coin",
+  "item.rl2dop.iron_coin": "Iron Coin",
+  "item.rl2dop.gold_coin": "Gold Coin",
+  "item.rl2dop.wallet": "Wallet",
   "item.rl2dop.bandage": "Bandage",
   "item.rl2dop.medkit": "Medkit",
   "item.rl2dop.npc_egg": "Citizen Egg",

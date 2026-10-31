@@ -2,6 +2,7 @@ package com.baraaoi.rl2dop.economy;
 
 import com.baraaoi.rl2dop.Rl2dopConfig;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -27,6 +28,12 @@ public final class EconomyTicker {
 			state.lastMarketTick = time;
 			MarketMath.updateAll(state);
 			Displays.refresh(server, state);
+			buildStep(server, state);
+		}
+
+		// таблички с нуждами обновляем чаще, чем рынок, но не каждый тик
+		if (Rl2dopConfig.needsOnSigns && server.getTickCount() % Math.max(20, Rl2dopConfig.displayRefreshTicks) == 0) {
+			SignBoards.refreshAll(server);
 		}
 
 		if (Rl2dopConfig.reputationDecayTicks > 0
@@ -40,6 +47,24 @@ public final class EconomyTicker {
 			for (var player : server.getPlayerList().getPlayers()) {
 				com.baraaoi.rl2dop.net.ModPackets.syncTo(player);
 			}
+		}
+	}
+
+	/** Ращу постройки поселения понемногу за каждый такт рынка. */
+	private static void buildStep(MinecraftServer server, EconomyState state) {
+		if (!Rl2dopConfig.autoBuild) {
+			return;
+		}
+		for (Settlement settlement : state.all()) {
+			if (settlement.buildProgress >= 100) {
+				continue;
+			}
+			ServerLevel level = Displays.levelOf(server, settlement.dimension);
+			if (level == null) {
+				continue;
+			}
+			SettlementBuilds.build(level, settlement, Math.max(1, Rl2dopConfig.buildBlocksPerTick));
+			state.setDirty();
 		}
 	}
 

@@ -1,7 +1,9 @@
 package com.baraaoi.rl2dop.entity;
 
 import com.baraaoi.rl2dop.Rl2dopConfig;
+import com.baraaoi.rl2dop.economy.CoinType;
 import com.baraaoi.rl2dop.economy.EconomyState;
+import com.baraaoi.rl2dop.economy.Money;
 import com.baraaoi.rl2dop.economy.Settlement;
 import com.baraaoi.rl2dop.economy.SettlementService;
 import com.baraaoi.rl2dop.economy.ShopService;
@@ -350,10 +352,19 @@ public class CitizenEntity extends PathfinderMob {
 	@Override
 	protected void dropCustomDeathLoot(ServerLevel level, DamageSource source, boolean recentlyHit) {
 		super.dropCustomDeathLoot(level, source, recentlyHit);
+		// кошелёк NPC выпадает реальными монетами трёх номиналов
 		if (wallet > 0) {
-			int drop = Math.min(wallet, 64);
-			this.spawnAtLocation(new ItemStack(ModItems.COIN, drop));
-			wallet -= drop;
+			int[] counts = Money.canonical(wallet);
+			CoinType[] types = CoinType.values();
+			for (int i = types.length - 1; i >= 0; i--) {
+				int left = counts[i];
+				while (left > 0) {
+					int chunk = Math.min(64, left);
+					this.spawnAtLocation(new ItemStack(types[i].item(), chunk));
+					left -= chunk;
+				}
+			}
+			wallet = 0;
 		}
 	}
 

@@ -11,15 +11,18 @@ import java.util.List;
 
 /**
  * S2C: содержимое торгового экрана.
- * Строки ленты: {@code itemId|buyPrice|sellPrice|stock|demand}.
+ * Строки ленты: {@code itemId|buyPrice|sellPrice|stock|demand|held}.
+ *
+ * @param purse строка с кошельком игрока («1з 5ж 3б = 153м») — сервер посчитал, клиент рисует
  */
-public record ShopPayload(int citizenId, String title, List<String> goods) implements CustomPacketPayload {
+public record ShopPayload(int citizenId, String title, String purse, List<String> goods) implements CustomPacketPayload {
 	public static final CustomPacketPayload.Type<ShopPayload> TYPE =
 			new CustomPacketPayload.Type<>(Rl2dop.id("shop"));
 
 	public static final StreamCodec<RegistryFriendlyByteBuf, ShopPayload> CODEC = StreamCodec.composite(
 			ByteBufCodecs.VAR_INT, ShopPayload::citizenId,
 			ByteBufCodecs.STRING_UTF8, ShopPayload::title,
+			ByteBufCodecs.STRING_UTF8, ShopPayload::purse,
 			ByteBufCodecs.collection(ArrayList::new, ByteBufCodecs.STRING_UTF8), ShopPayload::goods,
 			ShopPayload::new);
 

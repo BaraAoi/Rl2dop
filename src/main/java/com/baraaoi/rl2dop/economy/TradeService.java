@@ -127,11 +127,11 @@ public final class TradeService {
 			message(player, "§cНа складе только " + stock + " шт.");
 			return false;
 		}
-		if (CoinUtil.count(player) < price) {
-			message(player, "§cНужно " + price + " монет, у тебя " + CoinUtil.count(player) + ".");
+		if (Money.total(player) < price) {
+			message(player, "§cНужно " + price + "м, у тебя " + Money.total(player) + "м.");
 			return false;
 		}
-		if (!CoinUtil.take(player, price)) {
+		if (!Money.take(player, price)) {
 			return false;
 		}
 		settlement.takeStock(good.item, amount);
@@ -156,7 +156,7 @@ public final class TradeService {
 		if (item == Items.AIR) {
 			return false;
 		}
-		if (CoinUtil.countItems(player, item) < amount) {
+		if (InventoryUtil.countItems(player, item) < amount) {
 			message(player, "§cУ тебя нет столько " + new ItemStack(item).getHoverName().getString() + ".");
 			return false;
 		}
@@ -168,13 +168,13 @@ public final class TradeService {
 			message(player, "§cВ казне не хватает монет (" + settlement.treasury + "м). Продай позже.");
 			return false;
 		}
-		if (!CoinUtil.takeItems(player, item, amount)) {
+		if (!InventoryUtil.takeItems(player, item, amount)) {
 			return false;
 		}
 		settlement.treasury -= payout;
 		settlement.addStock(good.item, amount);
 		settlement.addDemand(good.item, -Math.max(1, amount));
-		CoinUtil.give(player, payout);
+		Money.give(player, payout);
 		message(player, "§aПродано §f" + amount + "x " + new ItemStack(item).getHoverName().getString()
 				+ " §aза §f" + payout + "м");
 		EconomyState.get(player.serverLevel().getServer()).setDirty();
@@ -211,10 +211,10 @@ public final class TradeService {
 		if (citizen != null) {
 			ModPackets.sendShop(player, citizen.getId(),
 					citizen.getCitizenName() + " · " + settlement.displayName(),
-					ShopService.feed(settlement, settlement.reputation(player.getUUID()), haggleFactor(player)));
+					ShopService.feed(player, settlement, settlement.reputation(player.getUUID()), haggleFactor(player)));
 		} else {
 			ModPackets.sendShop(player, ShopService.HALL_ID, "Ратуша · " + settlement.displayName(),
-					ShopService.feed(settlement, settlement.reputation(player.getUUID()), haggleFactor(player)));
+					ShopService.feed(player, settlement, settlement.reputation(player.getUUID()), haggleFactor(player)));
 		}
 	}
 

@@ -122,7 +122,8 @@ public final class SettlementService {
 		return surface(level, x, z, center.getY());
 	}
 
-	private static BlockPos surface(ServerLevel level, int x, int z, int fallbackY) {
+	/** Точка на поверхности земли — чтобы ратуша не проваливалась и не висела в воздухе. */
+	public static BlockPos surface(ServerLevel level, int x, int z, int fallbackY) {
 		int y = level.getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z);
 		if (y <= level.getMinBuildHeight()) {
 			y = fallbackY;
@@ -151,6 +152,8 @@ public final class SettlementService {
 			}
 		}
 		Displays.ensureBoard(level, settlement, hallPos.offset(0, 2, 0));
+		SignBoards.install(level, settlement);
+		SettlementBuilds.build(level, settlement, Rl2dopConfig.buildBlocksPerTick);
 		state.log("привязка к ванильной деревне: " + name + " (" + (bell != null ? "колокол" : "точка игрока") + ")");
 		return "Поселение «" + settlement.displayName() + "» создано в " + hallPos.toShortString()
 				+ (bell != null ? " (у колокола)" : "") + ". NPC: " + String.join(", ", spawned);

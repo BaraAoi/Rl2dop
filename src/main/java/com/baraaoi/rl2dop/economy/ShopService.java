@@ -33,7 +33,7 @@ public final class ShopService {
 		player.displayClientMessage(Component.literal("§e" + citizen.getCitizenName() + "§7: "
 				+ greeting(reputation)), false);
 		ModPackets.sendShop(player, citizen.getId(), citizen.getCitizenName() + " · " + settlement.displayName(),
-				feed(settlement, reputation, TradeService.haggleFactor(player)));
+				feed(player, settlement, reputation, TradeService.haggleFactor(player)));
 	}
 
 	public static void openHall(ServerPlayer player, Settlement settlement) {
@@ -41,17 +41,18 @@ public final class ShopService {
 		player.displayClientMessage(Component.literal("§6Ратуша §7" + settlement.displayName()
 				+ "§7: казна §f" + settlement.treasury + "м§7. Продавай нужные товары прямо сюда."), false);
 		ModPackets.sendShop(player, HALL_ID, "Ратуша · " + settlement.displayName(),
-				feed(settlement, reputation, TradeService.haggleFactor(player)));
+				feed(player, settlement, reputation, TradeService.haggleFactor(player)));
 	}
 
-	/** Строки вида {@code itemId|buy|sell|stock|demand} — клиент разбирает их сам. */
-	public static List<String> feed(Settlement settlement, int reputation, double haggle) {
+	/** Строки вида {@code itemId|buy|sell|stock|demand|held} — клиент разбирает их сам. */
+	public static List<String> feed(ServerPlayer player, Settlement settlement, int reputation, double haggle) {
 		List<String> rows = new ArrayList<>();
 		for (Rl2dopConfig.Good good : Rl2dopConfig.goods.values()) {
 			int buy = MarketMath.buyPrice(settlement, good, reputation, haggle);
 			int sell = MarketMath.sellPrice(settlement, good, reputation, haggle);
+			int held = InventoryUtil.countItems(player, TradeService.resolveItem(good.item));
 			rows.add(good.item + "|" + buy + "|" + sell + "|" + settlement.stock(good.item) + "|"
-					+ settlement.demand(good.item));
+					+ settlement.demand(good.item) + "|" + held);
 		}
 		return rows;
 	}

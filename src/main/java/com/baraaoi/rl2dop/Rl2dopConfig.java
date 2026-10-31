@@ -26,6 +26,11 @@ public final class Rl2dopConfig {
 	// --- деньги ---
 	public static int mintLimit = 100_000;
 	public static int startingCoins = 0;
+	/** Номиналы: бронза = 1 (единица счёта), железо и золото — во сколько раз дороже. */
+	public static int coinIronValue = 10;
+	public static int coinGoldValue = 100;
+	/** Печатать кошелёк вместе с первой выдачей монет, чтобы деньги было где носить. */
+	public static boolean giveWalletOnMint = true;
 
 	// --- торговля ---
 	public static double buySpread = 0.15;
@@ -51,6 +56,14 @@ public final class Rl2dopConfig {
 	public static int evilReputation = -30;
 	public static int shopRefuseReputation = -60;
 	public static int npcHitReputationPenalty = 5;
+
+	// --- постройка поселения ---
+	/** Строить ратушу, рынок и лавки автоматически (блоки ставятся только на пустом месте). */
+	public static boolean autoBuild = true;
+	/** Сколько блоков ставится за один такт экономики (0 = мгновенно). */
+	public static int buildBlocksPerTick = 40;
+	/** Показывать нужды поселения на табличках у ратуши. */
+	public static boolean needsOnSigns = true;
 
 	// --- прочее ---
 	public static int defaultSalary = 12;
@@ -87,6 +100,12 @@ public final class Rl2dopConfig {
 
 			mintLimit = intOr(root, "mintLimit", mintLimit);
 			startingCoins = intOr(root, "startingCoins", startingCoins);
+			coinIronValue = Math.max(2, intOr(root, "coinIronValue", coinIronValue));
+			coinGoldValue = Math.max(coinIronValue + 1, intOr(root, "coinGoldValue", coinGoldValue));
+			giveWalletOnMint = boolOr(root, "giveWalletOnMint", giveWalletOnMint);
+			autoBuild = boolOr(root, "autoBuild", autoBuild);
+			buildBlocksPerTick = Math.max(0, intOr(root, "buildBlocksPerTick", buildBlocksPerTick));
+			needsOnSigns = boolOr(root, "needsOnSigns", needsOnSigns);
 			buySpread = doubleOr(root, "buySpread", buySpread);
 			sellSpread = doubleOr(root, "sellSpread", sellSpread);
 			shopRange = doubleOr(root, "shopRange", shopRange);
@@ -202,6 +221,12 @@ public final class Rl2dopConfig {
 			JsonObject root = new JsonObject();
 			root.addProperty("mintLimit", mintLimit);
 			root.addProperty("startingCoins", startingCoins);
+			root.addProperty("coinIronValue", coinIronValue);
+			root.addProperty("coinGoldValue", coinGoldValue);
+			root.addProperty("giveWalletOnMint", giveWalletOnMint);
+			root.addProperty("autoBuild", autoBuild);
+			root.addProperty("buildBlocksPerTick", buildBlocksPerTick);
+			root.addProperty("needsOnSigns", needsOnSigns);
 			root.addProperty("buySpread", buySpread);
 			root.addProperty("sellSpread", sellSpread);
 			root.addProperty("shopRange", shopRange);

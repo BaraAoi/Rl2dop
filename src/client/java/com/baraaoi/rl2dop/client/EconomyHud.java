@@ -17,7 +17,8 @@ public final class EconomyHud {
 		Font font = minecraft.font;
 		int x = 6;
 		int y = 6;
-		graphics.drawString(font, "§6Монеты: §f" + ClientEconomy.coins, x, y, 0xFFFFFF, true);
+		graphics.drawString(font, "§6Казна: §f" + ClientEconomy.coins + "м"
+				+ (ClientEconomy.wallet ? "" : " §8(нет кошелька)"), x, y, 0xFFFFFF, true);
 		y += 10;
 		if (!ClientEconomy.settlement.isEmpty()) {
 			String repColor = ClientEconomy.reputation >= 0 ? "§a" : "§c";

@@ -1,12 +1,17 @@
 package com.baraaoi.rl2dop.command;
 
 import com.baraaoi.rl2dop.Rl2dopConfig;
-import com.baraaoi.rl2dop.economy.CoinUtil;
+import com.baraaoi.rl2dop.economy.CoinType;
+import com.baraaoi.rl2dop.economy.Money;
 import com.baraaoi.rl2dop.economy.Displays;
 import com.baraaoi.rl2dop.economy.EconomyState;
 import com.baraaoi.rl2dop.economy.Settlement;
+import com.baraaoi.rl2dop.economy.SettlementBuilds;
 import com.baraaoi.rl2dop.economy.SettlementService;
 import com.baraaoi.rl2dop.economy.ShopService;
+import com.baraaoi.rl2dop.economy.SignBoards;
+import com.baraaoi.rl2dop.economy.WalletService;
+import com.baraaoi.rl2dop.registry.ModItems;
 import com.baraaoi.rl2dop.entity.CitizenEntity;
 import com.baraaoi.rl2dop.entity.Profession;
 import com.baraaoi.rl2dop.net.ModPackets;
@@ -23,11 +28,13 @@ import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.commands.arguments.ResourceLocationArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /** Все команды отладки и администрирования экономики. */
 public final class Rl2dopCommands {
@@ -41,6 +48,8 @@ public final class Rl2dopCommands {
 			registerSetReputation(dispatcher);
 			registerSettleSpawn(dispatcher);
 			registerSettleBind(dispatcher);
+			registerSettleBuild(dispatcher);
+			registerWallet(dispatcher);
 			registerMarketDump(dispatcher);
 			registerResetEconomy(dispatcher);
 			registerSalarySet(dispatcher);
@@ -118,7 +127,10 @@ public final class Rl2dopCommands {
 		}
 		String who;
 		if (target != null) {
-			CoinUtil.give(target, (int) minted);
+			if (Rl2dopConfig.giveWalletOnMint) {
+				Money.ensureWallet(target);
+			}
+			Money.give(target, (int) minted);
 			ModPackets.syncTo(target);
 			who = target.getGameProfile().getName();
 			state.log("эмиссия " + minted + " монет для " + who + " (всего " + state.minted + "/"
@@ -192,13 +204,21 @@ public final class Rl2dopCommands {
 			throws CommandSyntaxException {
 		CommandSourceStack source = context.getSource();
 		ServerLevel level = source.getLevel();
-		BlockPos pos = targetPos(source);
+		BlockPos raw = targetPos(source);
+		BlockPos pos = SettlementService.surface(level, raw.getX(), raw.getZ(), raw.getY());
 		Settlement settlement = EconomyState.get(source.getServer()).createSettlement(name, pos,
 				level.dimension().location().toString());
 		Displays.ensureBoard(level, settlement, pos.above(2));
+		int progress;
+		if (Rl2dopConfig.autoBuild) {
+			progress = SettlementBuilds.buildInstant(level, settlement);
+		} else {
+			SignBoards.install(level, settlement);
+			progress = settlement.buildProgress;
+		}
 		source.sendSuccess(() -> Component.literal("§aПоселение «§f" + settlement.displayName()
 				+ "§a» создано. Ратуша: §f" + pos.toShortString()
-				+ "§a. Дальше: §f/settle_bind§a или §f/spawn_npc farmer"), true);
+				+ "§a, постройка §f" + progress + "%§a. Дальше: §f/settle_bind§a или §f/spawn_npc farmer"), true);
 		return 1;
 	}
 
@@ -262,7 +282,9 @@ public final class Rl2dopCommands {
 		List<String> lines = new ArrayList<>();
 		lines.add("Поселение " + settlement.displayName() + " (" + settlement.id + ") dim=" + settlement.dimension);
 		lines.add("  казна=" + settlement.treasury + "м  NPC=" + settlement.npcs.size()
-				+ "  постройка=" + settlement.buildProgress + "%");
+				+ "  постройка=" + settlement.buildProgress + "%"
+				+ "  лавка=" + settlement.shop().toShortString()
+				+ "  табличек=" + settlement.boards.size());
 		for (Rl2dopConfig.Good good : Rl2dopConfig.goods.values()) {
 			lines.add(String.format("  %s: сток=%d цена=%.2f спрос=%d",
 					good.item, settlement.stock(good.item), settlement.price(good.item),
@@ -516,6 +538,8 @@ public final class Rl2dopCommands {
 							"§f/set_reputation <player> <value>§7 — репутация (-100..100)",
 							"§f/settle_spawn <name>§7 — ратуша/поселение в текущей точке",
 							"§f/settle_bind [name]§7 — привязать к ванильной деревне",
+						"§f/settle_build [settlement] [instant|grow|reset]§7 — постройки поселения",
+						"§f/wallet [give|deposit|withdraw]§7 — кошелёк и монеты",
 							"§f/market_dump [settlement]§7 — цены, сток, спрос",
 							"§f/shop_open§7 — открыть торговый экран",
 							"§f/shelf_add <item>§7 — полка с живым стоком",
@@ -530,6 +554,153 @@ public final class Rl2dopCommands {
 					}
 					return 1;
 				}));
+	}
+
+	// ---------- 9: постройки поселения ----------
+
+	private static void registerSettleBuild(CommandDispatcher<CommandSourceStack> dispatcher) {
+		dispatcher.register(Commands.literal("settle_build")
+				.requires(source -> source.hasPermission(2))
+				.executes(context -> settleBuild(context, null, "instant"))
+				.then(Commands.argument("settlement", StringArgumentType.word())
+						.suggests((context, builder) -> SharedSuggestionProvider.suggest(
+								EconomyState.get(context.getSource().getServer()).settlements.keySet(), builder))
+						.executes(context -> settleBuild(context,
+								StringArgumentType.getString(context, "settlement"), "instant"))
+						.then(Commands.argument("mode", StringArgumentType.word())
+								.suggests((context, builder) -> SharedSuggestionProvider.suggest(
+										List.of("instant", "grow", "reset"), builder))
+								.executes(context -> settleBuild(context,
+										StringArgumentType.getString(context, "settlement"),
+										StringArgumentType.getString(context, "mode"))))));
+	}
+
+	private static int settleBuild(CommandContext<CommandSourceStack> context, String settlementId, String mode) {
+		CommandSourceStack source = context.getSource();
+		ServerLevel level = source.getLevel();
+		Settlement settlement = settlementId == null
+				? settlementAt(source, targetPos(source))
+				: EconomyState.get(source.getServer()).settlement(settlementId);
+		if (settlement == null) {
+			source.sendFailure(Component.literal("Поселение не найдено."));
+			return 0;
+		}
+		switch (mode) {
+			case "reset" -> {
+				settlement.buildProgress = 0;
+				EconomyState.get(source.getServer()).setDirty();
+				source.sendSuccess(() -> Component.literal("§eПостройка §f" + settlement.displayName()
+						+ "§e сброшена: дальше растёт автоматически (autoBuild)."), true);
+				return 1;
+			}
+			case "grow" -> {
+				int progress = SettlementBuilds.build(level, settlement, Math.max(1, Rl2dopConfig.buildBlocksPerTick));
+				EconomyState.get(source.getServer()).setDirty();
+				source.sendSuccess(() -> Component.literal("§aПостроено до §f" + progress + "%§a (шаг §f"
+						+ Rl2dopConfig.buildBlocksPerTick + "§a блоков)."), true);
+				return 1;
+			}
+			default -> {
+				int progress = SettlementBuilds.buildInstant(level, settlement);
+				SignBoards.refresh(level, settlement);
+				EconomyState.get(source.getServer()).setDirty();
+				source.sendSuccess(() -> Component.literal("§aРатуша, рынок и лавки поселения §f"
+						+ settlement.displayName() + "§a: постройка §f" + progress + "%§a, точка магазина §f"
+						+ settlement.shop().toShortString()), true);
+				return 1;
+			}
+		}
+	}
+
+	// ---------- 1: кошелёк и монеты ----------
+
+	private static void registerWallet(CommandDispatcher<CommandSourceStack> dispatcher) {
+		dispatcher.register(Commands.literal("wallet")
+				.executes(context -> wallet(context.getSource(), "open"))
+				.then(Commands.literal("give")
+						.executes(context -> wallet(context.getSource(), "give")))
+				.then(Commands.literal("deposit")
+						.executes(context -> wallet(context.getSource(), "deposit")))
+				.then(Commands.literal("withdraw")
+						.executes(context -> wallet(context.getSource(), "withdraw")))
+				.then(Commands.literal("change")
+						.executes(context -> wallet(context.getSource(), "change")))
+				.then(Commands.literal("coins")
+						.requires(source -> source.hasPermission(2))
+						.then(Commands.argument("type", StringArgumentType.word())
+								.suggests((context, builder) -> SharedSuggestionProvider.suggest(COIN_IDS, builder))
+								.then(Commands.argument("count", IntegerArgumentType.integer(1, 10000))
+										.executes(context -> giveCoinStacks(context,
+												StringArgumentType.getString(context, "type"),
+												IntegerArgumentType.getInteger(context, "count")))))));
+	}
+
+	private static int wallet(CommandSourceStack source, String mode) {
+		ServerPlayer player = source.getPlayer();
+		if (player == null) {
+			source.sendFailure(Component.literal("§cКошелёк открывается только из игры (нужен игрок)."));
+			return 0;
+		}
+		switch (mode) {
+			case "give" -> {
+				if (Money.ensureWallet(player)) {
+					player.displayClientMessage(Component.literal("§aКошелёк выдан. ПКМ — открыть."), false);
+				} else {
+					player.displayClientMessage(Component.literal("§7Кошелёк уже есть в инвентаре."), false);
+				}
+			}
+			case "deposit" -> WalletService.handle(player, WalletService.ACTION_DEPOSIT);
+			case "withdraw" -> WalletService.handle(player, WalletService.ACTION_WITHDRAW);
+			case "change" -> {
+				int total = Money.total(player);
+				Money.setTotal(player, total);
+				player.displayClientMessage(Component.literal("§aРазменяно: §f"
+						+ Money.describe(Money.purseCounts(player)) + " §a(= " + total + "м)"), false);
+			}
+			default -> {
+				WalletService.open(player);
+				player.displayClientMessage(Component.literal("§6В карманах §f"
+						+ Money.describe(Money.purseCounts(player)) + " §6= §f" + Money.total(player) + "м"), false);
+			}
+		}
+		return 1;
+	}
+
+	private static int giveCoinStacks(CommandContext<CommandSourceStack> context, String typeId, int count)
+			throws CommandSyntaxException {
+		CommandSourceStack source = context.getSource();
+		ServerPlayer player = source.getPlayerOrException();
+		CoinType type = coinType(typeId);
+		if (type == null) {
+			source.sendFailure(Component.literal("§cМонеты: " + String.join("/", COIN_IDS)));
+			return 0;
+		}
+		int left = count;
+		while (left > 0) {
+			int chunk = Math.min(64, left);
+			ItemStack stack = new ItemStack(type.item(), chunk);
+			if (!player.getInventory().add(stack)) {
+				player.drop(stack, false);
+			}
+			left -= chunk;
+		}
+		player.getInventory().setChanged();
+		ModPackets.syncTo(player);
+		source.sendSuccess(() -> Component.literal("§aВыдано §f" + count + " " + type.itemId()
+				+ "§a (=" + (count * type.value()) + "м)"), true);
+		return count;
+	}
+
+	private static final List<String> COIN_IDS = List.of("bronze", "iron", "gold");
+
+	private static CoinType coinType(String id) {
+		String key = id.toLowerCase(Locale.ROOT);
+		for (CoinType type : CoinType.values()) {
+			if (type.itemId().equals(key) || type.name().toLowerCase(Locale.ROOT).equals(key)) {
+				return type;
+			}
+		}
+		return null;
 	}
 
 	private static Settlement currentSettlement(CommandContext<CommandSourceStack> context) {

@@ -7,7 +7,8 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 
 /** S2C: монеты в кармане, репутация, поселение и строка экономики для HUD. */
-public record SyncPayload(int coins, int reputation, String settlement, String ticker) implements CustomPacketPayload {
+public record SyncPayload(int coins, int reputation, String settlement, String ticker, boolean wallet)
+		implements CustomPacketPayload {
 	public static final CustomPacketPayload.Type<SyncPayload> TYPE =
 			new CustomPacketPayload.Type<>(Rl2dop.id("sync"));
 
@@ -16,6 +17,7 @@ public record SyncPayload(int coins, int reputation, String settlement, String t
 			ByteBufCodecs.VAR_INT, SyncPayload::reputation,
 			ByteBufCodecs.STRING_UTF8, SyncPayload::settlement,
 			ByteBufCodecs.STRING_UTF8, SyncPayload::ticker,
+			ByteBufCodecs.BOOL, SyncPayload::wallet,
 			SyncPayload::new);
 
 	@Override

@@ -1,5 +1,8 @@
 {
-  "item.rl2dop.coin": "Монета",
+  "item.rl2dop.bronze_coin": "Бронзовая монета",
+  "item.rl2dop.iron_coin": "Железная монета",
+  "item.rl2dop.gold_coin": "Золотая монета",
+  "item.rl2dop.wallet": "Кошелёк",
   "item.rl2dop.bandage": "Бинт",
   "item.rl2dop.medkit": "Аптечка",
   "item.rl2dop.npc_egg": "Яйцо жителя",
