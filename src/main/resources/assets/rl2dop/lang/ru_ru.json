@@ -24,5 +24,6 @@
   "rl2dop.state.sleeping": "спит",
   "rl2dop.state.panic": "паника",
   "rl2dop.state.attack": "бой",
-  "rl2dop.state.shopping": "в магазине"
+  "rl2dop.state.shopping": "в магазине",
+  "item.rl2dop.coin": "Старая монета (заменена на бронзу)"
 }

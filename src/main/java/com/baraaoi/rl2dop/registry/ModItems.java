@@ -3,6 +3,7 @@ package com.baraaoi.rl2dop.registry;
 import com.baraaoi.rl2dop.Rl2dop;
 import com.baraaoi.rl2dop.item.CoinItem;
 import com.baraaoi.rl2dop.item.HealItem;
+import com.baraaoi.rl2dop.item.LegacyCoinItem;
 import com.baraaoi.rl2dop.item.NpcEggItem;
 import com.baraaoi.rl2dop.item.WalletItem;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
@@ -22,6 +23,8 @@ public final class ModItems {
 	public static final Item BANDAGE = register("bandage", new HealItem(4.0F, 40, new Item.Properties()));
 	public static final Item MEDKIT = register("medkit", new HealItem(12.0F, 200, new Item.Properties()));
 	public static final Item NPC_EGG = register("npc_egg", new NpcEggItem(new Item.Properties().stacksTo(16)));
+	/** Старая монета из первых версий: только для миграции, в креативе не светится. */
+	public static final Item LEGACY_COIN = register("coin", new LegacyCoinItem(new Item.Properties()));
 
 	private static Item register(String name, Item item) {
 		return Registry.register(BuiltInRegistries.ITEM, Rl2dop.id(name), item);

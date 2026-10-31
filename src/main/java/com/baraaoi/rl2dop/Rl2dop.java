@@ -2,6 +2,7 @@ package com.baraaoi.rl2dop;
 
 import com.baraaoi.rl2dop.command.Rl2dopCommands;
 import com.baraaoi.rl2dop.economy.EconomyState;
+import com.baraaoi.rl2dop.economy.LegacyCoins;
 import com.baraaoi.rl2dop.economy.EconomyTicker;
 import com.baraaoi.rl2dop.economy.SettlementService;
 import com.baraaoi.rl2dop.net.ModPackets;
@@ -39,6 +40,13 @@ public class Rl2dop implements ModInitializer {
 			ServerPlayer player = handler.getPlayer();
 			EconomyState state = EconomyState.get(server);
 			SettlementService.onPlayerJoin(state, player);
+			int migrated = LegacyCoins.migrate(player);
+			if (migrated > 0) {
+				player.displayClientMessage(net.minecraft.network.chat.Component
+						.literal("§eСтарые монеты заменены на бронзу: §f" + migrated + "м"), false);
+				LOGGER.info("[rl2dop] игрок {}: заменено {} старых монет на бронзу",
+						player.getGameProfile().getName(), migrated);
+			}
 			ModPackets.syncTo(player);
 		});
 

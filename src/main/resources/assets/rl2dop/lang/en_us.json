@@ -24,5 +24,6 @@
   "rl2dop.state.sleeping": "sleeping",
   "rl2dop.state.panic": "panicking",
   "rl2dop.state.attack": "fighting",
-  "rl2dop.state.shopping": "shopping"
+  "rl2dop.state.shopping": "shopping",
+  "item.rl2dop.coin": "Old Coin (replaced by bronze)"
 }
