@@ -38,8 +38,8 @@ Note: Recompile with -Xlint:deprecation for details.
 > Task :classes
 
 > Task :runServer
-[15:24:10] [main/INFO] (FabricLoader/GameProvider) Loading Minecraft 1.21.1 with Fabric Loader 0.20.1
-[15:24:11] [main/INFO] (FabricLoader) Loading 44 mods:
+[16:22:35] [main/INFO] (FabricLoader/GameProvider) Loading Minecraft 1.21.1 with Fabric Loader 0.20.1
+[16:22:35] [main/INFO] (FabricLoader) Loading 44 mods:
 	- fabric-api 0.116.17+1.21.1
 	- fabric-api-base 0.4.42+6573ed8c19
 	- fabric-api-lookup-api-v1 1.6.72+7b3d111d19
@@ -83,10 +83,10 @@ Note: Recompile with -Xlint:deprecation for details.
 	- java 25
 	- minecraft 1.21.1
 	- mixinextras 0.5.5
-	- rl2dop 0.3.1
-[15:24:11] [main/INFO] (FabricLoader/Mixin) SpongePowered MIXIN Subsystem Version=0.8.7 Source=file:/home/runner/.gradle/caches/modules-2/files-2.1/net.fabricmc/sponge-mixin/0.17.5+mixin.0.8.7/cef8519a91129d0c21fa03bb9378f0e8ca810e5/sponge-mixin-0.17.5+mixin.0.8.7.jar Service=Knot/Fabric Env=SERVER
-[15:24:11] [main/INFO] (FabricLoader/Mixin) Loaded Fabric development mappings for mixin remapper!
-[15:24:11] [main/INFO] (FabricLoader/MixinExtras|Service) Initializing MixinExtras via com.llamalad7.mixinextras.service.MixinExtrasServiceImpl(version=0.5.5).
+	- rl2dop 0.4.0
+[16:22:36] [main/INFO] (FabricLoader/Mixin) SpongePowered MIXIN Subsystem Version=0.8.7 Source=file:/home/runner/.gradle/caches/modules-2/files-2.1/net.fabricmc/sponge-mixin/0.17.5+mixin.0.8.7/cef8519a91129d0c21fa03bb9378f0e8ca810e5/sponge-mixin-0.17.5+mixin.0.8.7.jar Service=Knot/Fabric Env=SERVER
+[16:22:36] [main/INFO] (FabricLoader/Mixin) Loaded Fabric development mappings for mixin remapper!
+[16:22:36] [main/INFO] (FabricLoader/MixinExtras|Service) Initializing MixinExtras via com.llamalad7.mixinextras.service.MixinExtrasServiceImpl(version=0.5.5).
 WARNING: A restricted method in java.lang.System has been called
 WARNING: java.lang.System::load has been called by com.sun.jna.Native in an unnamed module (file:/home/runner/.gradle/caches/modules-2/files-2.1/net.java.dev.jna/jna/5.14.0/67bf3eaea4f0718cb376a181a629e5f88fa1c9dd/jna-5.14.0.jar)
 WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
@@ -96,198 +96,74 @@ WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
 WARNING: sun.misc.Unsafe::objectFieldOffset has been called by com.google.common.util.concurrent.AbstractFuture$UnsafeAtomicHelper (file:/home/runner/.gradle/caches/modules-2/files-2.1/com.google.guava/guava/32.1.2-jre/5e64ec7e056456bef3a4bc4c6fdaef71e8ab6318/guava-32.1.2-jre.jar)
 WARNING: Please consider reporting this to the maintainers of class com.google.common.util.concurrent.AbstractFuture$UnsafeAtomicHelper
 WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
-[15:24:18] [main/INFO] (rl2dop) [rl2dop] создан конфиг ./config/rl2dop.json
-[15:24:18] [main/INFO] (rl2dop) [rl2dop] экономика загружена
-[15:24:18] [main/INFO] (Minecraft) Environment: Environment[sessionHost=https://sessionserver.mojang.com, servicesHost=https://api.minecraftservices.com, name=PROD]
-[15:24:19] [main/INFO] (Minecraft) No existing world data, creating new world
-[15:24:20] [main/INFO] (Minecraft) Loaded 1290 recipes
-[15:24:20] [main/INFO] (Minecraft) Loaded 1399 advancements
-[15:24:21] [main/INFO] (BiomeModificationImpl) Applied 0 biome modifications to 0 of 64 new biomes in 1.387 ms
-[15:24:21] [Server thread/INFO] (Minecraft) Starting minecraft server version 1.21.1
-[15:24:21] [Server thread/INFO] (Minecraft) Loading properties
-[15:24:21] [Server thread/INFO] (Minecraft) Default game type: SURVIVAL
-[15:24:21] [Server thread/INFO] (Minecraft) Generating keypair
-[15:24:21] [Server thread/INFO] (Minecraft) Starting Minecraft server on *:25565
-[15:24:21] [Server thread/INFO] (Minecraft) Using epoll channel type
-[15:24:21] [Server thread/WARN] (Minecraft) **** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!
-[15:24:21] [Server thread/WARN] (Minecraft) The server will make no attempt to authenticate usernames. Beware.
-[15:24:21] [Server thread/WARN] (Minecraft) While this makes the game possible to play without internet access, it also opens up the ability for hackers to connect with any username they choose.
-[15:24:21] [Server thread/WARN] (Minecraft) To change this, set "online-mode" to "true" in the server.properties file.
-[15:24:21] [Server thread/INFO] (Minecraft) Preparing level "world"
-[15:24:22] [Server thread/INFO] (Minecraft) Preparing start region for dimension minecraft:overworld
-[15:24:22] [Worker-Main-3/INFO] (Minecraft) Preparing spawn area: 2%
-[15:24:22] [Server thread/INFO] (Minecraft) Time elapsed: 380 ms
-[15:24:22] [Server thread/INFO] (Minecraft) Done (1.077s)! For help, type "help"
-[15:24:26] [Server thread/INFO] (Minecraft) §aПоселение «§fSmokeTown§a» создано. Ратуша: §f0, -59, 0§a, постройка §f100%§a, домов §f2§a, глава: §fКлаус§a. Таблички нужд уже висят. Дальше: §f/settle_bind§a, §f/house_add§a или §f/spawn_npc farmer
-[15:24:28] [Server thread/INFO] (Minecraft) §aРатуша, площадь, лавка, склад и §f2§a домов поселения §fSmokeTown§a: постройка §f100%§a, точка магазина §f7, -59, 1§a, таблички нужд внутри зала.
-[15:24:30] [Server thread/INFO] (Minecraft) §aГлавой поселения «§fSmokeTown§a» назначен §fАнна§a. Он стоит у табличек и скупает всё без торга (скупка +§f5%§a). Снять: §f/settle_mayor smoketown remove
-[15:24:32] [Server thread/INFO] (Minecraft) §aДом поставлен в §f37, -60, 4§a. Домов в поселении: §f3§a, поселено жителей: §f0§a. Вход с южной стороны, внутри сундук и верстак. Откат: §f/settle_build <id> reset
-[15:24:34] [Server thread/INFO] (Minecraft) §aНапечатано §f500м §a→ §fказна SmokeTown§a. Эмиссия: 500/100000
-[15:24:36] [Server thread/INFO] (Minecraft) §cКошелёк открывается только из игры (нужен игрок).
-[15:24:38] [Server thread/INFO] (Minecraft) §aNPC §fДитрих §a(farmer) в поселении SmokeTown
-[15:24:40] [Server thread/INFO] (Minecraft) §aNPC §fКурт §a(trader) в поселении SmokeTown
-[15:24:42] [Server thread/INFO] (Minecraft) §aNPC §fФриц §a(guard) в поселении SmokeTown
-[15:24:44] [Server thread/INFO] (Minecraft) §aNPC §fАнна §a(cook) в поселении SmokeTown
-[15:24:46] [Server thread/INFO] (Minecraft) §aNPC §fМира §a(miner) в поселении SmokeTown
-[15:24:48] [Server thread/INFO] (Minecraft) §aNPC §fУльрих §a(builder) в поселении SmokeTown
-[15:24:50] [Server thread/INFO] (Minecraft) §7Эмиссия: 500 / 100000 монет
-[15:24:50] [Server thread/INFO] (Minecraft) §7— SmokeTown (smoketown) казна=900 NPC=8 постройка=100%
-[15:24:50] [Server thread/INFO] (Minecraft) §7   bread: сток=22 цена=10.4 спрос=0
-[15:24:50] [Server thread/INFO] (Minecraft) §7   wheat: сток=43 цена=5.1 спрос=0
-[15:24:50] [Server thread/INFO] (Minecraft) §7   carrot: сток=34 цена=5.5 спрос=0
-[15:24:50] [Server thread/INFO] (Minecraft) §7   oak_log: сток=0 цена=20.5 спрос=140
-[15:24:50] [Server thread/INFO] (Minecraft) §7   iron_ingot: сток=18 цена=40.5 спрос=0
-[15:24:50] [Server thread/INFO] (Minecraft) §7   cobblestone: сток=1 цена=10.2 спрос=135
-[15:24:50] [Server thread/INFO] (Minecraft) §7   coal: сток=22 цена=9.5 спрос=0
-[15:24:50] [Server thread/INFO] (Minecraft) §7   leather: сток=17 цена=13.9 спрос=0
-[15:24:50] [Server thread/INFO] (Minecraft) §7   white_wool: сток=17 цена=11.1 спрос=0
-[15:24:50] [Server thread/INFO] (Minecraft) §7   stick: сток=22 цена=4.7 спрос=0
-[15:24:50] [Server thread/INFO] (Minecraft) §7   stone_sword: сток=3 цена=43.0 спрос=0
-[15:24:50] [Server thread/INFO] (Minecraft) §7   bandage: сток=8 цена=14.4 спрос=0
-[15:24:50] [Server thread/INFO] (Minecraft) §7   medkit: сток=4 цена=33.7 спрос=0
-[15:24:50] [Server thread/INFO] (Minecraft) §7загружено NPC рядом: 7 [Дитрих/farmer/smoketown, Курт/trader/smoketown, Фриц/guard/smoketown, Анна/cook/smoketown, Мира/miner/smoketown, Ульрих/builder/smoketown, Анна/mayor/smoketown]
-[15:24:52] [Server thread/INFO] (Minecraft) §eДитрих§7 farmer · idle · кошелёк 30м · голод 100% · поселение smoketown
-[15:24:52] [Server thread/INFO] (Minecraft) §eКурт§7 trader · idle · кошелёк 30м · голод 100% · поселение smoketown
-[15:24:52] [Server thread/INFO] (Minecraft) §eФриц§7 guard · idle · кошелёк 30м · голод 100% · поселение smoketown
-[15:24:52] [Server thread/INFO] (Minecraft) §eАнна§7 cook · idle · кошелёк 30м · голод 100% · поселение smoketown
-[15:24:52] [Server thread/INFO] (Minecraft) §eМира§7 miner · idle · кошелёк 30м · голод 100% · поселение smoketown
-[15:24:52] [Server thread/INFO] (Minecraft) §eУльрих§7 builder · idle · кошелёк 30м · голод 100% · поселение smoketown
-[15:24:52] [Server thread/INFO] (Minecraft) §eАнна§7 mayor · idle · кошелёк 100м · голод 100% · поселение smoketown
-[15:24:54] [Server thread/INFO] (Minecraft) §aЗарплата farmer = 15м
-[15:24:56] [Server thread/INFO] (Minecraft) §aБазовая цена minecraft:bread = 5м
-[15:24:58] [Server thread/INFO] (Minecraft) §aПолка с §fminecraft:bread§a создана на 0, -58, 0
-[15:25:00] [Server thread/INFO] (Minecraft) §aТабло ратуши обновлено.
-[15:25:02] [Server thread/INFO] (Minecraft) §aМагазин поселения «SmokeTown» привязан к 0, -59, 0
-[15:25:04] [Server thread/INFO] (Minecraft) §aДитрих теперь lumberjack
-[15:25:06] [Server thread/INFO] (Minecraft) §aПоселение «SmokeVillage» создано в 0, -49, 0 (у колокола). NPC: Отто (farmer), Хельга (trader), Клаус (guard), Курт (cook)
-[15:25:08] [Server thread/INFO] (Minecraft) §8поселение SmokeTown (smoketown) основано в 0, -59, 0 [minecraft:overworld]
-[15:25:08] [Server thread/INFO] (Minecraft) §8поселение smoketown: главой стал Клаус у табличек
-[15:25:08] [Server thread/INFO] (Minecraft) §8поселению smoketown для стройки не хватает материалов (камень, брёвна) — нужды висят на табличках
-[15:25:08] [Server thread/INFO] (Minecraft) §8эмиссия 500 монет в казна SmokeTown (всего 500/100000)
-[15:25:08] [Server thread/INFO] (Minecraft) §8поселение SmokeVillage (smokevillage) основано в 0, -49, 0 [minecraft:overworld]
-[15:25:08] [Server thread/INFO] (Minecraft) §8привязка к ванильной деревне: SmokeVillage (колокол)
-[15:25:55] [Server thread/INFO] (Minecraft) §7Поселение SmokeTown (smoketown) dim=minecraft:overworld
-[15:25:55] [Server thread/INFO] (Minecraft) §7  казна=900м §a(бесконечная)§7  NPC=8  постройка=100%  лавка=0, -59, 0  домов=3  мастерских=4  табличек=3
-[15:25:55] [Server thread/INFO] (Minecraft) §7  работа farmer: -26,-59,3
-[15:25:55] [Server thread/INFO] (Minecraft) §7  работа lumberjack: -26,-59,-10
-[15:25:55] [Server thread/INFO] (Minecraft) §7  работа miner: 26,-59,-13
-[15:25:55] [Server thread/INFO] (Minecraft) §7  работа builder: 26,-59,6
-[15:25:55] [Server thread/INFO] (Minecraft) §7  minecraft:bread: сток=22 цена=14.41 спрос=0
-[15:25:55] [Server thread/INFO] (Minecraft) §7  minecraft:wheat: сток=52 цена=3.95 спрос=0
-[15:25:55] [Server thread/INFO] (Minecraft) §7  minecraft:carrot: сток=36 цена=5.88 спрос=0
-[15:25:55] [Server thread/INFO] (Minecraft) §7  minecraft:oak_log: сток=20 цена=23.97 спрос=94
-[15:25:55] [Server thread/INFO] (Minecraft) §7  minecraft:iron_ingot: сток=20 цена=38.93 спрос=0
-[15:25:55] [Server thread/INFO] (Minecraft) §7  minecraft:cobblestone: сток=14 цена=11.98 спрос=44
-[15:25:55] [Server thread/INFO] (Minecraft) §7  minecraft:coal: сток=26 цена=9.41 спрос=0
-[15:25:55] [Server thread/INFO] (Minecraft) §7  minecraft:leather: сток=17 цена=15.64 спрос=0
-[15:25:55] [Server thread/INFO] (Minecraft) §7  minecraft:white_wool: сток=17 цена=12.52 спрос=0
-[15:25:55] [Server thread/INFO] (Minecraft) §7  minecraft:stick: сток=22 цена=5.40 спрос=0
-[15:25:55] [Server thread/INFO] (Minecraft) §7  minecraft:stone_sword: сток=3 цена=47.95 спрос=0
-[15:25:55] [Server thread/INFO] (Minecraft) §7  rl2dop:bandage: сток=8 цена=16.11 спрос=0
-[15:25:55] [Server thread/INFO] (Minecraft) §7  rl2dop:medkit: сток=4 цена=37.59 спрос=0
-[15:25:55] [Server thread/INFO] (Minecraft) §7загружено NPC рядом: 12 [Дитрих/lumberjack/smoketown, Курт/trader/smoketown, Фриц/guard/smoketown, Анна/cook/smoketown, Мира/miner/smoketown, Ульрих/builder/smoketown, Отто/farmer/smokevillage, Хельга/trader/smokevillage, Клаус/guard/smokevillage, Курт/cook/smokevillage, Анна/mayor/smoketown, Аста/mayor/smokevillage]
-[15:25:59] [Server thread/INFO] (Minecraft) §eДитрих§7 lumberjack · idle · кошелёк 30м · голод 100% · поселение smoketown
-[15:25:59] [Server thread/INFO] (Minecraft) §eКурт§7 trader · idle · кошелёк 30м · голод 100% · поселение smoketown
-[15:25:59] [Server thread/INFO] (Minecraft) §eФриц§7 guard · idle · кошелёк 30м · голод 100% · поселение smoketown
-[15:25:59] [Server thread/INFO] (Minecraft) §eАнна§7 cook · idle · кошелёк 30м · голод 100% · поселение smoketown
-[15:25:59] [Server thread/INFO] (Minecraft) §eМира§7 miner · idle · кошелёк 30м · голод 100% · поселение smoketown
-[15:25:59] [Server thread/INFO] (Minecraft) §eУльрих§7 builder · idle · кошелёк 30м · голод 100% · поселение smoketown
-[15:25:59] [Server thread/INFO] (Minecraft) §eОтто§7 farmer · idle · кошелёк 30м · голод 100% · поселение smokevillage
-[15:25:59] [Server thread/INFO] (Minecraft) §eХельга§7 trader · idle · кошелёк 30м · голод 100% · поселение smokevillage
-[15:25:59] [Server thread/INFO] (Minecraft) §eКлаус§7 guard · idle · кошелёк 30м · голод 100% · поселение smokevillage
-[15:25:59] [Server thread/INFO] (Minecraft) §eКурт§7 cook · idle · кошелёк 30м · голод 100% · поселение smokevillage
-[15:25:59] [Server thread/INFO] (Minecraft) §eАнна§7 mayor · idle · кошелёк 100м · голод 100% · поселение smoketown
-[15:25:59] [Server thread/INFO] (Minecraft) §eАста§7 mayor · idle · кошелёк 100м · голод 100% · поселение smokevillage
-[15:26:13] [Server thread/INFO] (Minecraft) §7Поселение SmokeTown (smoketown) dim=minecraft:overworld
-[15:26:13] [Server thread/INFO] (Minecraft) §7  казна=900м §a(бесконечная)§7  NPC=8  постройка=100%  лавка=0, -59, 0  домов=3  мастерских=4  табличек=3
-[15:26:13] [Server thread/INFO] (Minecraft) §7  работа farmer: -26,-59,3
-[15:26:13] [Server thread/INFO] (Minecraft) §7  работа lumberjack: -26,-59,-10
-[15:26:13] [Server thread/INFO] (Minecraft) §7  работа miner: 26,-59,-13
-[15:26:13] [Server thread/INFO] (Minecraft) §7  работа builder: 26,-59,6
-[15:26:13] [Server thread/INFO] (Minecraft) §7  minecraft:bread: сток=22 цена=14.50 спрос=0
-[15:26:13] [Server thread/INFO] (Minecraft) §7  minecraft:wheat: сток=52 цена=3.93 спрос=0
-[15:26:13] [Server thread/INFO] (Minecraft) §7  minecraft:carrot: сток=36 цена=5.88 спрос=0
-[15:26:13] [Server thread/INFO] (Minecraft) §7  minecraft:oak_log: сток=26 цена=23.99 спрос=82
-[15:26:13] [Server thread/INFO] (Minecraft) §7  minecraft:iron_ingot: сток=21 цена=37.96 спрос=0
-[15:26:13] [Server thread/INFO] (Minecraft) §7  minecraft:cobblestone: сток=17 цена=11.99 спрос=23
-[15:26:13] [Server thread/INFO] (Minecraft) §7  minecraft:coal: сток=26 цена=9.04 спрос=0
-[15:26:13] [Server thread/INFO] (Minecraft) §7  minecraft:leather: сток=17 цена=15.66 спрос=0
-[15:26:13] [Server thread/INFO] (Minecraft) §7  minecraft:white_wool: сток=17 цена=12.52 спрос=0
-[15:26:13] [Server thread/INFO] (Minecraft) §7  minecraft:stick: сток=22 цена=5.40 спрос=0
-[15:26:13] [Server thread/INFO] (Minecraft) §7  minecraft:stone_sword: сток=3 цена=47.98 спрос=0
-[15:26:13] [Server thread/INFO] (Minecraft) §7  rl2dop:bandage: сток=8 цена=16.12 спрос=0
-[15:26:13] [Server thread/INFO] (Minecraft) §7  rl2dop:medkit: сток=4 цена=37.62 спрос=0
-[15:26:13] [Server thread/INFO] (Minecraft) §7загружено NPC рядом: 12 [Дитрих/lumberjack/smoketown, Курт/trader/smoketown, Фриц/guard/smoketown, Анна/cook/smoketown, Мира/miner/smoketown, Ульрих/builder/smoketown, Отто/farmer/smokevillage, Хельга/trader/smokevillage, Клаус/guard/smokevillage, Курт/cook/smokevillage, Анна/mayor/smoketown, Аста/mayor/smokevillage]
-[15:26:17] [Server thread/INFO] (Minecraft) Stopping the server
-[15:26:17] [Server thread/INFO] (Minecraft) Stopping server
-[15:26:17] [Server thread/INFO] (Minecraft) Saving players
-[15:26:17] [Server thread/INFO] (Minecraft) Saving worlds
-[15:26:17] [Server thread/INFO] (Minecraft) Saving chunks for level 'ServerLevel[world]'/minecraft:overworld
-[15:26:18] [Server thread/INFO] (Minecraft) Saving chunks for level 'ServerLevel[world]'/minecraft:the_nether
-[15:26:18] [Server thread/INFO] (Minecraft) Saving chunks for level 'ServerLevel[world]'/minecraft:the_end
-[15:26:18] [Server thread/INFO] (Minecraft) ThreadedAnvilChunkStorage (world): All chunks are saved
-[15:26:18] [Server thread/INFO] (Minecraft) ThreadedAnvilChunkStorage (DIM-1): All chunks are saved
-[15:26:18] [Server thread/INFO] (Minecraft) ThreadedAnvilChunkStorage (DIM1): All chunks are saved
-[15:26:18] [Server thread/INFO] (Minecraft) ThreadedAnvilChunkStorage: All dimensions are saved
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run-1793460201059.json
+[16:22:43] [main/INFO] (rl2dop) [rl2dop] создан конфиг ./config/rl2dop.json
+[16:22:43] [main/INFO] (rl2dop) [rl2dop] экономика загружена
+[16:22:43] [main/INFO] (Minecraft) Environment: Environment[sessionHost=https://sessionserver.mojang.com, servicesHost=https://api.minecraftservices.com, name=PROD]
+[16:22:44] [main/INFO] (Minecraft) No existing world data, creating new world
+[16:22:45] [main/INFO] (Minecraft) Loaded 1290 recipes
+[16:22:45] [main/INFO] (Minecraft) Loaded 1399 advancements
+[16:22:46] [main/INFO] (BiomeModificationImpl) Applied 0 biome modifications to 0 of 64 new biomes in 1.390 ms
+[16:22:46] [Server thread/INFO] (Minecraft) Starting minecraft server version 1.21.1
+[16:22:46] [Server thread/INFO] (Minecraft) Loading properties
+[16:22:46] [Server thread/INFO] (Minecraft) Default game type: SURVIVAL
+[16:22:46] [Server thread/INFO] (Minecraft) Generating keypair
+[16:22:46] [Server thread/INFO] (Minecraft) Starting Minecraft server on *:25565
+[16:22:46] [Server thread/INFO] (Minecraft) Using epoll channel type
+[16:22:46] [Server thread/WARN] (Minecraft) **** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!
+[16:22:46] [Server thread/WARN] (Minecraft) The server will make no attempt to authenticate usernames. Beware.
+[16:22:46] [Server thread/WARN] (Minecraft) While this makes the game possible to play without internet access, it also opens up the ability for hackers to connect with any username they choose.
+[16:22:46] [Server thread/WARN] (Minecraft) To change this, set "online-mode" to "true" in the server.properties file.
+[16:22:46] [Server thread/INFO] (Minecraft) Preparing level "world"
+[16:22:47] [Server thread/INFO] (Minecraft) Preparing start region for dimension minecraft:overworld
+[16:22:47] [Worker-Main-1/INFO] (Minecraft) Preparing spawn area: 2%
+[16:22:47] [Server thread/INFO] (Minecraft) Time elapsed: 348 ms
+[16:22:47] [Server thread/INFO] (Minecraft) Done (0.969s)! For help, type "help"
+[16:22:52] [Server thread/INFO] (Minecraft) An unexpected error occurred trying to execute that command
+[16:22:53] [Server thread/ERROR] (Minecraft) Encountered an unexpected exception
+java.lang.IllegalArgumentException: Cannot set property DirectionProperty{name=facing, clazz=class net.minecraft.core.Direction, values=[north, south, west, east]} as it does not exist in Block{minecraft:barrel}
+	at knot/net.minecraft.world.level.block.state.StateHolder.setValue(StateHolder.java:121) ~[minecraft-common-e6922664db-1.21.1-loom.mappings.1_21_1.layered+hash.1992839665-v2.jar:?]
+	at knot/com.baraaoi.rl2dop.economy.SettlementBuilds.tavernPlan(SettlementBuilds.java:861) ~[main/:?]
+	at knot/com.baraaoi.rl2dop.economy.SettlementBuilds.plan(SettlementBuilds.java:308) ~[main/:?]
+	at knot/com.baraaoi.rl2dop.economy.SettlementBuilds.build(SettlementBuilds.java:1020) ~[main/:?]
+	at knot/com.baraaoi.rl2dop.economy.SettlementBuilds.buildInstant(SettlementBuilds.java:1080) ~[main/:?]
+	at knot/com.baraaoi.rl2dop.economy.EconomyTicker.settlementStep(EconomyTicker.java:73) ~[main/:?]
+	at knot/com.baraaoi.rl2dop.economy.EconomyTicker.onServerTick(EconomyTicker.java:32) ~[main/:?]
+	at knot/net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.lambda$static$2(ServerTickEvents.java:43) ~[fabric-lifecycle-events-v1-952be1d3-common-2.6.0+0865547519.jar:?]
+	at knot/net.minecraft.server.MinecraftServer.handler$zgi000$fabric-lifecycle-events-v1$onEndTick(MinecraftServer.java:4163) ~[minecraft-common-e6922664db-1.21.1-loom.mappings.1_21_1.layered+hash.1992839665-v2.jar:?]
+	at knot/net.minecraft.server.MinecraftServer.tickServer(MinecraftServer.java:940) ~[minecraft-common-e6922664db-1.21.1-loom.mappings.1_21_1.layered+hash.1992839665-v2.jar:?]
+	at knot/net.minecraft.server.MinecraftServer.runServer(MinecraftServer.java:697) [minecraft-common-e6922664db-1.21.1-loom.mappings.1_21_1.layered+hash.1992839665-v2.jar:?]
+	at knot/net.minecraft.server.MinecraftServer.method_29739(MinecraftServer.java:281) [minecraft-common-e6922664db-1.21.1-loom.mappings.1_21_1.layered+hash.1992839665-v2.jar:?]
+	at java.base/java.lang.Thread.run(Thread.java:1474) [?:?]
+[16:22:53] [Server thread/ERROR] (Minecraft) This crash report has been saved to: /home/runner/work/Rl2dop/Rl2dop/run/crash-reports/crash-2026-10-31_16.22.53-server.txt
+[16:22:53] [Server thread/INFO] (Minecraft) Stopping server
+[16:22:53] [Server thread/INFO] (Minecraft) Saving players
+[16:22:53] [Server thread/INFO] (Minecraft) Saving worlds
+[16:22:54] [Server thread/INFO] (Minecraft) Saving chunks for level 'ServerLevel[world]'/minecraft:overworld
+[16:22:54] [Server thread/INFO] (Minecraft) Saving chunks for level 'ServerLevel[world]'/minecraft:the_end
+[16:22:54] [Server thread/INFO] (Minecraft) Saving chunks for level 'ServerLevel[world]'/minecraft:the_nether
+[16:22:54] [Server thread/INFO] (Minecraft) ThreadedAnvilChunkStorage (world): All chunks are saved
+[16:22:54] [Server thread/INFO] (Minecraft) ThreadedAnvilChunkStorage (DIM1): All chunks are saved
+[16:22:54] [Server thread/INFO] (Minecraft) ThreadedAnvilChunkStorage (DIM-1): All chunks are saved
+[16:22:54] [Server thread/INFO] (Minecraft) ThreadedAnvilChunkStorage: All dimensions are saved
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run-1793463697245.json
 
 [Incubating] Problems report is available at: file:///home/runner/work/Rl2dop/Rl2dop/build/reports/problems/problems-report.html
 
-BUILD SUCCESSFUL in 3m 5s
+BUILD SUCCESSFUL in 1m 26s
 6 actionable tasks: 6 executed
 Configuration cache entry stored.
 === файлы мода ===
--rw-r--r-- 1 runner runner 3581 Oct 31 15:24 run/config/rl2dop.json
+-rw-r--r-- 1 runner runner 3948 Oct 31 16:22 run/config/rl2dop.json
 
 run/world/data/:
 total 16
-drwxr-xr-x  2 runner runner 4096 Oct 31 15:26 .
-drwxr-xr-x 10 runner runner 4096 Oct 31 15:27 ..
--rw-r--r--  1 runner runner   90 Oct 31 15:27 raids.dat
--rw-r--r--  1 runner runner 1910 Oct 31 15:27 rl2dop_economy.dat
+drwxr-xr-x 2 runner runner 4096 Oct 31 16:22 .
+drwxr-xr-x 9 runner runner 4096 Oct 31 16:22 ..
+-rw-r--r-- 1 runner runner   89 Oct 31 16:22 raids.dat
+-rw-r--r-- 1 runner runner  877 Oct 31 16:22 rl2dop_economy.dat
 
 === перезапуск: что прочиталось ===
 --- первый запуск: постройки, кошелёк, цены ---
-[15:24:28] [Server thread/INFO] (Minecraft) §aРатуша, площадь, лавка, склад и §f2§a домов поселения §fSmokeTown§a: постройка §f100%§a, точка магазина §f7, -59, 1§a, таблички нужд внутри зала.
-[15:24:30] [Server thread/INFO] (Minecraft) §aГлавой поселения «§fSmokeTown§a» назначен §fАнна§a. Он стоит у табличек и скупает всё без торга (скупка +§f5%§a). Снять: §f/settle_mayor smoketown remove
-[15:24:32] [Server thread/INFO] (Minecraft) §aДом поставлен в §f37, -60, 4§a. Домов в поселении: §f3§a, поселено жителей: §f0§a. Вход с южной стороны, внутри сундук и верстак. Откат: §f/settle_build <id> reset
-[15:24:50] [Server thread/INFO] (Minecraft) §7— SmokeTown (smoketown) казна=900 NPC=8 постройка=100%
-[15:24:52] [Server thread/INFO] (Minecraft) §eДитрих§7 farmer · idle · кошелёк 30м · голод 100% · поселение smoketown
-[15:24:52] [Server thread/INFO] (Minecraft) §eКурт§7 trader · idle · кошелёк 30м · голод 100% · поселение smoketown
-[15:24:52] [Server thread/INFO] (Minecraft) §eФриц§7 guard · idle · кошелёк 30м · голод 100% · поселение smoketown
-[15:24:52] [Server thread/INFO] (Minecraft) §eАнна§7 cook · idle · кошелёк 30м · голод 100% · поселение smoketown
-[15:24:52] [Server thread/INFO] (Minecraft) §eМира§7 miner · idle · кошелёк 30м · голод 100% · поселение smoketown
-[15:24:52] [Server thread/INFO] (Minecraft) §eУльрих§7 builder · idle · кошелёк 30м · голод 100% · поселение smoketown
-[15:24:52] [Server thread/INFO] (Minecraft) §eАнна§7 mayor · idle · кошелёк 100м · голод 100% · поселение smoketown
-[15:25:06] [Server thread/INFO] (Minecraft) §aПоселение «SmokeVillage» создано в 0, -49, 0 (у колокола). NPC: Отто (farmer), Хельга (trader), Клаус (guard), Курт (cook)
-[15:25:08] [Server thread/INFO] (Minecraft) §8поселение SmokeTown (smoketown) основано в 0, -59, 0 [minecraft:overworld]
-[15:25:08] [Server thread/INFO] (Minecraft) §8поселение smoketown: главой стал Клаус у табличек
-[15:25:08] [Server thread/INFO] (Minecraft) §8эмиссия 500 монет в казна SmokeTown (всего 500/100000)
-[15:25:08] [Server thread/INFO] (Minecraft) §8поселение SmokeVillage (smokevillage) основано в 0, -49, 0 [minecraft:overworld]
-[15:25:55] [Server thread/INFO] (Minecraft) §7Поселение SmokeTown (smoketown) dim=minecraft:overworld
-[15:25:55] [Server thread/INFO] (Minecraft) §7  казна=900м §a(бесконечная)§7  NPC=8  постройка=100%  лавка=0, -59, 0  домов=3  мастерских=4  табличек=3
-[15:25:55] [Server thread/INFO] (Minecraft) §7  работа farmer: -26,-59,3
-[15:25:55] [Server thread/INFO] (Minecraft) §7  работа lumberjack: -26,-59,-10
-[15:25:55] [Server thread/INFO] (Minecraft) §7  работа miner: 26,-59,-13
-[15:25:55] [Server thread/INFO] (Minecraft) §7  работа builder: 26,-59,6
-[15:25:59] [Server thread/INFO] (Minecraft) §eДитрих§7 lumberjack · idle · кошелёк 30м · голод 100% · поселение smoketown
-[15:25:59] [Server thread/INFO] (Minecraft) §eКурт§7 trader · idle · кошелёк 30м · голод 100% · поселение smoketown
-[15:25:59] [Server thread/INFO] (Minecraft) §eФриц§7 guard · idle · кошелёк 30м · голод 100% · поселение smoketown
-[15:25:59] [Server thread/INFO] (Minecraft) §eАнна§7 cook · idle · кошелёк 30м · голод 100% · поселение smoketown
-[15:25:59] [Server thread/INFO] (Minecraft) §eМира§7 miner · idle · кошелёк 30м · голод 100% · поселение smoketown
-[15:25:59] [Server thread/INFO] (Minecraft) §eУльрих§7 builder · idle · кошелёк 30м · голод 100% · поселение smoketown
-[15:25:59] [Server thread/INFO] (Minecraft) §eОтто§7 farmer · idle · кошелёк 30м · голод 100% · поселение smokevillage
-[15:25:59] [Server thread/INFO] (Minecraft) §eХельга§7 trader · idle · кошелёк 30м · голод 100% · поселение smokevillage
-[15:25:59] [Server thread/INFO] (Minecraft) §eКлаус§7 guard · idle · кошелёк 30м · голод 100% · поселение smokevillage
-[15:25:59] [Server thread/INFO] (Minecraft) §eКурт§7 cook · idle · кошелёк 30м · голод 100% · поселение smokevillage
-[15:25:59] [Server thread/INFO] (Minecraft) §eАнна§7 mayor · idle · кошелёк 100м · голод 100% · поселение smoketown
-[15:25:59] [Server thread/INFO] (Minecraft) §eАста§7 mayor · idle · кошелёк 100м · голод 100% · поселение smokevillage
-[15:26:13] [Server thread/INFO] (Minecraft) §7Поселение SmokeTown (smoketown) dim=minecraft:overworld
-[15:26:13] [Server thread/INFO] (Minecraft) §7  казна=900м §a(бесконечная)§7  NPC=8  постройка=100%  лавка=0, -59, 0  домов=3  мастерских=4  табличек=3
-[15:26:13] [Server thread/INFO] (Minecraft) §7  работа farmer: -26,-59,3
-[15:26:13] [Server thread/INFO] (Minecraft) §7  работа lumberjack: -26,-59,-10
-[15:26:13] [Server thread/INFO] (Minecraft) §7  работа miner: 26,-59,-13
-[15:26:13] [Server thread/INFO] (Minecraft) §7  работа builder: 26,-59,6
 [15:26:48] [Server thread/INFO] (rl2dop) [rl2dop] сохранение загружено: 2 поселений, эмиссия 500
 [15:26:53] [Server thread/INFO] (Minecraft) §7Поселение SmokeTown (smoketown) dim=minecraft:overworld
 [15:26:53] [Server thread/INFO] (Minecraft) §7  казна=900м §a(бесконечная)§7  NPC=8  постройка=100%  лавка=0, -59, 0  домов=3  мастерских=4  табличек=3
@@ -359,3 +235,6 @@ drwxr-xr-x 10 runner runner 4096 Oct 31 15:27 ..
 [15:27:24] [Server thread/INFO] (Minecraft) §8поселение SmokeVillage (smokevillage) основано в 0, -49, 0 [minecraft:overworld]
 [15:27:24] [Server thread/INFO] (Minecraft) §8поселение smokevillage: главой стал Аста у табличек
 === ошибки/исключения (оба запуска) ===
+ci/smoke.log:[16:22:53] [Server thread/ERROR] (Minecraft) Encountered an unexpected exception
+ci/smoke.log:java.lang.IllegalArgumentException: Cannot set property DirectionProperty{name=facing, clazz=class net.minecraft.core.Direction, values=[north, south, west, east]} as it does not exist in Block{minecraft:barrel}
+ci/smoke.log:[16:22:53] [Server thread/ERROR] (Minecraft) This crash report has been saved to: /home/runner/work/Rl2dop/Rl2dop/run/crash-reports/crash-2026-10-31_16.22.53-server.txt
