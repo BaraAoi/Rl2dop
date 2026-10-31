@@ -419,9 +419,16 @@ public final class SettlementBuilds {
 				plan.set(base.offset(x, 0, z), Blocks.DIRT.defaultBlockState());
 			}
 		}
-		// грядки: через строку — вода не нужна, влажность ставим вручную
+		// канавка с водой по центру: без неё грядки высыхают в землю через минуту
+		for (int x = -halfX + 1; x <= halfX - 1; x++) {
+			plan.set(base.offset(x, 0, 0), Blocks.WATER.defaultBlockState());
+		}
+		// грядки в шахматном порядке по обе стороны канавки, сразу спелые
 		for (int x = -halfX + 1; x <= halfX - 1; x++) {
 			for (int z = -halfZ + 1; z <= halfZ - 1; z += 2) {
+				if (z == 0) {
+					continue;
+				}
 				BlockPos soil = base.offset(x, 0, z);
 				plan.set(soil, Blocks.FARMLAND.defaultBlockState()
 						.setValue(BlockStateProperties.MOISTURE, 7));

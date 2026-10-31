@@ -106,7 +106,12 @@ jobs:
             echo "$cmd" >&3
             sleep 2
           done
-          sleep 15
+          # даём жителям дойти до мастерских (они в 26 блоках) и что-нибудь произвести
+          sleep 45
+          echo "market_dump smoketown" >&3; sleep 4
+          echo "npc_list" >&3; sleep 4
+          sleep 10
+          echo "market_dump smoketown" >&3; sleep 4
           echo "stop" >&3 || true
           sleep 15
           exec 3>&-
@@ -144,8 +149,8 @@ jobs:
             echo ""
             echo "=== перезапуск: что прочиталось ==="
             echo "--- первый запуск: постройки, кошелёк, цены ---"
-            grep -aE "Поселение|казна=|постройка|табличек|напечатано|эмиссия|Лавка|создано" ci/smoke.log 2>/dev/null | tail -30 || true
-            grep -aE "сохранение загружено|казна=|NPC|Эмиссия|Поселение|загружено NPC|цена=|погиб|постройка" ci/smoke2.log 2>/dev/null | tail -60 || true
+            grep -aE "Поселение|поселение|казна=|постройка|табличек|таблички|напечатано|эмиссия|Лавка|создано|работа |мастерских|подарок|Дом поставлен|спасено|главой" ci/smoke.log 2>/dev/null | tail -40 || true
+            grep -aE "сохранение загружено|казна=|NPC|Эмиссия|Поселение|поселение|загружено NPC|цена=|погиб|постройка|работа |мастерских|подарок|табличк" ci/smoke2.log 2>/dev/null | tail -80 || true
             echo "=== ошибки/исключения (оба запуска) ==="
             grep -aE "ERROR|Exception|Caused by" ci/smoke.log ci/smoke2.log 2>/dev/null | grep -avE "ExceptionHandler|No key layers" | tail -60 || true
           } >> ci/smoke.log
