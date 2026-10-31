@@ -48,18 +48,32 @@ public final class SettlementBuilds {
 	public static final int HOUSE_Z = 4;
 	public static final int HOUSE_HALF = 3;
 
-	/** Уровень пола площадки: верхний твёрдый блок по максимуму габаритов. */
+	/**
+	 * Уровень пола: верхний блок грунта под точкой ратуши. Мерим именно природный/чужой блок,
+	 * а не максимум по пятну застройки — иначе собственные крыши поднимали бы поселение на
+	 * несколько блоков вверх при каждой перестройке. Неровности закрывает fillFoundation().
+	 */
 	public static int platformLevel(ServerLevel level, BlockPos center) {
-		int best = Integer.MIN_VALUE;
-		for (int x = -SHOP_X - 4; x <= HOUSE_X + HOUSE_HALF; x++) {
-			for (int z = -HALL_HALF_Z - 2; z <= 10; z++) {
-				int y = topSolidY(level, center.getX() + x, center.getZ() + z, center.getY());
-				if (y > best) {
-					best = y;
-				}
-			}
+		return groundTopY(level, center.getX(), center.getZ(), center.getY());
+	}
+
+	/** Первый непроходимый блок, начиная с given y и вниз (16 попыток). */
+	private static int groundTopY(ServerLevel level, int x, int z, int fromY) {
+		if (!level.hasChunkAt(new BlockPos(x, fromY, z))) {
+			return fromY;
 		}
-		return best == Integer.MIN_VALUE ? center.getY() : best;
+		int y = fromY;
+		for (int i = 0; i < 16; i++) {
+			BlockState state = level.getBlockState(new BlockPos(x, y, z));
+			if (!state.canBeReplaced()) {
+				return y;
+			}
+			if (y <= level.getMinBuildHeight() + 1) {
+				return fromY;
+			}
+			y--;
+		}
+		return fromY;
 	}
 
 	/** Ставит точку ратуши на уровень земли, чтобы ничего не висело в воздухе. */
