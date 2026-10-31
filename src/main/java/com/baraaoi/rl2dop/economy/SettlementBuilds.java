@@ -276,7 +276,7 @@ public final class SettlementBuilds {
 	private static BlockState floor(int x, int z) {
 		boolean edge = Math.abs(x) == HALL_HALF_X || Math.abs(z) == HALL_HALF_Z;
 		if (edge) {
-			return Blocks.POLISHED_STONE.defaultBlockState();
+			return Blocks.POLISHED_ANDESITE.defaultBlockState();
 		}
 		return (x + z) % 2 == 0 ? Blocks.OAK_PLANKS.defaultBlockState() : Blocks.SPRUCE_PLANKS.defaultBlockState();
 	}

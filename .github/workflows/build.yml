@@ -88,7 +88,7 @@ jobs:
           exec 3> /tmp/cmd1
           for i in $(seq 1 150); do grep -q "Done (" ci/smoke.log 2>/dev/null && break; sleep 2; done
           sleep 3
-          for cmd in "settle_spawn SmokeTown" "give_coins 500" "spawn_npc farmer" "spawn_npc trader" "spawn_npc guard" "spawn_npc cook" "market_dump" "npc_list" "salary_set farmer 15" "price_set minecraft:bread 5" "shelf_add minecraft:bread" "hall_board" "shop_marker" "npc_profession lumberjack" "settle_bind SmokeVillage" "econ_log 8"; do
+          for cmd in "settle_spawn SmokeTown" "settle_build" "give_coins 500" "wallet" "spawn_npc farmer" "spawn_npc trader" "spawn_npc guard" "spawn_npc cook" "market_dump" "npc_list" "salary_set farmer 15" "price_set minecraft:bread 5" "shelf_add minecraft:bread" "hall_board" "shop_marker" "npc_profession lumberjack" "settle_bind SmokeVillage" "econ_log 8"; do
             echo "$cmd" >&3
             sleep 2
           done
@@ -106,6 +106,8 @@ jobs:
           exec 3> /tmp/cmd2
           for i in $(seq 1 150); do grep -q "Done (" ci/smoke2.log 2>/dev/null && break; sleep 2; done
           sleep 3
+          echo "market_dump smoketown" >&3; sleep 3
+          echo "settle_build smoketown grow" >&3; sleep 3
           echo "market_dump smoketown" >&3; sleep 3
           echo "npc_list" >&3; sleep 3
           sleep 10
@@ -125,13 +127,15 @@ jobs:
             ls -la run/config/rl2dop.json run/world/data/ 2>&1 || true
             echo ""
             echo "=== перезапуск: что прочиталось ==="
-            grep -aE "сохранение загружено|казна=|NPC|Эмиссия|Поселение|загружено NPC|цена=|погиб" ci/smoke2.log 2>/dev/null | tail -60 || true
+            echo "--- первый запуск: постройки, кошелёк, цены ---"
+            grep -aE "Поселение|казна=|постройка|табличек|напечатано|эмиссия|Лавка|создано" ci/smoke.log 2>/dev/null | tail -30 || true
+            grep -aE "сохранение загружено|казна=|NPC|Эмиссия|Поселение|загружено NPC|цена=|погиб|постройка" ci/smoke2.log 2>/dev/null | tail -60 || true
             echo "=== ошибки/исключения (оба запуска) ==="
             grep -aE "ERROR|Exception|Caused by" ci/smoke.log ci/smoke2.log 2>/dev/null | grep -avE "ExceptionHandler|No key layers" | tail -60 || true
           } >> ci/smoke.log
 
       - name: save smoke log
-        if: failure()
+        if: always()
         run: |
           git config user.name "rl2dop-ci"
           git config user.email "ci@users.noreply.github.com"
