@@ -1,0 +1,31 @@
+{
+	"schemaVersion": 1,
+	"id": "rl2dop",
+	"version": "${version}",
+	"name": "Rl2dop",
+	"description": "Серверная экономика поселений: монета, рынок с динамическими ценами, NPC с профессиями, репутация и стража.",
+	"authors": [
+		"BaraAoi"
+	],
+	"contact": {
+		"homepage": "https://github.com/BaraAoi/Rl2dop",
+		"sources": "https://github.com/BaraAoi/Rl2dop",
+		"issues": "https://github.com/BaraAoi/Rl2dop/issues"
+	},
+	"license": "MIT",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.baraaoi.rl2dop.Rl2dop"
+		],
+		"client": [
+			"com.baraaoi.rl2dop.client.Rl2dopClient"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=0.16.0",
+		"minecraft": "~1.21.1",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}

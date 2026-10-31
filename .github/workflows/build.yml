@@ -1,0 +1,49 @@
+name: build
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v4
+
+      - name: setup jdk
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: setup gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: make gradle wrapper executable
+        run: chmod +x ./gradlew
+
+      - name: build
+        run: ./gradlew build --stacktrace
+
+      - name: capture build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rl2dop-artifacts
+          path: build/libs/
+
+      - name: publish latest build
+        if: github.ref == 'refs/heads/arena/cbe241d1-rl2dop' || github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Latest build (1.21.1)
+          body: |
+            Автоматическая сборка мода Rl2dop для Minecraft 1.21.1 (Fabric).
+            Скачай `rl2dop-*.jar` и положи в папку `mods` вместе с Fabric API.
+          files: build/libs/*.jar
+          prerelease: true
+          make_latest: true
