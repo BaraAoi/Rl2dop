@@ -308,8 +308,13 @@ public final class SettlementBuilds {
 
 	/** Построить дом мгновенно (команда /house_add). */
 	public static BlockPos buildHouse(ServerLevel level, Settlement settlement, BlockPos standing) {
-		BlockPos base = new BlockPos(standing.getX(),
-				topSolidY(level, standing.getX(), standing.getZ(), standing.getY()), standing.getZ());
+		BlockPos hall = settlement.hall();
+		// в пределах поселения пол дома берём на уровне ратуши (иначе дом «вразнобой» с площадью
+		// и свисает), за пределами — по верхнему твёрдому блоку столбца
+		boolean inPlot = Math.abs(standing.getX() - hall.getX()) <= 40
+				&& Math.abs(standing.getZ() - hall.getZ()) <= 32;
+		int y = inPlot ? hall.getY() : topSolidY(level, standing.getX(), standing.getZ(), standing.getY());
+		BlockPos base = new BlockPos(standing.getX(), y, standing.getZ());
 		Plan plan = new Plan();
 		housePlan(plan, level, base);
 		int built = 0;
@@ -318,10 +323,7 @@ public final class SettlementBuilds {
 				built++;
 			}
 		}
-		String record = base.getX() + ";" + base.getY() + ";" + base.getZ();
-		if (!settlement.houses.contains(record)) {
-			settlement.houses.add(record);
-		}
+		settlement.addHouse(base);
 		EconomyState.get(level.getServer()).setDirty();
 		return built > 0 ? base : null;
 	}
