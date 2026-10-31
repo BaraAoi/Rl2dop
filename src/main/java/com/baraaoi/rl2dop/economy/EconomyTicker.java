@@ -1,6 +1,7 @@
 package com.baraaoi.rl2dop.economy;
 
 import com.baraaoi.rl2dop.Rl2dopConfig;
+import com.baraaoi.rl2dop.entity.Profession;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 
@@ -84,6 +85,70 @@ public final class EconomyTicker {
 			}
 			if (settlement.buildProgress >= 100) {
 				SettlementService.assignHomes(level, settlement);
+			}
+			state.setDirty();
+		}
+		workshopStep(server, state);
+	}
+
+	/**
+	 * Мастерские работают сами. Каждое рабочее строение раз в цикл рынка даёт продукт, если в
+	 * поселении есть работник этой профессии, — и потребляет сырьё, поднимая на него спрос.
+	 * Так шахта, ферма, лесопилка и мастерская полезны, даже если житель ещё идёт к ним.
+	 */
+	private static void workshopStep(MinecraftServer server, EconomyState state) {
+		if (!Rl2dopConfig.workshopsAutoWork) {
+			return;
+		}
+		for (Settlement settlement : state.all()) {
+			if (settlement.workSites.isEmpty()) {
+				continue;
+			}
+			ServerLevel level = Displays.levelOf(server, settlement.dimension);
+			if (level == null) {
+				continue;
+			}
+			for (Map.Entry<String, String> site : new ArrayList<>(settlement.workSites.entrySet())) {
+				Profession profession = Profession.byId(site.getKey());
+				int workers = settlement.jobCount(profession);
+				if (workers <= 0) {
+					continue;
+				}
+				if (profession.consumes()) {
+					String input = profession.consumeItem();
+					int need = Math.max(1, profession.consumeAmount() * workers);
+					if (settlement.warehouse(input) >= need) {
+						settlement.takeWarehouse(input, need);
+					} else if (settlement.stock(input) >= need) {
+						settlement.takeStock(input, need);
+					} else {
+						// нечего переработать — мастерская встаёт, и табличка это показывает
+						settlement.addDemand(input, Math.max(1, need / 2));
+						continue;
+					}
+				}
+				if (profession.produces()) {
+					int amount = profession.produceAmount() * workers;
+					settlement.addStock(profession.produceItem(), amount);
+					settlement.addDemand(profession.produceItem(), -amount);
+				}
+				if (profession == Profession.MINER) {
+					int extra = Math.max(0, Rl2dopConfig.workshopYield) * workers;
+					settlement.addStock("minecraft:cobblestone", extra);
+					settlement.addDemand("minecraft:cobblestone", -extra);
+					if (level.random.nextInt(3) == 0) {
+						settlement.addStock("minecraft:coal", workers);
+						settlement.addDemand("minecraft:coal", -workers);
+					}
+					if (level.random.nextInt(4) == 0) {
+						settlement.addStock("minecraft:iron_ingot", workers);
+						settlement.addDemand("minecraft:iron_ingot", -workers);
+					}
+				}
+				if (profession == Profession.FARMER && level.random.nextInt(2) == 0) {
+					settlement.addStock("minecraft:carrot", workers);
+					settlement.addDemand("minecraft:carrot", -workers);
+				}
 			}
 			state.setDirty();
 		}

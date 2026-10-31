@@ -64,6 +64,8 @@ public final class Rl2dopConfig {
 	public static boolean starterWorkshops = true;
 	/** Побочный добыток мастерской шахтёра (2 = флинт/руда каждый третий цикл). */
 	public static int workshopYield = 1;
+	/** Мастерские работают сами: раз в цикл рынка дают продукт, если в поселении есть работник. */
+	public static boolean workshopsAutoWork = true;
 	/** Строитель своими руками ставит новые жилые дома (ратуша строить не просит). */
 	public static boolean builderExpands = true;
 	/** Больше жилых домов строитель не ставит. */
@@ -129,6 +131,7 @@ public final class Rl2dopConfig {
 			instantTownHall = boolOr(root, "instantTownHall", instantTownHall);
 			starterWorkshops = boolOr(root, "starterWorkshops", starterWorkshops);
 			workshopYield = intOr(root, "workshopYield", workshopYield);
+			workshopsAutoWork = boolOr(root, "workshopsAutoWork", workshopsAutoWork);
 			builderExpands = boolOr(root, "builderExpands", builderExpands);
 			maxVillageHouses = intOr(root, "maxVillageHouses", maxVillageHouses);
 			infiniteNpcMoney = boolOr(root, "infiniteNpcMoney", infiniteNpcMoney);
@@ -263,6 +266,7 @@ public final class Rl2dopConfig {
 			root.addProperty("instantTownHall", instantTownHall);
 			root.addProperty("starterWorkshops", starterWorkshops);
 			root.addProperty("workshopYield", workshopYield);
+			root.addProperty("workshopsAutoWork", workshopsAutoWork);
 			root.addProperty("builderExpands", builderExpands);
 			root.addProperty("maxVillageHouses", maxVillageHouses);
 			root.addProperty("infiniteNpcMoney", infiniteNpcMoney);
