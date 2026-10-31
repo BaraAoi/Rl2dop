@@ -71,16 +71,15 @@ public final class Rl2dopCommands {
 	private static int spawnNpc(CommandContext<CommandSourceStack> context, String professionId, String name)
 			throws CommandSyntaxException {
 		CommandSourceStack source = context.getSource();
-		ServerPlayer player = source.getPlayerOrException();
-		ServerLevel level = (ServerLevel) source.getLevel();
-		Settlement settlement = SettlementService.forPlayer(player);
+		ServerLevel level = source.getLevel();
+		BlockPos pos = targetPos(source);
+		Settlement settlement = settlementAt(source, pos);
 		if (settlement == null) {
 			source.sendFailure(Component.literal("Нет поселения рядом. Создай: /settle_spawn <имя>"));
 			return 0;
 		}
 		Profession profession = Profession.byId(professionId);
-		CitizenEntity citizen = SettlementService.spawnCitizen(level, settlement, profession,
-				player.blockPosition(), name);
+		CitizenEntity citizen = SettlementService.spawnCitizen(level, settlement, profession, pos, name);
 		if (citizen == null) {
 			source.sendFailure(Component.literal("Не удалось создать NPC."));
 			return 0;
@@ -175,13 +174,13 @@ public final class Rl2dopCommands {
 	private static int settleSpawn(CommandContext<CommandSourceStack> context, String name)
 			throws CommandSyntaxException {
 		CommandSourceStack source = context.getSource();
-		ServerPlayer player = source.getPlayerOrException();
-		ServerLevel level = (ServerLevel) source.getLevel();
-		Settlement settlement = EconomyState.get(source.getServer()).createSettlement(name,
-				player.blockPosition(), level.dimension().location().toString());
-		Displays.ensureBoard(level, settlement, player.blockPosition().above(2));
+		ServerLevel level = source.getLevel();
+		BlockPos pos = targetPos(source);
+		Settlement settlement = EconomyState.get(source.getServer()).createSettlement(name, pos,
+				level.dimension().location().toString());
+		Displays.ensureBoard(level, settlement, pos.above(2));
 		source.sendSuccess(() -> Component.literal("§aПоселение «§f" + settlement.displayName()
-				+ "§a» создано. Ратуша: §f" + player.blockPosition().toShortString()
+				+ "§a» создано. Ратуша: §f" + pos.toShortString()
 				+ "§a. Дальше: §f/settle_bind§a или §f/spawn_npc farmer"), true);
 		return 1;
 	}
@@ -197,9 +196,8 @@ public final class Rl2dopCommands {
 	private static int settleBind(CommandContext<CommandSourceStack> context, String name)
 			throws CommandSyntaxException {
 		CommandSourceStack source = context.getSource();
-		ServerPlayer player = source.getPlayerOrException();
-		ServerLevel level = (ServerLevel) source.getLevel();
-		String message = SettlementService.bindVillage(level, player.blockPosition(), name);
+		ServerLevel level = source.getLevel();
+		String message = SettlementService.bindVillage(level, targetPos(source), name);
 		source.sendSuccess(() -> Component.literal("§a" + message), true);
 		return 1;
 	}
@@ -341,15 +339,14 @@ public final class Rl2dopCommands {
 						.suggests((context, builder) -> SharedSuggestionProvider.suggest(Rl2dopConfig.goodIds(), builder))
 						.executes(context -> {
 							CommandSourceStack source = context.getSource();
-							ServerPlayer player = source.getPlayerOrException();
-							ServerLevel level = (ServerLevel) source.getLevel();
+							ServerLevel level = source.getLevel();
 							String item = StringArgumentType.getString(context, "item");
-							Settlement settlement = SettlementService.forPlayer(player);
+							BlockPos pos = targetPos(source).above();
+							Settlement settlement = settlementAt(source, pos);
 							if (settlement == null) {
 								source.sendFailure(Component.literal("Нет поселения."));
 								return 0;
 							}
-							BlockPos pos = player.blockPosition().above();
 							if (!Displays.addShelf(level, settlement, pos, item)) {
 								source.sendFailure(Component.literal("Товар не в конфиге: " + item));
 								return 0;
@@ -365,14 +362,14 @@ public final class Rl2dopCommands {
 				.requires(source -> source.hasPermission(2))
 				.executes(context -> {
 					CommandSourceStack source = context.getSource();
-					ServerPlayer player = source.getPlayerOrException();
-					ServerLevel level = (ServerLevel) source.getLevel();
-					Settlement settlement = SettlementService.forPlayer(player);
+					ServerLevel level = source.getLevel();
+					BlockPos pos = targetPos(source).above(2);
+					Settlement settlement = settlementAt(source, pos);
 					if (settlement == null) {
 						source.sendFailure(Component.literal("Нет поселения."));
 						return 0;
 					}
-					Displays.ensureBoard(level, settlement, player.blockPosition().above(2));
+					Displays.ensureBoard(level, settlement, pos);
 					source.sendSuccess(() -> Component.literal("§aТабло ратуши обновлено."), true);
 					return 1;
 				}));
@@ -383,13 +380,12 @@ public final class Rl2dopCommands {
 				.requires(source -> source.hasPermission(2))
 				.executes(context -> {
 					CommandSourceStack source = context.getSource();
-					ServerPlayer player = source.getPlayerOrException();
-					Settlement settlement = SettlementService.forPlayer(player);
+					BlockPos pos = targetPos(source);
+					Settlement settlement = settlementAt(source, pos);
 					if (settlement == null) {
 						source.sendFailure(Component.literal("Нет поселения."));
 						return 0;
 					}
-					BlockPos pos = player.blockPosition();
 					settlement.setShop(pos);
 					EconomyState.get(source.getServer()).setDirty();
 					source.sendSuccess(() -> Component.literal("§aМагазин поселения «" + settlement.displayName()
@@ -403,10 +399,10 @@ public final class Rl2dopCommands {
 				.requires(source -> source.hasPermission(2))
 				.executes(context -> {
 					CommandSourceStack source = context.getSource();
-					ServerPlayer player = source.getPlayerOrException();
-					ServerLevel level = player.serverLevel();
+					ServerLevel level = source.getLevel();
+					BlockPos center = targetPos(source);
 					List<CitizenEntity> citizens = level.getEntitiesOfClass(CitizenEntity.class,
-							player.getBoundingBox().inflate(96.0D));
+							new net.minecraft.world.phys.AABB(center).inflate(96.0D));
 					if (citizens.isEmpty()) {
 						source.sendSuccess(() -> Component.literal("§7NPC рядом нет."), false);
 						return 0;
@@ -468,9 +464,22 @@ public final class Rl2dopCommands {
 				}));
 	}
 
-	private static Settlement currentSettlement(CommandContext<CommandSourceStack> context)
-			throws CommandSyntaxException {
-		ServerPlayer player = context.getSource().getPlayerOrException();
-		return SettlementService.forPlayer(player);
+	private static Settlement currentSettlement(CommandContext<CommandSourceStack> context) {
+		CommandSourceStack source = context.getSource();
+		return settlementAt(source, targetPos(source));
+	}
+
+	private static Settlement settlementAt(CommandSourceStack source, BlockPos pos) {
+		Settlement settlement = SettlementService.nearest(source.getLevel(), pos);
+		if (settlement != null) {
+			return settlement;
+		}
+		return EconomyState.get(source.getServer()).defaultSettlement();
+	}
+
+	/** Позиция источника: игрок или блок консоли/командного блока. */
+	private static BlockPos targetPos(CommandSourceStack source) {
+		ServerPlayer player = source.getPlayer();
+		return player != null ? player.blockPosition() : BlockPos.containing(source.getPosition());
 	}
 }
