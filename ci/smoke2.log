@@ -3,17 +3,17 @@ Calculating task graph as configuration cache cannot be reused because the file 
 > Configure project :
 Fabric Loom: 1.19.3
 
-> Task :generateRemapClasspath UP-TO-DATE
-> Task :processResources UP-TO-DATE
 > Task :generateLog4jConfig UP-TO-DATE
+> Task :generateRemapClasspath UP-TO-DATE
 > Task :compileJava UP-TO-DATE
+> Task :processResources UP-TO-DATE
 > Task :classes UP-TO-DATE
 > Task :generateDLIConfig UP-TO-DATE
 > Task :configureLaunch UP-TO-DATE
 
 > Task :runServer
-[21:46:21] [main/INFO] (FabricLoader/GameProvider) Loading Minecraft 1.21.1 with Fabric Loader 0.20.1
-[21:46:21] [main/INFO] (FabricLoader) Loading 44 mods:
+[21:57:16] [main/INFO] (FabricLoader/GameProvider) Loading Minecraft 1.21.1 with Fabric Loader 0.20.1
+[21:57:16] [main/INFO] (FabricLoader) Loading 44 mods:
 	- fabric-api 0.116.17+1.21.1
 	- fabric-api-base 0.4.42+6573ed8c19
 	- fabric-api-lookup-api-v1 1.6.72+7b3d111d19
@@ -57,10 +57,10 @@ Fabric Loom: 1.19.3
 	- java 25
 	- minecraft 1.21.1
 	- mixinextras 0.5.5
-	- rl2dop 0.4.2
-[21:46:21] [main/INFO] (FabricLoader/Mixin) SpongePowered MIXIN Subsystem Version=0.8.7 Source=file:/home/runner/.gradle/caches/modules-2/files-2.1/net.fabricmc/sponge-mixin/0.17.5+mixin.0.8.7/cef8519a91129d0c21fa03bb9378f0e8ca810e5/sponge-mixin-0.17.5+mixin.0.8.7.jar Service=Knot/Fabric Env=SERVER
-[21:46:22] [main/INFO] (FabricLoader/Mixin) Loaded Fabric development mappings for mixin remapper!
-[21:46:22] [main/INFO] (FabricLoader/MixinExtras|Service) Initializing MixinExtras via com.llamalad7.mixinextras.service.MixinExtrasServiceImpl(version=0.5.5).
+	- rl2dop 0.4.3
+[21:57:16] [main/INFO] (FabricLoader/Mixin) SpongePowered MIXIN Subsystem Version=0.8.7 Source=file:/home/runner/.gradle/caches/modules-2/files-2.1/net.fabricmc/sponge-mixin/0.17.5+mixin.0.8.7/cef8519a91129d0c21fa03bb9378f0e8ca810e5/sponge-mixin-0.17.5+mixin.0.8.7.jar Service=Knot/Fabric Env=SERVER
+[21:57:16] [main/INFO] (FabricLoader/Mixin) Loaded Fabric development mappings for mixin remapper!
+[21:57:17] [main/INFO] (FabricLoader/MixinExtras|Service) Initializing MixinExtras via com.llamalad7.mixinextras.service.MixinExtrasServiceImpl(version=0.5.5).
 WARNING: A restricted method in java.lang.System has been called
 WARNING: java.lang.System::load has been called by com.sun.jna.Native in an unnamed module (file:/home/runner/.gradle/caches/modules-2/files-2.1/net.java.dev.jna/jna/5.14.0/67bf3eaea4f0718cb376a181a629e5f88fa1c9dd/jna-5.14.0.jar)
 WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
@@ -70,159 +70,159 @@ WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
 WARNING: sun.misc.Unsafe::objectFieldOffset has been called by com.google.common.util.concurrent.AbstractFuture$UnsafeAtomicHelper (file:/home/runner/.gradle/caches/modules-2/files-2.1/com.google.guava/guava/32.1.2-jre/5e64ec7e056456bef3a4bc4c6fdaef71e8ab6318/guava-32.1.2-jre.jar)
 WARNING: Please consider reporting this to the maintainers of class com.google.common.util.concurrent.AbstractFuture$UnsafeAtomicHelper
 WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
-[21:46:26] [main/INFO] (rl2dop) [rl2dop] конфиг загружен: 13 товаров, 12 зарплат
-[21:46:26] [main/INFO] (rl2dop) [rl2dop] экономика загружена
-[21:46:26] [main/INFO] (Minecraft) Environment: Environment[sessionHost=https://sessionserver.mojang.com, servicesHost=https://api.minecraftservices.com, name=PROD]
-[21:46:27] [main/INFO] (Minecraft) Loaded 1290 recipes
-[21:46:27] [main/INFO] (Minecraft) Loaded 1399 advancements
-[21:46:27] [main/INFO] (BiomeModificationImpl) Applied 0 biome modifications to 0 of 64 new biomes in 904.1 μs
-[21:46:27] [Server thread/INFO] (Minecraft) Starting minecraft server version 1.21.1
-[21:46:27] [Server thread/INFO] (Minecraft) Loading properties
-[21:46:27] [Server thread/INFO] (Minecraft) Default game type: SURVIVAL
-[21:46:27] [Server thread/INFO] (Minecraft) Generating keypair
-[21:46:28] [Server thread/INFO] (Minecraft) Starting Minecraft server on *:25565
-[21:46:28] [Server thread/INFO] (Minecraft) Using epoll channel type
-[21:46:28] [Server thread/WARN] (Minecraft) **** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!
-[21:46:28] [Server thread/WARN] (Minecraft) The server will make no attempt to authenticate usernames. Beware.
-[21:46:28] [Server thread/WARN] (Minecraft) While this makes the game possible to play without internet access, it also opens up the ability for hackers to connect with any username they choose.
-[21:46:28] [Server thread/WARN] (Minecraft) To change this, set "online-mode" to "true" in the server.properties file.
-[21:46:28] [Server thread/INFO] (Minecraft) Preparing level "world"
-[21:46:28] [Server thread/INFO] (Minecraft) Preparing start region for dimension minecraft:overworld
-[21:46:28] [Worker-Main-2/INFO] (Minecraft) Preparing spawn area: 0%
-[21:46:28] [Server thread/INFO] (Minecraft) Time elapsed: 309 ms
-[21:46:28] [Server thread/INFO] (Minecraft) Done (0.442s)! For help, type "help"
-[21:46:28] [Server thread/INFO] (rl2dop) [rl2dop] сохранение загружено: 2 поселений, эмиссия 500
-[21:46:33] [Server thread/INFO] (Minecraft) Set the time to 6000
-[21:46:35] [Server thread/INFO] (Minecraft) §aПоселение перенесено на ровное место: §f0, -60, 0§a → §f18, -60, -15§a (перепад §f11§a блоков), постройка §f100%§a.
-[21:46:39] [Server thread/INFO] (Minecraft) §7аудит §fsmoketown§7: площадок 8 (домов 7), кривых 0, без пола 0, вода под 0, без дорожки 1 · шагов дороги 128, макс перепад 1, разрывов 48 · нарушений 1 · калитка 0,-3
-[21:46:41] [Server thread/INFO] (Minecraft) §7Поселение SmokeTown (smoketown) dim=minecraft:overworld
-[21:46:41] [Server thread/INFO] (Minecraft) §7  казна=917м §a(бесконечная)§7  NPC=16  постройка=100%  лавка=0, -59, 0  домов=7  мастерских=4  табличек=4  таверна=9, -56, -29  без работы=4  вакансий=0  мест под дома=3
-[21:46:41] [Server thread/INFO] (Minecraft) §7  работа builder: 30,-59,-30
-[21:46:41] [Server thread/INFO] (Minecraft) §7  работа farmer: -30,-59,-33
-[21:46:41] [Server thread/INFO] (Minecraft) §7  работа lumberjack: -10,-59,-30
-[21:46:41] [Server thread/INFO] (Minecraft) §7  работа miner: 10,-59,-33
-[21:46:41] [Server thread/INFO] (Minecraft) §7  minecraft:bread: сток=21 цена=15.05 спрос=2
-[21:46:41] [Server thread/INFO] (Minecraft) §7  minecraft:wheat: сток=151 цена=1.32 спрос=0
-[21:46:41] [Server thread/INFO] (Minecraft) §7  minecraft:carrot: сток=56 цена=3.85 спрос=0
-[21:46:41] [Server thread/INFO] (Minecraft) §7  minecraft:oak_log: сток=4 цена=10.67 спрос=144
-[21:46:41] [Server thread/INFO] (Minecraft) §7  minecraft:iron_ingot: сток=34 цена=19.07 спрос=0
-[21:46:41] [Server thread/INFO] (Minecraft) §7  minecraft:cobblestone: сток=10 цена=4.97 спрос=140
-[21:46:41] [Server thread/INFO] (Minecraft) §7  minecraft:coal: сток=46 цена=4.66 спрос=0
-[21:46:41] [Server thread/INFO] (Minecraft) §7  minecraft:leather: сток=17 цена=15.66 спрос=0
-[21:46:41] [Server thread/INFO] (Minecraft) §7  minecraft:white_wool: сток=17 цена=12.53 спрос=0
-[21:46:41] [Server thread/INFO] (Minecraft) §7  minecraft:stick: сток=22 цена=5.40 спрос=0
-[21:46:41] [Server thread/INFO] (Minecraft) §7  minecraft:stone_sword: сток=3 цена=48.00 спрос=0
-[21:46:41] [Server thread/INFO] (Minecraft) §7  rl2dop:bandage: сток=8 цена=16.13 спрос=0
-[21:46:41] [Server thread/INFO] (Minecraft) §7  rl2dop:medkit: сток=4 цена=37.63 спрос=0
-[21:46:41] [Server thread/INFO] (Minecraft) §7загружено NPC рядом: 23 [Ганс/unemployed/smoketown, Ганс/unemployed/smoketown, Йорн/lumberjack/smokevillage, Анна/guard/smokevillage, Бруно/builder/smoketown, Мира/farmer/smoketown, Отто/unemployed/smoketown, Курт/unemployed/smoketown, Пауль/lumberjack/smoketown, Мира/trader/smoketown, Отто/cook/smoketown, Курт/guard/smoketown, Хельга/miner/smokevillage, Дитрих/builder/smokevillage, Курт/farmer/smokevillage, Фриц/trader/smokevillage, Тиль/mayor/smoketown, Фриц/miner/smoketown, Йорн/mayor/smokevillage, Дитрих/builder/smoketown, Марта/miner/smoketown, Йорн/lumberjack/smoketown, Ивар/cook/smokevillage]
-[21:46:44] [Server thread/INFO] (Minecraft) §aПостроено до §f100%§a (шаг §f40§a блоков), материалов съедено на этом шаге: §f12§a камня на складе.
-[21:46:47] [Server thread/INFO] (Minecraft) §aГлавой поселения «§fSmokeTown§a» назначен §fКлаус§a. Он стоит у табличек и скупает всё без торга (скупка +§f5%§a). Снять: §f/settle_mayor smoketown remove
-[21:46:50] [Server thread/INFO] (Minecraft) §aДом поставлен в §f-22, -60, -1§a. Домов в поселении: §f10§a, поселено жителей: §f15§a. Вход с южной стороны, внутри сундук и верстак. Откат: §f/settle_build <id> reset
-[21:46:53] [Server thread/INFO] (Minecraft) §7Поселение SmokeTown (smoketown) dim=minecraft:overworld
-[21:46:53] [Server thread/INFO] (Minecraft) §7  казна=917м §a(бесконечная)§7  NPC=18  постройка=100%  лавка=0, -59, 0  домов=10  мастерских=4  табличек=4  таверна=1, -59, -21  без работы=5  вакансий=0  мест под дома=0
-[21:46:53] [Server thread/INFO] (Minecraft) §7  работа builder: 30,-59,-30
-[21:46:53] [Server thread/INFO] (Minecraft) §7  работа farmer: -30,-59,-33
-[21:46:53] [Server thread/INFO] (Minecraft) §7  работа lumberjack: -10,-59,-30
-[21:46:53] [Server thread/INFO] (Minecraft) §7  работа miner: 10,-59,-33
-[21:46:53] [Server thread/INFO] (Minecraft) §7  minecraft:bread: сток=21 цена=15.15 спрос=0
-[21:46:53] [Server thread/INFO] (Minecraft) §7  minecraft:wheat: сток=160 цена=1.24 спрос=0
-[21:46:53] [Server thread/INFO] (Minecraft) §7  minecraft:carrot: сток=57 цена=3.71 спрос=0
-[21:46:53] [Server thread/INFO] (Minecraft) §7  minecraft:oak_log: сток=16 цена=17.47 спрос=128
-[21:46:53] [Server thread/INFO] (Minecraft) §7  minecraft:iron_ingot: сток=34 цена=18.92 спрос=0
-[21:46:53] [Server thread/INFO] (Minecraft) §7  minecraft:cobblestone: сток=16 цена=8.55 спрос=106
-[21:46:53] [Server thread/INFO] (Minecraft) §7  minecraft:coal: сток=48 цена=4.49 спрос=0
-[21:46:53] [Server thread/INFO] (Minecraft) §7  minecraft:leather: сток=17 цена=15.66 спрос=0
-[21:46:53] [Server thread/INFO] (Minecraft) §7  minecraft:white_wool: сток=17 цена=12.53 спрос=0
-[21:46:53] [Server thread/INFO] (Minecraft) §7  minecraft:stick: сток=22 цена=5.40 спрос=0
-[21:46:53] [Server thread/INFO] (Minecraft) §7  minecraft:stone_sword: сток=3 цена=48.00 спрос=0
-[21:46:53] [Server thread/INFO] (Minecraft) §7  rl2dop:bandage: сток=8 цена=16.13 спрос=0
-[21:46:53] [Server thread/INFO] (Minecraft) §7  rl2dop:medkit: сток=4 цена=37.63 спрос=0
-[21:46:53] [Server thread/INFO] (Minecraft) §7загружено NPC рядом: 24 [Ганс/unemployed/smoketown, Ганс/unemployed/smoketown, Йорн/lumberjack/smokevillage, Бруно/builder/smoketown, Мира/farmer/smoketown, Отто/unemployed/smoketown, Курт/unemployed/smoketown, Мира/trader/smoketown, Отто/cook/smoketown, Курт/guard/smoketown, Фриц/trader/smokevillage, Хельга/miner/smokevillage, Дитрих/builder/smokevillage, Курт/farmer/smokevillage, Анна/guard/smokevillage, Фриц/unemployed/smoketown, Фриц/miner/smoketown, Йорн/mayor/smokevillage, Дитрих/builder/smoketown, Марта/miner/smoketown, Йорн/lumberjack/smoketown, Ивар/cook/smokevillage, Пауль/lumberjack/smoketown, Клаус/mayor/smoketown]
-[21:46:56] [Server thread/INFO] (Minecraft) §eГанс§7 unemployed · §bwait_job§7 · waiting · кошелёк 30м · голод 100% · дом есть · до работы 27м · поселение smoketown
-[21:46:56] [Server thread/INFO] (Minecraft) §eГанс§7 unemployed · §bwait_job§7 · waiting · кошелёк 30м · голод 100% · дом есть · до работы 27м · поселение smoketown
-[21:46:56] [Server thread/INFO] (Minecraft) §eЙорн§7 lumberjack · §bwork§7 · walking · кошелёк 30м · голод 100% · дом нет — ночует в таверне · до работы 25м · поселение smokevillage
-[21:46:56] [Server thread/INFO] (Minecraft) §eБруно§7 builder · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 53м · поселение smoketown
-[21:46:56] [Server thread/INFO] (Minecraft) §eМира§7 farmer · §bbreak§7 · walking · кошелёк 13м · голод 100% · дом есть · до работы 29м · поселение smoketown
-[21:46:56] [Server thread/INFO] (Minecraft) §eОтто§7 unemployed · §bwait_job§7 · waiting · кошелёк 30м · голод 100% · дом есть · до работы 23м · поселение smoketown
-[21:46:56] [Server thread/INFO] (Minecraft) §eКурт§7 unemployed · §bwait_job§7 · waiting · кошелёк 30м · голод 100% · дом есть · до работы 22м · поселение smoketown
-[21:46:56] [Server thread/INFO] (Minecraft) §eМира§7 trader · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 15м · поселение smoketown
-[21:46:56] [Server thread/INFO] (Minecraft) §eОтто§7 cook · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 14м · поселение smoketown
-[21:46:56] [Server thread/INFO] (Minecraft) §eКурт§7 guard · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 15м · поселение smoketown
-[21:46:56] [Server thread/INFO] (Minecraft) §eФриц§7 trader · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 13м · поселение smokevillage
-[21:46:56] [Server thread/INFO] (Minecraft) §eХельга§7 miner · §bbreak§7 · idle · кошелёк 13м · голод 100% · дом нет — ночует в таверне · до работы 33м · поселение smokevillage
-[21:46:56] [Server thread/INFO] (Minecraft) §eДитрих§7 builder · §bbreak§7 · idle · кошелёк 13м · голод 100% · дом нет — ночует в таверне · до работы 42м · поселение smokevillage
-[21:46:56] [Server thread/INFO] (Minecraft) §eКурт§7 farmer · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 13м · поселение smokevillage
-[21:46:56] [Server thread/INFO] (Minecraft) §eАнна§7 guard · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 13м · поселение smokevillage
-[21:46:56] [Server thread/INFO] (Minecraft) §eФриц§7 unemployed · §bwork§7 · waiting · кошелёк 30м · голод 100% · дом есть · до работы 25м · поселение smoketown
-[21:46:56] [Server thread/INFO] (Minecraft) §eФриц§7 miner · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 29м · поселение smoketown
-[21:46:56] [Server thread/INFO] (Minecraft) §eЙорн§7 mayor · §bpost§7 · walking · кошелёк 100м · голод 100% · дом есть · до работы 1м · поселение smokevillage
-[21:46:56] [Server thread/INFO] (Minecraft) §eДитрих§7 builder · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 37м · поселение smoketown
-[21:46:56] [Server thread/INFO] (Minecraft) §eМарта§7 miner · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 29м · поселение smoketown
-[21:46:56] [Server thread/INFO] (Minecraft) §eЙорн§7 lumberjack · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 30м · поселение smoketown
-[21:46:56] [Server thread/INFO] (Minecraft) §eИвар§7 cook · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 9м · поселение smokevillage
-[21:46:56] [Server thread/INFO] (Minecraft) §eПауль§7 lumberjack · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 26м · поселение smoketown
-[21:46:56] [Server thread/INFO] (Minecraft) §eКлаус§7 mayor · §bwork§7 · idle · кошелёк 100м · голод 100% · дом есть · до работы 0м · поселение smoketown
-[21:46:56] [Server thread/INFO] (Minecraft) §7время дня §f6460§7 (перерыв с §f6000§7, сходка с §f12000§7, расписание §ftrue§7)
-[21:46:56] [Server thread/INFO] (Minecraft) §7smoketown: коек 20 из 10 дом(ов) · размещено 15/15 · без дома 0 · записей без NPC 2
-[21:47:09] [Server thread/INFO] (Minecraft) §eГанс§7 unemployed · §bwait_job§7 · waiting · кошелёк 30м · голод 100% · дом есть · до работы 27м · поселение smoketown
-[21:47:09] [Server thread/INFO] (Minecraft) §eГанс§7 unemployed · §bwait_job§7 · waiting · кошелёк 30м · голод 100% · дом есть · до работы 27м · поселение smoketown
-[21:47:09] [Server thread/INFO] (Minecraft) §eЙорн§7 lumberjack · §bwork§7 · walking · кошелёк 30м · голод 100% · дом нет — ночует в таверне · до работы 25м · поселение smokevillage
-[21:47:09] [Server thread/INFO] (Minecraft) §eБруно§7 builder · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 53м · поселение smoketown
-[21:47:09] [Server thread/INFO] (Minecraft) §eМира§7 farmer · §bbreak§7 · walking · кошелёк 13м · голод 100% · дом есть · до работы 29м · поселение smoketown
-[21:47:09] [Server thread/INFO] (Minecraft) §eОтто§7 unemployed · §bwait_job§7 · waiting · кошелёк 30м · голод 100% · дом есть · до работы 23м · поселение smoketown
-[21:47:09] [Server thread/INFO] (Minecraft) §eКурт§7 unemployed · §bwait_job§7 · waiting · кошелёк 30м · голод 100% · дом есть · до работы 22м · поселение smoketown
-[21:47:09] [Server thread/INFO] (Minecraft) §eМира§7 trader · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 15м · поселение smoketown
-[21:47:09] [Server thread/INFO] (Minecraft) §eОтто§7 cook · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 14м · поселение smoketown
-[21:47:09] [Server thread/INFO] (Minecraft) §eКурт§7 guard · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 15м · поселение smoketown
-[21:47:09] [Server thread/INFO] (Minecraft) §eФриц§7 trader · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 13м · поселение smokevillage
-[21:47:09] [Server thread/INFO] (Minecraft) §eХельга§7 miner · §bbreak§7 · idle · кошелёк 13м · голод 100% · дом нет — ночует в таверне · до работы 33м · поселение smokevillage
-[21:47:09] [Server thread/INFO] (Minecraft) §eДитрих§7 builder · §bbreak§7 · idle · кошелёк 13м · голод 100% · дом нет — ночует в таверне · до работы 42м · поселение smokevillage
-[21:47:09] [Server thread/INFO] (Minecraft) §eКурт§7 farmer · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 13м · поселение smokevillage
-[21:47:09] [Server thread/INFO] (Minecraft) §eАнна§7 guard · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 13м · поселение smokevillage
-[21:47:09] [Server thread/INFO] (Minecraft) §eФриц§7 unemployed · §bwork§7 · waiting · кошелёк 30м · голод 100% · дом есть · до работы 25м · поселение smoketown
-[21:47:09] [Server thread/INFO] (Minecraft) §eМарта§7 unemployed · §bwork§7 · waiting · кошелёк 30м · голод 100% · дом есть · до работы 25м · поселение smoketown
-[21:47:09] [Server thread/INFO] (Minecraft) §eФриц§7 miner · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 29м · поселение smoketown
-[21:47:09] [Server thread/INFO] (Minecraft) §eЙорн§7 mayor · §bpost§7 · walking · кошелёк 100м · голод 100% · дом есть · до работы 1м · поселение smokevillage
-[21:47:09] [Server thread/INFO] (Minecraft) §eДитрих§7 builder · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 37м · поселение smoketown
-[21:47:09] [Server thread/INFO] (Minecraft) §eМарта§7 miner · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 29м · поселение smoketown
-[21:47:09] [Server thread/INFO] (Minecraft) §eЙорн§7 lumberjack · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 30м · поселение smoketown
-[21:47:09] [Server thread/INFO] (Minecraft) §eИвар§7 cook · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 9м · поселение smokevillage
-[21:47:09] [Server thread/INFO] (Minecraft) §eПауль§7 lumberjack · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 26м · поселение smoketown
-[21:47:09] [Server thread/INFO] (Minecraft) §eКлаус§7 mayor · §bwork§7 · idle · кошелёк 100м · голод 100% · дом есть · до работы 0м · поселение smoketown
-[21:47:09] [Server thread/INFO] (Minecraft) §7время дня §f6720§7 (перерыв с §f6000§7, сходка с §f12000§7, расписание §ftrue§7)
-[21:47:09] [Server thread/INFO] (Minecraft) §7smoketown: коек 20 из 10 дом(ов) · размещено 16/16 · без дома 0 · записей без NPC 2
-[21:47:12] [Server thread/INFO] (Minecraft) §8в поселение smoketown пришёл Бруно — поселился в таверне и ждёт работу
-[21:47:12] [Server thread/INFO] (Minecraft) §8в поселение smoketown прибыл Мира (ждёт работу у таверны)
-[21:47:12] [Server thread/INFO] (Minecraft) §8в поселение smoketown прибыл Отто (ждёт работу у таверны)
-[21:47:12] [Server thread/INFO] (Minecraft) §8в поселение smoketown прибыл Курт (ждёт работу у таверны)
-[21:47:12] [Server thread/INFO] (Minecraft) §8поселение smoketown: 2 жител(ям) негде жить — выбрали участок под дом 26, -60, 22
-[21:47:12] [Server thread/INFO] (Minecraft) §8поселение smoketown: Бруно берёт топор и идёт на участок 26, -60, 22
-[21:47:12] [Server thread/INFO] (Minecraft) §8поселение smoketown: Мира дождался вакансии и стал: farmer
-[21:47:12] [Server thread/INFO] (Minecraft) §8поселение SmokeVillage (smokevillage) основано в 0, -49, 0 [minecraft:overworld]
-[21:47:12] [Server thread/INFO] (Minecraft) §8привязка к ванильной деревне: SmokeVillage (колокол)
-[21:47:12] [Server thread/INFO] (Minecraft) §8поселение smokevillage: главой стал Йорн у табличек
-[21:47:12] [Server thread/INFO] (Minecraft) §8в поселение smokevillage приехал Хельга — сразу на работу: miner
-[21:47:12] [Server thread/INFO] (Minecraft) §8поселение smokevillage: 1 жител(ям) негде жить — выбрали участок под дом -32, -57, 8
-[21:47:12] [Server thread/INFO] (Minecraft) §8в поселение smokevillage приехал Дитрих — сразу на работу: builder
-[21:47:12] [Server thread/INFO] (Minecraft) §8в поселение smokevillage приехал Йорн — сразу на работу: lumberjack
-[21:47:12] [Server thread/INFO] (Minecraft) §8в поселение smoketown прибыл Ганс (ждёт работу у таверны)
-[21:47:12] [Server thread/INFO] (Minecraft) §8в поселение smoketown прибыл Ганс (ждёт работу у таверны)
-[21:47:12] [Server thread/INFO] (Minecraft) §8поселение smoketown: стройка закопала жителей, спасено: 6
-[21:47:12] [Server thread/INFO] (Minecraft) §8поселение smoketown: стройка закопала жителей, спасено: 5
-[21:47:12] [Server thread/INFO] (Minecraft) §8в поселение smoketown пришёл Фриц — поселился в таверне и ждёт работу
-[21:47:12] [Server thread/INFO] (Minecraft) §8в поселение smoketown пришёл Марта — поселился в таверне и ждёт работу
-[21:47:15] [Server thread/INFO] (Minecraft) Stopping the server
-[21:47:15] [Server thread/INFO] (Minecraft) Stopping server
-[21:47:15] [Server thread/INFO] (Minecraft) Saving players
-[21:47:15] [Server thread/INFO] (Minecraft) Saving worlds
-[21:47:15] [Server thread/INFO] (Minecraft) Saving chunks for level 'ServerLevel[world]'/minecraft:overworld
-[21:47:15] [Server thread/INFO] (Minecraft) Saving chunks for level 'ServerLevel[world]'/minecraft:the_nether
-[21:47:15] [Server thread/INFO] (Minecraft) Saving chunks for level 'ServerLevel[world]'/minecraft:the_end
-[21:47:15] [Server thread/INFO] (Minecraft) ThreadedAnvilChunkStorage (world): All chunks are saved
-[21:47:15] [Server thread/INFO] (Minecraft) ThreadedAnvilChunkStorage (DIM-1): All chunks are saved
-[21:47:15] [Server thread/INFO] (Minecraft) ThreadedAnvilChunkStorage (DIM1): All chunks are saved
-[21:47:15] [Server thread/INFO] (Minecraft) ThreadedAnvilChunkStorage: All dimensions are saved
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1793483180669.json
+[21:57:21] [main/INFO] (rl2dop) [rl2dop] конфиг загружен: 13 товаров, 12 зарплат
+[21:57:21] [main/INFO] (rl2dop) [rl2dop] экономика загружена
+[21:57:21] [main/INFO] (Minecraft) Environment: Environment[sessionHost=https://sessionserver.mojang.com, servicesHost=https://api.minecraftservices.com, name=PROD]
+[21:57:22] [main/INFO] (Minecraft) Loaded 1290 recipes
+[21:57:23] [main/INFO] (Minecraft) Loaded 1399 advancements
+[21:57:23] [main/INFO] (BiomeModificationImpl) Applied 0 biome modifications to 0 of 64 new biomes in 1.144 ms
+[21:57:23] [Server thread/INFO] (Minecraft) Starting minecraft server version 1.21.1
+[21:57:23] [Server thread/INFO] (Minecraft) Loading properties
+[21:57:23] [Server thread/INFO] (Minecraft) Default game type: SURVIVAL
+[21:57:23] [Server thread/INFO] (Minecraft) Generating keypair
+[21:57:23] [Server thread/INFO] (Minecraft) Starting Minecraft server on *:25565
+[21:57:23] [Server thread/INFO] (Minecraft) Using epoll channel type
+[21:57:23] [Server thread/WARN] (Minecraft) **** SERVER IS RUNNING IN OFFLINE/INSECURE MODE!
+[21:57:23] [Server thread/WARN] (Minecraft) The server will make no attempt to authenticate usernames. Beware.
+[21:57:23] [Server thread/WARN] (Minecraft) While this makes the game possible to play without internet access, it also opens up the ability for hackers to connect with any username they choose.
+[21:57:23] [Server thread/WARN] (Minecraft) To change this, set "online-mode" to "true" in the server.properties file.
+[21:57:23] [Server thread/INFO] (Minecraft) Preparing level "world"
+[21:57:23] [Server thread/INFO] (Minecraft) Preparing start region for dimension minecraft:overworld
+[21:57:24] [Worker-Main-1/INFO] (Minecraft) Preparing spawn area: 0%
+[21:57:24] [Server thread/INFO] (Minecraft) Time elapsed: 434 ms
+[21:57:24] [Server thread/INFO] (Minecraft) Done (0.587s)! For help, type "help"
+[21:57:24] [Server thread/INFO] (rl2dop) [rl2dop] сохранение загружено: 2 поселений, эмиссия 500
+[21:57:27] [Server thread/INFO] (Minecraft) Set the time to 6000
+[21:57:30] [Server thread/INFO] (Minecraft) §aПоселение перенесено на ровное место: §f0, -60, 0§a → §f18, -60, -15§a (перепад §f11§a блоков), постройка §f100%§a.
+[21:57:33] [Server thread/INFO] (Minecraft) §7аудит §fsmoketown§7: площадок 8 (домов 7), кривых 0, без пола 0, вода под 0, без дорожки 0 · шагов дороги 128, макс перепад 1, разрывов 48 · нарушений 0
+[21:57:35] [Server thread/INFO] (Minecraft) §7Поселение SmokeTown (smoketown) dim=minecraft:overworld
+[21:57:35] [Server thread/INFO] (Minecraft) §7  казна=934м §a(бесконечная)§7  NPC=16  постройка=100%  лавка=0, -59, 0  домов=7  мастерских=4  табличек=4  таверна=9, -56, -29  без работы=3  вакансий=0  мест под дома=3
+[21:57:35] [Server thread/INFO] (Minecraft) §7  работа builder: 30,-59,-30
+[21:57:35] [Server thread/INFO] (Minecraft) §7  работа farmer: -30,-59,-33
+[21:57:35] [Server thread/INFO] (Minecraft) §7  работа lumberjack: -10,-59,-30
+[21:57:35] [Server thread/INFO] (Minecraft) §7  работа miner: 10,-59,-33
+[21:57:35] [Server thread/INFO] (Minecraft) §7  minecraft:bread: сток=20 цена=15.68 спрос=4
+[21:57:35] [Server thread/INFO] (Minecraft) §7  minecraft:wheat: сток=148 цена=1.35 спрос=0
+[21:57:35] [Server thread/INFO] (Minecraft) §7  minecraft:carrot: сток=53 цена=3.91 спрос=0
+[21:57:35] [Server thread/INFO] (Minecraft) §7  minecraft:oak_log: сток=8 цена=14.87 спрос=138
+[21:57:35] [Server thread/INFO] (Minecraft) §7  minecraft:iron_ingot: сток=29 цена=23.19 спрос=0
+[21:57:35] [Server thread/INFO] (Minecraft) §7  minecraft:cobblestone: сток=20 цена=12.00 спрос=134
+[21:57:35] [Server thread/INFO] (Minecraft) §7  minecraft:coal: сток=59 цена=3.52 спрос=0
+[21:57:35] [Server thread/INFO] (Minecraft) §7  minecraft:leather: сток=17 цена=15.66 спрос=0
+[21:57:35] [Server thread/INFO] (Minecraft) §7  minecraft:white_wool: сток=17 цена=12.53 спрос=0
+[21:57:35] [Server thread/INFO] (Minecraft) §7  minecraft:stick: сток=22 цена=5.40 спрос=0
+[21:57:35] [Server thread/INFO] (Minecraft) §7  minecraft:stone_sword: сток=3 цена=48.00 спрос=0
+[21:57:35] [Server thread/INFO] (Minecraft) §7  rl2dop:bandage: сток=8 цена=16.13 спрос=0
+[21:57:35] [Server thread/INFO] (Minecraft) §7  rl2dop:medkit: сток=4 цена=37.63 спрос=0
+[21:57:35] [Server thread/INFO] (Minecraft) §7загружено NPC рядом: 23 [Ганс/unemployed/smoketown, Аста/unemployed/smoketown, Ивар/lumberjack/smokevillage, Пауль/lumberjack/smoketown, Анна/builder/smoketown, Фриц/builder/smoketown, Анна/farmer/smoketown, Тиль/unemployed/smoketown, Бруно/cook/smoketown, Курт/trader/smoketown, Лина/miner/smokevillage, Ганс/builder/smokevillage, Фриц/cook/smokevillage, Ивар/farmer/smokevillage, Дитрих/trader/smokevillage, Мира/guard/smokevillage, Зельда/mayor/smoketown, Марта/mayor/smokevillage, Фриц/miner/smoketown, Ганс/builder/smoketown, Курт/miner/smoketown, Хельга/guard/smoketown, Лина/lumberjack/smoketown]
+[21:57:38] [Server thread/INFO] (Minecraft) §aПостроено до §f100%§a (шаг §f40§a блоков), материалов съедено на этом шаге: §f18§a камня на складе.
+[21:57:41] [Server thread/INFO] (Minecraft) §aГлавой поселения «§fSmokeTown§a» назначен §fИвар§a. Он стоит у табличек и скупает всё без торга (скупка +§f5%§a). Снять: §f/settle_mayor smoketown remove
+[21:57:44] [Server thread/INFO] (Minecraft) §aДом поставлен в §f-22, -60, -1§a. Домов в поселении: §f10§a, поселено жителей: §f15§a. Вход с южной стороны, внутри сундук и верстак. Откат: §f/settle_build <id> reset
+[21:57:47] [Server thread/INFO] (Minecraft) §7Поселение SmokeTown (smoketown) dim=minecraft:overworld
+[21:57:47] [Server thread/INFO] (Minecraft) §7  казна=934м §a(бесконечная)§7  NPC=18  постройка=100%  лавка=0, -59, 0  домов=10  мастерских=4  табличек=4  таверна=1, -59, -21  без работы=4  вакансий=0  мест под дома=0
+[21:57:47] [Server thread/INFO] (Minecraft) §7  работа builder: 30,-59,-30
+[21:57:47] [Server thread/INFO] (Minecraft) §7  работа farmer: -30,-59,-33
+[21:57:47] [Server thread/INFO] (Minecraft) §7  работа lumberjack: -10,-59,-30
+[21:57:47] [Server thread/INFO] (Minecraft) §7  работа miner: 10,-59,-33
+[21:57:47] [Server thread/INFO] (Minecraft) §7  minecraft:bread: сток=20 цена=15.91 спрос=0
+[21:57:47] [Server thread/INFO] (Minecraft) §7  minecraft:wheat: сток=157 цена=1.27 спрос=0
+[21:57:47] [Server thread/INFO] (Minecraft) §7  minecraft:carrot: сток=54 цена=3.84 спрос=0
+[21:57:47] [Server thread/INFO] (Minecraft) §7  minecraft:oak_log: сток=20 цена=19.53 спрос=122
+[21:57:47] [Server thread/INFO] (Minecraft) §7  minecraft:iron_ingot: сток=29 цена=23.14 спрос=0
+[21:57:47] [Server thread/INFO] (Minecraft) §7  minecraft:cobblestone: сток=14 цена=12.00 спрос=100
+[21:57:47] [Server thread/INFO] (Minecraft) §7  minecraft:coal: сток=61 цена=3.41 спрос=0
+[21:57:47] [Server thread/INFO] (Minecraft) §7  minecraft:leather: сток=17 цена=15.66 спрос=0
+[21:57:47] [Server thread/INFO] (Minecraft) §7  minecraft:white_wool: сток=17 цена=12.53 спрос=0
+[21:57:47] [Server thread/INFO] (Minecraft) §7  minecraft:stick: сток=22 цена=5.40 спрос=0
+[21:57:47] [Server thread/INFO] (Minecraft) §7  minecraft:stone_sword: сток=3 цена=48.00 спрос=0
+[21:57:47] [Server thread/INFO] (Minecraft) §7  rl2dop:bandage: сток=8 цена=16.13 спрос=0
+[21:57:47] [Server thread/INFO] (Minecraft) §7  rl2dop:medkit: сток=4 цена=37.63 спрос=0
+[21:57:47] [Server thread/INFO] (Minecraft) §7загружено NPC рядом: 24 [Ганс/unemployed/smoketown, Аста/unemployed/smoketown, Ивар/lumberjack/smokevillage, Пауль/lumberjack/smoketown, Анна/builder/smoketown, Фриц/builder/smoketown, Анна/farmer/smoketown, Тиль/unemployed/smoketown, Бруно/cook/smoketown, Курт/trader/smoketown, Ивар/farmer/smokevillage, Хельга/guard/smoketown, Дитрих/trader/smokevillage, Лина/miner/smokevillage, Ганс/builder/smokevillage, Фриц/cook/smokevillage, Мира/guard/smokevillage, Тиль/unemployed/smoketown, Марта/mayor/smokevillage, Фриц/miner/smoketown, Ганс/builder/smoketown, Курт/miner/smoketown, Лина/lumberjack/smoketown, Ивар/mayor/smoketown]
+[21:57:50] [Server thread/INFO] (Minecraft) §eГанс§7 unemployed · §bwait_job§7 · waiting · кошелёк 30м · голод 100% · дом есть · до работы 27м · поселение smoketown
+[21:57:50] [Server thread/INFO] (Minecraft) §eАста§7 unemployed · §bwait_job§7 · waiting · кошелёк 30м · голод 100% · дом есть · до работы 27м · поселение smoketown
+[21:57:50] [Server thread/INFO] (Minecraft) §eИвар§7 lumberjack · §bwork§7 · walking · кошелёк 30м · голод 100% · дом нет — ночует в таверне · до работы 25м · поселение smokevillage
+[21:57:50] [Server thread/INFO] (Minecraft) §eПауль§7 lumberjack · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 38м · поселение smoketown
+[21:57:50] [Server thread/INFO] (Minecraft) §eАнна§7 builder · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 51м · поселение smoketown
+[21:57:50] [Server thread/INFO] (Minecraft) §eФриц§7 builder · §bbreak§7 · walking · кошелёк 13м · голод 100% · дом есть · до работы 53м · поселение smoketown
+[21:57:50] [Server thread/INFO] (Minecraft) §eАнна§7 farmer · §bbreak§7 · walking · кошелёк 13м · голод 100% · дом есть · до работы 29м · поселение smoketown
+[21:57:50] [Server thread/INFO] (Minecraft) §eТиль§7 unemployed · §bwait_job§7 · waiting · кошелёк 30м · голод 100% · дом есть · до работы 21м · поселение smoketown
+[21:57:50] [Server thread/INFO] (Minecraft) §eБруно§7 cook · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 14м · поселение smoketown
+[21:57:50] [Server thread/INFO] (Minecraft) §eКурт§7 trader · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 15м · поселение smoketown
+[21:57:50] [Server thread/INFO] (Minecraft) §eИвар§7 farmer · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 13м · поселение smokevillage
+[21:57:50] [Server thread/INFO] (Minecraft) §eХельга§7 guard · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 16м · поселение smoketown
+[21:57:50] [Server thread/INFO] (Minecraft) §eДитрих§7 trader · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 9м · поселение smokevillage
+[21:57:50] [Server thread/INFO] (Minecraft) §eЛина§7 miner · §bbreak§7 · idle · кошелёк 13м · голод 100% · дом нет — ночует в таверне · до работы 33м · поселение smokevillage
+[21:57:50] [Server thread/INFO] (Minecraft) §eГанс§7 builder · §bbreak§7 · idle · кошелёк 13м · голод 100% · дом нет — ночует в таверне · до работы 43м · поселение smokevillage
+[21:57:50] [Server thread/INFO] (Minecraft) §eФриц§7 cook · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 10м · поселение smokevillage
+[21:57:50] [Server thread/INFO] (Minecraft) §eМира§7 guard · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 4м · поселение smokevillage
+[21:57:50] [Server thread/INFO] (Minecraft) §eТиль§7 unemployed · §bwork§7 · waiting · кошелёк 30м · голод 100% · дом есть · до работы 25м · поселение smoketown
+[21:57:50] [Server thread/INFO] (Minecraft) §eМарта§7 mayor · §bpost§7 · idle · кошелёк 100м · голод 100% · дом есть · до работы 1м · поселение smokevillage
+[21:57:50] [Server thread/INFO] (Minecraft) §eФриц§7 miner · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 33м · поселение smoketown
+[21:57:50] [Server thread/INFO] (Minecraft) §eГанс§7 builder · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 36м · поселение smoketown
+[21:57:50] [Server thread/INFO] (Minecraft) §eКурт§7 miner · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 29м · поселение smoketown
+[21:57:50] [Server thread/INFO] (Minecraft) §eЛина§7 lumberjack · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 30м · поселение smoketown
+[21:57:50] [Server thread/INFO] (Minecraft) §eИвар§7 mayor · §bwork§7 · idle · кошелёк 100м · голод 100% · дом есть · до работы 0м · поселение smoketown
+[21:57:50] [Server thread/INFO] (Minecraft) §7время дня §f6460§7 (перерыв с §f6000§7, сходка с §f12000§7, расписание §ftrue§7)
+[21:57:50] [Server thread/INFO] (Minecraft) §7smoketown: коек 20 из 10 дом(ов) · размещено 15/15 · без дома 0 · записей без NPC 2
+[21:58:03] [Server thread/INFO] (Minecraft) §eГанс§7 unemployed · §bwait_job§7 · waiting · кошелёк 30м · голод 100% · дом есть · до работы 27м · поселение smoketown
+[21:58:03] [Server thread/INFO] (Minecraft) §eАста§7 unemployed · §bwait_job§7 · waiting · кошелёк 30м · голод 100% · дом есть · до работы 27м · поселение smoketown
+[21:58:03] [Server thread/INFO] (Minecraft) §eИвар§7 lumberjack · §bwork§7 · walking · кошелёк 30м · голод 100% · дом нет — ночует в таверне · до работы 25м · поселение smokevillage
+[21:58:03] [Server thread/INFO] (Minecraft) §eПауль§7 lumberjack · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 38м · поселение smoketown
+[21:58:03] [Server thread/INFO] (Minecraft) §eАнна§7 builder · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 51м · поселение smoketown
+[21:58:03] [Server thread/INFO] (Minecraft) §eФриц§7 builder · §bbreak§7 · walking · кошелёк 13м · голод 100% · дом есть · до работы 53м · поселение smoketown
+[21:58:03] [Server thread/INFO] (Minecraft) §eАнна§7 farmer · §bbreak§7 · walking · кошелёк 13м · голод 100% · дом есть · до работы 29м · поселение smoketown
+[21:58:03] [Server thread/INFO] (Minecraft) §eТиль§7 unemployed · §bwait_job§7 · waiting · кошелёк 30м · голод 100% · дом есть · до работы 21м · поселение smoketown
+[21:58:03] [Server thread/INFO] (Minecraft) §eБруно§7 cook · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 14м · поселение smoketown
+[21:58:03] [Server thread/INFO] (Minecraft) §eКурт§7 trader · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 15м · поселение smoketown
+[21:58:03] [Server thread/INFO] (Minecraft) §eИвар§7 farmer · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 13м · поселение smokevillage
+[21:58:03] [Server thread/INFO] (Minecraft) §eХельга§7 guard · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 16м · поселение smoketown
+[21:58:03] [Server thread/INFO] (Minecraft) §eДитрих§7 trader · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 9м · поселение smokevillage
+[21:58:03] [Server thread/INFO] (Minecraft) §eЛина§7 miner · §bbreak§7 · idle · кошелёк 13м · голод 100% · дом нет — ночует в таверне · до работы 33м · поселение smokevillage
+[21:58:03] [Server thread/INFO] (Minecraft) §eГанс§7 builder · §bbreak§7 · idle · кошелёк 13м · голод 100% · дом нет — ночует в таверне · до работы 43м · поселение smokevillage
+[21:58:03] [Server thread/INFO] (Minecraft) §eФриц§7 cook · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 10м · поселение smokevillage
+[21:58:03] [Server thread/INFO] (Minecraft) §eМира§7 guard · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 4м · поселение smokevillage
+[21:58:03] [Server thread/INFO] (Minecraft) §eТиль§7 unemployed · §bwork§7 · waiting · кошелёк 30м · голод 100% · дом есть · до работы 25м · поселение smoketown
+[21:58:03] [Server thread/INFO] (Minecraft) §eФриц§7 unemployed · §bwork§7 · waiting · кошелёк 30м · голод 100% · дом есть · до работы 25м · поселение smoketown
+[21:58:03] [Server thread/INFO] (Minecraft) §eМарта§7 mayor · §bpost§7 · idle · кошелёк 100м · голод 100% · дом есть · до работы 1м · поселение smokevillage
+[21:58:03] [Server thread/INFO] (Minecraft) §eФриц§7 miner · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 33м · поселение smoketown
+[21:58:03] [Server thread/INFO] (Minecraft) §eГанс§7 builder · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 36м · поселение smoketown
+[21:58:03] [Server thread/INFO] (Minecraft) §eКурт§7 miner · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 29м · поселение smoketown
+[21:58:03] [Server thread/INFO] (Minecraft) §eЛина§7 lumberjack · §bbreak§7 · walking · кошелёк 30м · голод 100% · дом есть · до работы 30м · поселение smoketown
+[21:58:03] [Server thread/INFO] (Minecraft) §eИвар§7 mayor · §bwork§7 · idle · кошелёк 100м · голод 100% · дом есть · до работы 0м · поселение smoketown
+[21:58:03] [Server thread/INFO] (Minecraft) §7время дня §f6720§7 (перерыв с §f6000§7, сходка с §f12000§7, расписание §ftrue§7)
+[21:58:03] [Server thread/INFO] (Minecraft) §7smoketown: коек 20 из 10 дом(ов) · размещено 16/16 · без дома 0 · записей без NPC 2
+[21:58:06] [Server thread/INFO] (Minecraft) §8в поселение smoketown приехал Анна — сразу на работу: builder
+[21:58:06] [Server thread/INFO] (Minecraft) §8в поселение smoketown прибыл Фриц (ждёт работу у таверны)
+[21:58:06] [Server thread/INFO] (Minecraft) §8в поселение smoketown прибыл Анна (ждёт работу у таверны)
+[21:58:06] [Server thread/INFO] (Minecraft) §8в поселение smoketown прибыл Тиль (ждёт работу у таверны)
+[21:58:06] [Server thread/INFO] (Minecraft) §8поселение smoketown: 2 жител(ям) негде жить — выбрали участок под дом 26, -60, 22
+[21:58:06] [Server thread/INFO] (Minecraft) §8поселение smoketown: Фриц берёт топор и идёт на участок 26, -60, 22
+[21:58:06] [Server thread/INFO] (Minecraft) §8поселение SmokeVillage (smokevillage) основано в 0, -49, 0 [minecraft:overworld]
+[21:58:06] [Server thread/INFO] (Minecraft) §8привязка к ванильной деревне: SmokeVillage (колокол)
+[21:58:06] [Server thread/INFO] (Minecraft) §8поселение smoketown: Анна дождался вакансии и стал: farmer
+[21:58:06] [Server thread/INFO] (Minecraft) §8поселение smokevillage: главой стал Марта у табличек
+[21:58:06] [Server thread/INFO] (Minecraft) §8в поселение smokevillage приехал Лина — сразу на работу: miner
+[21:58:06] [Server thread/INFO] (Minecraft) §8поселение smokevillage: 1 жител(ям) негде жить — выбрали участок под дом -32, -57, 8
+[21:58:06] [Server thread/INFO] (Minecraft) §8в поселение smokevillage приехал Ганс — сразу на работу: builder
+[21:58:06] [Server thread/INFO] (Minecraft) §8в поселение smokevillage приехал Ивар — сразу на работу: lumberjack
+[21:58:06] [Server thread/INFO] (Minecraft) §8в поселение smoketown прибыл Ганс (ждёт работу у таверны)
+[21:58:06] [Server thread/INFO] (Minecraft) §8в поселение smoketown прибыл Аста (ждёт работу у таверны)
+[21:58:06] [Server thread/INFO] (Minecraft) §8поселение smoketown: стройка закопала жителей, спасено: 8
+[21:58:06] [Server thread/INFO] (Minecraft) §8поселение smoketown: стройка закопала жителей, спасено: 7
+[21:58:06] [Server thread/INFO] (Minecraft) §8в поселение smoketown пришёл Тиль — поселился в таверне и ждёт работу
+[21:58:06] [Server thread/INFO] (Minecraft) §8в поселение smoketown пришёл Фриц — поселился в таверне и ждёт работу
+[21:58:09] [Server thread/INFO] (Minecraft) Stopping the server
+[21:58:09] [Server thread/INFO] (Minecraft) Stopping server
+[21:58:09] [Server thread/INFO] (Minecraft) Saving players
+[21:58:09] [Server thread/INFO] (Minecraft) Saving worlds
+[21:58:09] [Server thread/INFO] (Minecraft) Saving chunks for level 'ServerLevel[world]'/minecraft:overworld
+[21:58:09] [Server thread/INFO] (Minecraft) Saving chunks for level 'ServerLevel[world]'/minecraft:the_end
+[21:58:09] [Server thread/INFO] (Minecraft) Saving chunks for level 'ServerLevel[world]'/minecraft:the_nether
+[21:58:09] [Server thread/INFO] (Minecraft) ThreadedAnvilChunkStorage (world): All chunks are saved
+[21:58:09] [Server thread/INFO] (Minecraft) ThreadedAnvilChunkStorage (DIM1): All chunks are saved
+[21:58:09] [Server thread/INFO] (Minecraft) ThreadedAnvilChunkStorage (DIM-1): All chunks are saved
+[21:58:09] [Server thread/INFO] (Minecraft) ThreadedAnvilChunkStorage: All dimensions are saved
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1793483835096.json
 
 BUILD SUCCESSFUL in 55s
 6 actionable tasks: 1 executed, 5 up-to-date
