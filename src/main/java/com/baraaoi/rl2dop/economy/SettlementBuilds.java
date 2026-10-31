@@ -75,8 +75,12 @@ public final class SettlementBuilds {
 	}
 
 	private static int topSolidY(ServerLevel level, int x, int z, int fallbackY) {
+		// на выгруженном столбце heightmap врёт: без проверки дом может встать в воздухе
+		if (!level.hasChunkAt(new BlockPos(x, fallbackY, z))) {
+			return fallbackY;
+		}
 		int y = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
-		if (y <= level.getMinBuildHeight() + 1) {
+		if (y <= level.getMinBuildHeight() + 1 || Math.abs(y - fallbackY) > 24) {
 			return fallbackY;
 		}
 		return y;

@@ -180,10 +180,16 @@ public class Settlement {
 	}
 
 	public void addHouse(BlockPos pos) {
-		String record = pos.getX() + ";" + pos.getY() + ";" + pos.getZ();
-		if (!houses.contains(record)) {
-			houses.add(record);
+		// уровень может измениться после выравнивания площадки — дубликаты ищем по x/z
+		for (String existing : houses) {
+			String[] parts = existing.split(";");
+			if (parts.length == 3 && parts[0].equals(String.valueOf(pos.getX()))
+					&& parts[2].equals(String.valueOf(pos.getZ()))) {
+				houses.set(houses.indexOf(existing), pos.getX() + ";" + pos.getY() + ";" + pos.getZ());
+				return;
+			}
 		}
+		houses.add(pos.getX() + ";" + pos.getY() + ";" + pos.getZ());
 	}
 
 	/** Жилой дом стоит рядом с этой точкой (чтобы не переселять NPC каждый такт). */
