@@ -30,6 +30,8 @@ public final class TradeService {
 	public static final int ACTION_BUY = 0;
 	public static final int ACTION_SELL = 1;
 	public static final int ACTION_HAGGLE = 2;
+	/** Подарок: игрок отдаёт предмет жителю (или в склад ратуши) — без денег, за настроение и репутацию. */
+	public static final int ACTION_GIFT = 3;
 
 	private static final Map<UUID, Long> LAST_ACTION = new HashMap<>();
 	private static final Map<UUID, Long> HAGGLE_UNTIL = new HashMap<>();
@@ -96,6 +98,14 @@ public final class TradeService {
 			}
 			haggle(player, settlement, itemId);
 			refresh(player, citizen, settlement);
+			return;
+		}
+
+		if (action == ACTION_GIFT) {
+			gift(player, citizen, settlement, itemId, amount);
+			refresh(player, citizen, settlement);
+			ModPackets.syncTo(player);
+			Money.syncInventory(player);
 			return;
 		}
 
@@ -185,14 +195,18 @@ public final class TradeService {
 		if (institution) {
 			payout = (int) Math.ceil(payout * Math.max(1.0D, Rl2dopConfig.mayorBuyBonus));
 		}
-		if (settlement.treasury < payout) {
+		boolean unlimited = Rl2dopConfig.infiniteNpcMoney;
+		if (!unlimited && settlement.treasury < payout) {
 			message(player, "§cВ казне не хватает монет (" + settlement.treasury + "м). Продай позже.");
 			return false;
 		}
 		if (!InventoryUtil.takeItems(player, item, amount)) {
 			return false;
 		}
-		settlement.treasury -= payout;
+		if (!unlimited) {
+			// ВРЕМЕННО (infiniteNpcMoney=true) казна не тратится: у поселения всегда есть монеты
+			settlement.treasury -= payout;
+		}
 		settlement.addStock(good.item, amount);
 		settlement.addDemand(good.item, -Math.max(1, amount));
 		Money.give(player, payout);
@@ -200,6 +214,51 @@ public final class TradeService {
 				+ " §aза §f" + payout + "м");
 		EconomyState.get(player.serverLevel().getServer()).setDirty();
 		return true;
+	}
+
+	/**
+	 * Подарок жителю (или в склад поселения, если это ратуша). Денег не берётся: подарок —
+	 * отдельное действие. Он поднимает настроение жителя и репутацию игрока в поселении.
+	 * Предмет берётся из инвентаря игрока, поэтому «подарить» то, чего нет, нельзя.
+	 */
+	private static void gift(ServerPlayer player, CitizenEntity citizen, Settlement settlement, String itemId,
+			int requested) {
+		Item item = resolveItem(itemId);
+		if (item == Items.AIR) {
+			message(player, "§cТакого предмета не существует.");
+			return;
+		}
+		int have = InventoryUtil.countItems(player, item);
+		if (have <= 0) {
+			message(player, "§cПодарить нечего: §f" + new ItemStack(item).getHoverName().getString()
+					+ " §7в инвентаре нет.");
+			return;
+		}
+		int count = Math.max(1, Math.min(Math.min(have, 64), requested < 1 ? 1 : requested));
+		if (!InventoryUtil.takeItems(player, item, count)) {
+			return;
+		}
+		String name = new ItemStack(item).getHoverName().getString();
+		if (citizen != null) {
+			citizen.addCarried(itemId, count);
+			int mood = (int) Math.ceil(count * Math.max(0.1D, Rl2dopConfig.giftMoodPerItem));
+			citizen.setMood(citizen.getMood() + mood);
+			citizen.refreshNameTag();
+			message(player, "§a" + citizen.getCitizenName() + " §7получил подарок: §f" + count + "×" + name
+					+ " §7(настроение +" + mood + " → " + citizen.getMood() + "%)");
+		} else {
+			settlement.addStock(itemId, count);
+			message(player, "§aПодарок приняли в склад поселения: §f" + count + "×" + name
+					+ " §7(казна не тронута)");
+		}
+		int reputation = Math.max(1, count * Math.max(0, Rl2dopConfig.giftReputationPerItem));
+		settlement.addReputation(player.getUUID(), reputation);
+		EconomyState state = EconomyState.get(player.serverLevel().getServer());
+		state.log("подарок " + count + "x " + itemId + " от " + player.getGameProfile().getName()
+				+ " в " + settlement.id + (citizen == null ? " (склад)" : " (жителю " + citizen.getCitizenName() + ")")
+				+ ", репутация +" + reputation);
+		state.setDirty();
+		SignBoards.refresh(player.serverLevel(), settlement);
 	}
 
 	private static void haggle(ServerPlayer player, Settlement settlement, String itemId) {

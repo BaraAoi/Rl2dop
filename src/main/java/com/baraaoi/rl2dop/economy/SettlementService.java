@@ -187,6 +187,11 @@ public final class SettlementService {
 	}
 
 	public static BlockPos workSpot(ServerLevel level, Settlement settlement, Profession profession) {
+		BlockPos site = settlement.workSite(profession);
+		if (site != null) {
+			// профессия привязана к реальной постройке (ферма, шахта, лесопилка, мастерская)
+			return SettlementBuilds.safeStand(level, site);
+		}
 		BlockPos hall = settlement.hall();
 		double angle = profession.ordinal() * (Math.PI * 2.0D / Profession.values().length);
 		int x = hall.getX() + (int) Math.round(Math.cos(angle) * 7.0D);

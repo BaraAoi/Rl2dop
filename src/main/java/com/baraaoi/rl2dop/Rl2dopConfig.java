@@ -58,6 +58,22 @@ public final class Rl2dopConfig {
 	public static int npcHitReputationPenalty = 5;
 
 	// --- постройка поселения ---
+	/** Ратушь строят сразу: поселение рождается с готовым зданием (false = растёт по блокам). */
+	public static boolean instantTownHall = true;
+	/** Ставить ли при основании ферму, дом лесоруба, шахту и мастерскую строителя. */
+	public static boolean starterWorkshops = true;
+	/** Побочный добыток мастерской шахтёра (2 = флинт/руда каждый третий цикл). */
+	public static int workshopYield = 1;
+	/** Строитель своими руками ставит новые жилые дома (ратуша строить не просит). */
+	public static boolean builderExpands = true;
+	/** Больше жилых домов строитель не ставит. */
+	public static int maxVillageHouses = 8;
+	/** Временно: у поселения и NPC всегда есть деньги (казна не тратится и не проверяется). */
+	public static boolean infiniteNpcMoney = true;
+	/** Подарок: сколько настроения и репутации даёт подарок жителю (за предмет). */
+	public static double giftMoodPerItem = 0.5;
+	public static int giftReputationPerItem = 1;
+
 	/** Какая доля целевого склада есть у нового поселения (меньше = больше нужд на старте). */
 	public static double startStockFraction = 0.35;
 	/** Сколько жилых домов ставится вместе с ратушей. */
@@ -110,6 +126,14 @@ public final class Rl2dopConfig {
 			coinIronValue = Math.max(2, intOr(root, "coinIronValue", coinIronValue));
 			coinGoldValue = Math.max(coinIronValue + 1, intOr(root, "coinGoldValue", coinGoldValue));
 			giveWalletOnMint = boolOr(root, "giveWalletOnMint", giveWalletOnMint);
+			instantTownHall = boolOr(root, "instantTownHall", instantTownHall);
+			starterWorkshops = boolOr(root, "starterWorkshops", starterWorkshops);
+			workshopYield = intOr(root, "workshopYield", workshopYield);
+			builderExpands = boolOr(root, "builderExpands", builderExpands);
+			maxVillageHouses = intOr(root, "maxVillageHouses", maxVillageHouses);
+			infiniteNpcMoney = boolOr(root, "infiniteNpcMoney", infiniteNpcMoney);
+			giftMoodPerItem = doubleOr(root, "giftMoodPerItem", giftMoodPerItem);
+			giftReputationPerItem = intOr(root, "giftReputationPerItem", giftReputationPerItem);
 			startStockFraction = doubleOr(root, "startStockFraction", startStockFraction);
 			starterHouses = intOr(root, "starterHouses", starterHouses);
 			mayorBuyBonus = doubleOr(root, "mayorBuyBonus", mayorBuyBonus);
@@ -235,6 +259,14 @@ public final class Rl2dopConfig {
 			root.addProperty("coinIronValue", coinIronValue);
 			root.addProperty("coinGoldValue", coinGoldValue);
 			root.addProperty("giveWalletOnMint", giveWalletOnMint);
+			root.addProperty("instantTownHall", instantTownHall);
+			root.addProperty("starterWorkshops", starterWorkshops);
+			root.addProperty("workshopYield", workshopYield);
+			root.addProperty("builderExpands", builderExpands);
+			root.addProperty("maxVillageHouses", maxVillageHouses);
+			root.addProperty("infiniteNpcMoney", infiniteNpcMoney);
+			root.addProperty("giftMoodPerItem", giftMoodPerItem);
+			root.addProperty("giftReputationPerItem", giftReputationPerItem);
 			root.addProperty("startStockFraction", startStockFraction);
 			root.addProperty("starterHouses", starterHouses);
 			root.addProperty("mayorBuyBonus", mayorBuyBonus);

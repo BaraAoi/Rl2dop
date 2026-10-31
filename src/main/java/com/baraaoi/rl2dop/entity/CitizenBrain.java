@@ -4,6 +4,7 @@ import com.baraaoi.rl2dop.Rl2dopConfig;
 import com.baraaoi.rl2dop.economy.EconomyState;
 import com.baraaoi.rl2dop.economy.MarketMath;
 import com.baraaoi.rl2dop.economy.Settlement;
+import com.baraaoi.rl2dop.economy.SettlementBuilds;
 import com.baraaoi.rl2dop.economy.SettlementService;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
@@ -52,6 +53,37 @@ public final class CitizenBrain {
 		}
 		paySalary(citizen, settlement);
 		maybeAutoSwitch(citizen, level, settlement);
+	}
+
+	/**
+	 * Строитель раз в несколько циклов достраивает поселению новый жилой дом, если на складе
+	 * есть материал. Так у профессии «строитель» есть реальное дело, когда ратуша уже готова.
+	 */
+	private static void growHouse(CitizenEntity citizen, ServerLevel level, Settlement settlement) {
+		if (!Rl2dopConfig.builderExpands) {
+			return;
+		}
+		if (settlement.houses.size() >= Rl2dopConfig.maxVillageHouses) {
+			return;
+		}
+		if (citizen.getRandom().nextInt(40) != 0) {
+			return;
+		}
+		if (settlement.stock("minecraft:cobblestone") < 16 || settlement.stock("minecraft:oak_log") < 8) {
+			settlement.addDemand("minecraft:cobblestone", 8);
+			settlement.addDemand("minecraft:oak_log", 6);
+			return;
+		}
+		settlement.takeStock("minecraft:cobblestone", 16);
+		settlement.takeStock("minecraft:oak_log", 8);
+		BlockPos hall = settlement.hall();
+		BlockPos at = hall.offset(SettlementBuilds.HOUSE_X + 8 + settlement.houses.size() * 8, 0,
+				SettlementBuilds.HOUSE_Z);
+		if (SettlementBuilds.buildHouse(level, settlement, at) != null) {
+			SettlementService.assignHomes(level, settlement);
+			EconomyState.get(level.getServer()).log("поселение " + settlement.id
+					+ ": строитель поставил дом в " + at.toShortString());
+		}
 	}
 
 	// ---------- стража ----------
@@ -142,6 +174,10 @@ public final class CitizenBrain {
 			return true;
 		}
 		int price = MarketMath.buyPrice(settlement, good, 0, 1.0D);
+		if (Rl2dopConfig.infiniteNpcMoney) {
+			// временно: деньги у жителей есть всегда — еда не должна упираться в кошелёк
+			citizen.setWallet(Math.max(citizen.getWallet(), price * 4));
+		}
 		if (citizen.getWallet() < price && settlement.treasury >= (long) price * 4L) {
 			// соцпомощь из казны: житель не должен умирать с голоду
 			settlement.treasury -= price;
@@ -238,10 +274,13 @@ public final class CitizenBrain {
 			int need = profession.consumeAmount();
 			if (settlement.warehouse(input) >= need) {
 				settlement.takeWarehouse(input, need);
+				settlement.addDemand(input, 1);
 			} else if (settlement.stock(input) >= need) {
 				settlement.takeStock(input, need);
+				settlement.addDemand(input, 2);
 			} else {
-				// нет сырья — ждём поставки
+				// сырья нет — работа встаёт, и это сразу видно на табличке нужд
+				settlement.addDemand(input, 3);
 				return;
 			}
 		}
@@ -249,11 +288,28 @@ public final class CitizenBrain {
 			settlement.addStock(profession.produceItem(), profession.produceAmount());
 			settlement.addDemand(profession.produceItem(), -1);
 		}
-		if (profession == Profession.BUILDER) {
-			settlement.buildProgress = Math.min(100, settlement.buildProgress + 1);
+		// дом шахтера работает сам: шахтёр стоит у своей шахты и производит камень и руду
+		if (profession == Profession.MINER) {
+			settlement.addStock("minecraft:cobblestone", 2);
+			settlement.addDemand("minecraft:cobblestone", -1);
+			int luck = citizen.getRandom().nextInt(6);
+			if (luck == 0) {
+				settlement.addStock("minecraft:iron_ingot", 1);
+				settlement.addDemand("minecraft:iron_ingot", -1);
+			} else if (luck == 1) {
+				settlement.addStock("minecraft:coal", 1);
+				settlement.addDemand("minecraft:coal", -1);
+			} else if (luck == 2 && Rl2dopConfig.workshopYield > 0) {
+				settlement.addStock("minecraft:flint", 1);
+			}
 		}
-		if (profession == Profession.MINER && citizen.getRandom().nextInt(4) == 0) {
-			settlement.addStock("minecraft:iron_ingot", 1);
+		if (profession == Profession.FARMER && citizen.getRandom().nextInt(3) == 0) {
+			// на ферме всегда что-то да вырастает: морковь/картофель разбавляют склад
+			settlement.addStock(citizen.getRandom().nextBoolean() ? "minecraft:carrot" : "minecraft:potato", 1);
+		}
+		if (profession == Profession.BUILDER) {
+			// ратуша не нуждается в стройке, поэтому строитель растит жилые дома
+			growHouse(citizen, level, settlement);
 		}
 		if (profession == Profession.HEALER) {
 			healNearby(citizen, level);
@@ -288,6 +344,12 @@ public final class CitizenBrain {
 		citizen.setSalaryTimer(0);
 		int salary = settlement.salaryFor(citizen.getProfession());
 		if (salary <= 0) {
+			return;
+		}
+		if (Rl2dopConfig.infiniteNpcMoney) {
+			// временно: зарплаты платятся всегда, казна не ограниченна
+			citizen.addWallet(salary);
+			citizen.setMood(citizen.getMood() + 1);
 			return;
 		}
 		if (settlement.treasury >= salary) {

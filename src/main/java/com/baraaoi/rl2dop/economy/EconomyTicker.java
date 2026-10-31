@@ -65,8 +65,14 @@ public final class EconomyTicker {
 				state.log("поселение " + settlement.id + ": вывесили таблички нужд (стройка "
 						+ settlement.buildProgress + "%)");
 			}
-			if (Rl2dopConfig.autoBuild && settlement.buildProgress < 100) {
-				SettlementBuilds.build(level, settlement, Math.max(1, Rl2dopConfig.buildBlocksPerTick));
+			if (settlement.buildProgress < 100) {
+				// ратуша не «строится» — поселение рождается с готовым зданием и постройками;
+				// постепенная стройка остаётся только если instantTownHall=false
+				if (Rl2dopConfig.instantTownHall || !Rl2dopConfig.autoBuild) {
+					SettlementBuilds.buildInstant(level, settlement);
+				} else {
+					SettlementBuilds.build(level, settlement, Math.max(1, Rl2dopConfig.buildBlocksPerTick));
+				}
 			}
 			// глава нужен поселению с первого дня: без ратуши он стоит у временных табличек
 			if (!settlement.hasMayor()) {

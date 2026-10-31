@@ -1,6 +1,7 @@
 package com.baraaoi.rl2dop.economy;
 
 import com.baraaoi.rl2dop.Rl2dopConfig;
+import com.baraaoi.rl2dop.entity.Profession;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -247,6 +248,11 @@ public final class SettlementBuilds {
 			housePlan(plan, level, base);
 		}
 
+		// 6) рабочие постройки: ферма, дом лесоруба, шахта, мастерская строителя
+		if (Rl2dopConfig.starterWorkshops) {
+			workshops(plan, level, settlement, origin);
+		}
+
 		return plan.entries;
 	}
 
@@ -318,6 +324,220 @@ public final class SettlementBuilds {
 		// труба из булыжника
 		plan.set(base.offset(-half + 1, 5, -half + 1), Blocks.COBBLESTONE.defaultBlockState());
 		plan.set(base.offset(-half + 1, 6, -half + 1), Blocks.COBBLESTONE.defaultBlockState());
+	}
+
+	// ---------- рабочие постройки поселения ----------
+
+	/** Как далеко от ратуши ставятся ферма/шахта/лесопилка/мастерская. */
+	public static final int WORK_X = 26;
+	public static final int WORK_Z = 2;
+	public static final int WORK_Z_BACK = -14;
+
+	/**
+	 * Рабочие постройки, которые поселение получает сразу. Каждая — домик + само производство,
+	 * и к ней привязывается рабочая точка профессии ({@code Settlement.workSites}), так что
+	 * шахтёру не нужно ничего копать: он стоит у своей шахты и производит камень и руду.
+	 */
+	private static void workshops(Plan plan, ServerLevel level, Settlement settlement, BlockPos origin) {
+		farmPlan(plan, level, settlement, ground(level, origin.offset(-WORK_X, 0, WORK_Z), origin));
+		lumberPlan(plan, level, settlement, ground(level, origin.offset(-WORK_X, 0, WORK_Z_BACK), origin));
+		minePlan(plan, level, settlement, ground(level, origin.offset(WORK_X, 0, WORK_Z_BACK), origin));
+		builderPlan(plan, level, settlement, ground(level, origin.offset(WORK_X, 0, WORK_Z), origin));
+	}
+
+	/** Уровень грунта под рабочей постройкой (на выгруженном столбце — уровень ратуши). */
+	private static BlockPos ground(ServerLevel level, BlockPos at, BlockPos origin) {
+		return new BlockPos(at.getX(), topSolidY(level, at.getX(), at.getZ(), origin.getY()), at.getZ());
+	}
+
+	/** Расчистка объёма над пятном постройки (только природное). */
+	private static void carve(Plan plan, ServerLevel level, BlockPos base, int halfX, int halfZ, int height) {
+		for (int x = -halfX - 1; x <= halfX + 1; x++) {
+			for (int z = -halfZ - 1; z <= halfZ + 1; z++) {
+				for (int dy = 1; dy <= height; dy++) {
+					BlockPos pos = base.offset(x, dy, z);
+					if (removable(level, pos)) {
+						plan.air(pos);
+					}
+				}
+			}
+		}
+	}
+
+	/** Компактный домик 5x5: стены, дверь с юга, окно, сундук, свет, крыша. */
+	private static void hut(Plan plan, ServerLevel level, BlockPos base, BlockState wall) {
+		int half = 2;
+		for (int x = -half; x <= half; x++) {
+			for (int z = -half; z <= half; z++) {
+				BlockPos pos = base.offset(x, 0, z);
+				boolean edge = Math.abs(x) == half || Math.abs(z) == half;
+				plan.set(pos, edge ? Blocks.COBBLESTONE.defaultBlockState() : Blocks.OAK_PLANKS.defaultBlockState());
+				fillFoundation(level, plan, pos);
+			}
+		}
+		for (int dy = 1; dy <= 2; dy++) {
+			for (int x = -half; x <= half; x++) {
+				boolean doorway = dy <= 2 && Math.abs(x) <= 0;
+				if (!doorway) {
+					plan.set(base.offset(x, dy, half), wall);
+				}
+				plan.set(base.offset(x, dy, -half), wall);
+			}
+			for (int z = -half + 1; z <= half - 1; z++) {
+				plan.set(base.offset(-half, dy, z), wall);
+				plan.set(base.offset(half, dy, z), wall);
+			}
+		}
+		door(plan, base.offset(0, 1, half), Direction.SOUTH);
+		plan.set(base.offset(-half, 2, 0), Blocks.GLASS.defaultBlockState());
+		plan.set(base.offset(half, 2, 0), Blocks.GLASS.defaultBlockState());
+		plan.set(base.offset(-1, 1, -half + 1), Blocks.CHEST.defaultBlockState()
+				.setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.SOUTH));
+		plan.set(base.offset(1, 1, -half + 1), Blocks.LANTERN.defaultBlockState());
+		for (int x = -half - 1; x <= half + 1; x++) {
+			for (int z = -half - 1; z <= half + 1; z++) {
+				boolean edgeX = Math.abs(x) == half + 1;
+				boolean edgeZ = Math.abs(z) == half + 1;
+				if (!edgeX && !edgeZ) {
+					plan.set(base.offset(x, 3, z), Blocks.SPRUCE_PLANKS.defaultBlockState());
+					continue;
+				}
+				Direction facing = edgeX ? (x > 0 ? Direction.WEST : Direction.EAST)
+						: (z > 0 ? Direction.NORTH : Direction.SOUTH);
+				plan.set(base.offset(x, 3, z), stairs(facing));
+			}
+		}
+	}
+
+	/** Ферма: грядки со спелой пшеницей, забор, кадка с водой, домик фермера. */
+	private static void farmPlan(Plan plan, ServerLevel level, Settlement settlement, BlockPos base) {
+		int halfX = 6;
+		int halfZ = 4;
+		carve(plan, level, base, halfX, halfZ, 4);
+		for (int x = -halfX; x <= halfX; x++) {
+			for (int z = -halfZ; z <= halfZ; z++) {
+				plan.set(base.offset(x, 0, z), Blocks.DIRT.defaultBlockState());
+			}
+		}
+		// грядки: через строку — вода не нужна, влажность ставим вручную
+		for (int x = -halfX + 1; x <= halfX - 1; x++) {
+			for (int z = -halfZ + 1; z <= halfZ - 1; z += 2) {
+				BlockPos soil = base.offset(x, 0, z);
+				plan.set(soil, Blocks.FARMLAND.defaultBlockState()
+						.setValue(BlockStateProperties.MOISTURE, 7));
+				plan.set(soil.above(), Blocks.WHEAT.defaultBlockState()
+						.setValue(BlockStateProperties.AGE_7, 7));
+			}
+		}
+		for (int x = -halfX; x <= halfX; x++) {
+			plan.set(base.offset(x, 1, -halfZ), Blocks.OAK_FENCE.defaultBlockState());
+			if (Math.abs(x) > 1) {
+				plan.set(base.offset(x, 1, halfZ), Blocks.OAK_FENCE.defaultBlockState());
+			}
+		}
+		for (int z = -halfZ; z <= halfZ; z++) {
+			plan.set(base.offset(-halfX, 1, z), Blocks.OAK_FENCE.defaultBlockState());
+			plan.set(base.offset(halfX, 1, z), Blocks.OAK_FENCE.defaultBlockState());
+		}
+		plan.set(base.offset(halfX - 1, 1, 0), Blocks.WATER_CAULDRON.defaultBlockState());
+		plan.set(base.offset(-halfX + 1, 1, halfZ - 1), Blocks.BARREL.defaultBlockState());
+		hut(plan, level, base.offset(-halfX + 2, 0, -halfZ - 4), Blocks.OAK_PLANKS.defaultBlockState());
+		settlement.setWorkSite(Profession.FARMER, base.offset(0, 1, 1));
+	}
+
+	/** Дом лесоруба: избушка, поленница, пни и саженцы вокруг. */
+	private static void lumberPlan(Plan plan, ServerLevel level, Settlement settlement, BlockPos base) {
+		carve(plan, level, base, 5, 5, 5);
+		hut(plan, level, base, Blocks.STRIPPED_OAK_LOG.defaultBlockState());
+		// поленница
+		for (int dx = 0; dx < 3; dx++) {
+			for (int dz = 0; dz < 2; dz++) {
+				plan.set(base.offset(3 + dx, 1, -1 + dz), Blocks.OAK_LOG.defaultBlockState()
+						.setValue(BlockStateProperties.AXIS, Direction.Axis.X));
+				plan.set(base.offset(3 + dx, 2, -1 + dz), Blocks.OAK_LOG.defaultBlockState()
+						.setValue(BlockStateProperties.AXIS, Direction.Axis.X));
+			}
+		}
+		// пни и саженцы: лес рядом с домом
+		for (int[] spot : new int[][]{{-4, 4}, {-2, 5}, {2, 5}, {5, 4}, {-5, -3}}) {
+			plan.set(base.offset(spot[0], 1, spot[1]), Blocks.OAK_STAIRS.defaultBlockState());
+			plan.set(base.offset(spot[0], 2, spot[1]), Blocks.OAK_SAPLING.defaultBlockState());
+		}
+		plan.set(base.offset(-3, 1, 3), Blocks.CRAFTING_TABLE.defaultBlockState());
+		lampPost(plan, base.offset(4, 1, 4), level);
+		settlement.setWorkSite(Profession.LUMBERJACK, base.offset(0, 1, 4));
+	}
+
+	/** Шахта: ствол с лестницей, рудные блоки в породе, крепь, свет, бытовка. */
+	private static void minePlan(Plan plan, ServerLevel level, Settlement settlement, BlockPos base) {
+		carve(plan, level, base, 4, 4, 5);
+		// площадка устья
+		for (int x = -2; x <= 2; x++) {
+			for (int z = -2; z <= 2; z++) {
+				plan.set(base.offset(x, 0, z), Blocks.COBBLESTONE.defaultBlockState());
+			}
+		}
+		// ствол вниз: 3x3, крепь из брёвен, лестница
+		for (int dy = 1; dy <= 4; dy++) {
+			for (int x = -1; x <= 1; x++) {
+				for (int z = -1; z <= 1; z++) {
+					BlockPos pos = base.offset(x, -dy, z);
+					if (x == 0 && z == 0) {
+						// ствол чистим и вешаем лестницу (опора с севера есть — там порода)
+						plan.set(pos, Blocks.AIR.defaultBlockState());
+						if (dy >= 2) {
+							plan.set(pos, Blocks.LADDER.defaultBlockState()
+									.setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH));
+						}
+						continue;
+					}
+					plan.set(pos, dy <= 2 ? Blocks.STONE.defaultBlockState() : Blocks.COBBLESTONE.defaultBlockState());
+				}
+			}
+			plan.set(base.offset(0, -dy, 2), Blocks.AIR.defaultBlockState());
+		}
+		for (int x = -1; x <= 1; x++) {
+			plan.set(base.offset(x, 1, -2), Blocks.SPRUCE_LOG.defaultBlockState()
+					.setValue(BlockStateProperties.AXIS, Direction.X));
+		}
+		plan.set(base.offset(0, 1, -2), Blocks.LANTERN.defaultBlockState());
+		// руда в породе вокруг устья — шахтёр её «добывает», ничего копать не надо
+		int[][] ores = {{-3, 1}, {3, -1}, {-4, -2}, {4, 2}, {-2, -4}, {2, 4}};
+		for (int i = 0; i < ores.length; i++) {
+			BlockState ore = switch (i % 3) {
+				case 0 -> Blocks.IRON_ORE.defaultBlockState();
+				case 1 -> Blocks.COAL_ORE.defaultBlockState();
+				default -> Blocks.COPPER_ORE.defaultBlockState();
+			};
+			plan.set(base.offset(ores[i][0], 0, ores[i][1]), ore);
+		}
+		// отвал
+		for (int dx = 0; dx <= 2; dx++) {
+			plan.set(base.offset(dx, 1, 3 + dx / 2), Blocks.COBBLESTONE.defaultBlockState());
+		}
+		hut(plan, level, base.offset(-4, 0, 4), Blocks.COBBLESTONE.defaultBlockState());
+		settlement.setWorkSite(Profession.MINER, base.offset(0, 1, 1));
+	}
+
+	/** Мастерская строителя: станок, леса, штабель кирпича и камня. */
+	private static void builderPlan(Plan plan, ServerLevel level, Settlement settlement, BlockPos base) {
+		carve(plan, level, base, 5, 4, 6);
+		hut(plan, level, base, Blocks.STONE_BRICKS.defaultBlockState());
+		plan.set(base.offset(3, 1, 0), Blocks.SMITHING_TABLE.defaultBlockState());
+		plan.set(base.offset(3, 1, 2), Blocks.CRAFTING_TABLE.defaultBlockState());
+		for (int dy = 1; dy <= 3; dy++) {
+			plan.set(base.offset(4, dy, -2), Blocks.SCAFFOLDING.defaultBlockState());
+		}
+		plan.set(base.offset(4, 4, -2), Blocks.LANTERN.defaultBlockState());
+		for (int dx = 0; dx <= 2; dx++) {
+			for (int dz = 0; dz <= 1; dz++) {
+				plan.set(base.offset(-3 + dx, 1, 3 + dz), dx == 1
+						? Blocks.STONE_BRICKS.defaultBlockState()
+						: Blocks.COBBLESTONE.defaultBlockState());
+			}
+		}
+		lampPost(plan, base.offset(-4, 1, -3), level);
+		settlement.setWorkSite(Profession.BUILDER, base.offset(0, 1, 4));
 	}
 
 	/** Построить дом мгновенно (команда /house_add). */

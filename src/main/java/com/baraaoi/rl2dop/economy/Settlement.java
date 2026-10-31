@@ -49,6 +49,8 @@ public class Settlement {
 	public final List<String> houses = new ArrayList<>();
 	/** UUID главы поселения (стоит у табличек и скупает всё без торга). */
 	public String mayor = "";
+	/** Рабочие точки построек: profession -> "x;y;z" (ферма, шахта, дом лесоруба, мастерская). */
+	public final Map<String, String> workSites = new LinkedHashMap<>();
 
 	public Settlement(String id, String name) {
 		this.id = id;
@@ -179,6 +181,30 @@ public class Settlement {
 		npcs.remove(uuid.toString());
 	}
 
+	/** Рабочая точка профессии, если постройка поселения к ней привязана. */
+	public BlockPos workSite(Profession profession) {
+		String raw = workSites.get(profession.id());
+		if (raw == null || raw.isBlank()) {
+			return null;
+		}
+		String[] parts = raw.split(";");
+		if (parts.length != 3) {
+			return null;
+		}
+		try {
+			return new BlockPos(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+		} catch (NumberFormatException e) {
+			return null;
+		}
+	}
+
+	public void setWorkSite(Profession profession, BlockPos pos) {
+		String value = pos.getX() + ";" + pos.getY() + ";" + pos.getZ();
+		if (!value.equals(workSites.get(profession.id()))) {
+			workSites.put(profession.id(), value);
+		}
+	}
+
 	public void addHouse(BlockPos pos) {
 		// уровень может измениться после выравнивания площадки — дубликаты ищем по x/z
 		for (String existing : houses) {
@@ -269,6 +295,11 @@ public class Settlement {
 		tag.put("Shelves", stringList(shelves));
 		tag.put("Boards", stringList(boards));
 		tag.put("Houses", stringList(houses));
+		CompoundTag sites = new CompoundTag();
+		for (Map.Entry<String, String> entry : workSites.entrySet()) {
+			sites.putString(entry.getKey(), entry.getValue());
+		}
+		tag.put("WorkSites", sites);
 		tag.putString("Mayor", mayor == null ? "" : mayor);
 		return tag;
 	}
@@ -295,6 +326,11 @@ public class Settlement {
 		readStringList(tag.getList("Shelves", 8), settlement.shelves);
 		readStringList(tag.getList("Boards", 8), settlement.boards);
 		readStringList(tag.getList("Houses", 8), settlement.houses);
+		if (tag.get("WorkSites") instanceof CompoundTag sites) {
+			for (String key : sites.getAllKeys()) {
+				settlement.workSites.put(key, sites.getString(key));
+			}
+		}
 		settlement.mayor = tag.contains("Mayor") ? tag.getString("Mayor") : "";
 		// если конфиг поменялся — добить недостающие товары
 		for (Rl2dopConfig.Good good : Rl2dopConfig.goods.values()) {

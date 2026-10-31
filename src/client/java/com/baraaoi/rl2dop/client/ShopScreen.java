@@ -27,6 +27,7 @@ public class ShopScreen extends Screen {
 	private static final int ROW_HEIGHT = 16;
 	private static final int LIST_TOP = 30;
 	private static final int[] AMOUNTS = {1, 8, 16, 32, 64};
+	private static final int WIDTH_PX = 384;
 
 	private int citizenId;
 	private String purse = "";
@@ -86,7 +87,7 @@ public class ShopScreen extends Screen {
 
 	@Override
 	protected void init() {
-		this.panelWidth = Math.min(this.width - 20, 340);
+		this.panelWidth = Math.min(this.width - 20, WIDTH_PX);
 		this.panelHeight = layoutHeight();
 		this.panelX = (this.width - this.panelWidth) / 2;
 		this.panelY = (this.height - this.panelHeight) / 2;
@@ -106,9 +107,10 @@ public class ShopScreen extends Screen {
 					.build());
 			x += 25;
 		}
-		this.addRenderableWidget(action("Купить", TradeService.ACTION_BUY, panelX + 145, y, 62));
-		this.addRenderableWidget(action("Продать", TradeService.ACTION_SELL, panelX + 211, y, 62));
-		this.addRenderableWidget(action("Торг", TradeService.ACTION_HAGGLE, panelX + 277, y, 46));
+		this.addRenderableWidget(action("Купить", TradeService.ACTION_BUY, panelX + 142, y, 56));
+		this.addRenderableWidget(action("Продать", TradeService.ACTION_SELL, panelX + 202, y, 56));
+		this.addRenderableWidget(action("Торг", TradeService.ACTION_HAGGLE, panelX + 262, y, 40));
+		this.addRenderableWidget(action("Подарить", TradeService.ACTION_GIFT, panelX + 306, y, 68));
 	}
 
 	private Button action(String label, int action, int x, int y, int width) {
@@ -145,7 +147,7 @@ public class ShopScreen extends Screen {
 
 	@Override
 	public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
-		if (this.panelHeight != layoutHeight() || this.panelWidth != Math.min(this.width - 20, 340)) {
+		if (this.panelHeight != layoutHeight() || this.panelWidth != Math.min(this.width - 20, WIDTH_PX)) {
 			rebuildWidgets();
 		}
 		drawPanel(graphics);
@@ -185,9 +187,11 @@ public class ShopScreen extends Screen {
 
 		super.render(graphics, mouseX, mouseY, delta);
 
-		graphics.drawString(font, "§eКошелёк: §f" + purse, panelX + 10, panelY + panelHeight - 60, 0xFFFFFF, true);
-		graphics.drawString(font, "§fЛКМ — выбрать, ПКМ — продать, колесо/стрелки — список",
-				panelX + panelWidth - 232, panelY + panelHeight - 18, 0xFFE8E0C8, true);
+		graphics.drawString(font, "§eКошелёк: §f" + purse
+				+ " §8| §7подарок: §f" + amount() + " шт §7из инвентаря, денег не берут",
+				panelX + 10, panelY + panelHeight - 60, 0xFFFFFF, true);
+		graphics.drawString(font, "§fЛКМ — выбрать, ПКМ — продать, Shift+ЛКМ — подарок, стрелки — список",
+				panelX + panelWidth - 276, panelY + panelHeight - 18, 0xFFE8E0C8, true);
 		graphics.drawString(font, "§e" + (rows.isEmpty() ? "—" : rows.get(selected).name())
 						+ " §7· §f" + amount() + " шт §7| §fEsc — закрыть",
 				panelX + 10, panelY + panelHeight - 18, 0xFFFFFF, true);
@@ -243,6 +247,11 @@ public class ShopScreen extends Screen {
 		}
 		if (index >= 0 && button == 1) {
 			perform(TradeService.ACTION_SELL, amount());
+			return true;
+		}
+		if (index >= 0 && button == 0 && hasShiftDown()) {
+			// Shift+ЛКМ по строке — подарить выбранное количество этому жителю (или в склад ратуши)
+			perform(TradeService.ACTION_GIFT, amount());
 			return true;
 		}
 		return super.mouseClicked(mouseX, mouseY, button);
