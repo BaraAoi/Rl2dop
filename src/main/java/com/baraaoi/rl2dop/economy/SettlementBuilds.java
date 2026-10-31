@@ -905,7 +905,10 @@ public final class SettlementBuilds {
 					continue;   // участок за выгруженной зоной пока не считается местом для дома
 				}
 				BlockPos spot = ground.pick(ideal.getX(), ideal.getZ(), HOUSE_HALF + 2, HOUSE_HALF + 2);
-				out.add(spot != null ? spot : ideal);
+				if (spot == null) {
+					continue;   // участок без ровного сухого места в загруженной зоне — не место для дома
+				}
+				out.add(spot);
 			}
 		}
 		// застраивается ближний круг, дальний — когда места рядом кончатся
@@ -1623,9 +1626,24 @@ public final class SettlementBuilds {
 			if (cached != null) {
 				return cached;
 			}
+			if (!level.hasChunkAt(new BlockPos(x, baseY, z))) {
+				// чанка нет — высоту НЕ КЭШИРУМ: иначе фантомный «уровень поселения» на весь план,
+				// а place() чанк как раз подгрузит, и площадка ляжет на 2+ блока выше настоящего грунта
+					return baseY;
+			}
 			int y = topSolidY(level, x, z, baseY);
 			natural.put(k, y);
 			return y;
+		}
+
+		/** Всё пятно постройки (включая откос) должно быть в загруженных чанках. */
+		boolean footprintLoaded(int cx, int cz, int halfX, int halfZ) {
+			int y = baseY;
+			return level.hasChunkAt(new BlockPos(cx, y, cz))
+					&& level.hasChunkAt(new BlockPos(cx - halfX - 1, y, cz - halfZ - 1))
+					&& level.hasChunkAt(new BlockPos(cx + halfX + 1, y, cz - halfZ - 1))
+					&& level.hasChunkAt(new BlockPos(cx - halfX - 1, y, cz + halfZ + 1))
+					&& level.hasChunkAt(new BlockPos(cx + halfX + 1, y, cz + halfZ + 1));
 		}
 
 		/** Текущий уровень колонки: либо тот, что задал посёлок, либо природный. */
@@ -1774,8 +1792,8 @@ public final class SettlementBuilds {
 				for (int dx = -radius; dx <= radius; dx++) {
 					int x = cx + dx * step;
 					int z = cz + dz * step;
-					if (!level.hasChunkAt(new BlockPos(x, baseY, z))) {
-						continue;
+					if (!footprintLoaded(x, z, halfX, halfZ)) {
+						continue;   // пятно залезает в незагруженный чанк — ищем место целиком внутри мира
 					}
 					if (dryOnly && wet(x, z, halfX, halfZ)) {
 						continue;

@@ -161,7 +161,11 @@ jobs:
           exec 3> /tmp/cmd3
           for i in $(seq 1 150); do grep -q "Done (" ci/smoke3.log 2>/dev/null && break; sleep 2; done
           sleep 6
-          for cmd in "settle_spawn HillsTown" "settle_audit hillstown" "house_add hillstown" "settle_settlers hillstown 3" "settle_tavern hillstown" "settle_audit hillstown" "market_dump hillstown" "npc_list"; do
+          # без игрока чанков вокруг почти нет, а посёлок строит только там, где terrain уже есть:
+          # принудительно грузим площадку, где соберётся поселение (рельеф обычный, не суперплоский)
+          echo "forceload add -100 -70 20 60" >&3
+          sleep 25
+          for cmd in "settle_spawn HillsTown" "settle_audit hillstown" "house_add hillstown" "settle_settlers hillstown 3" "settle_tavern hillstown" "settle_build hillstown instant" "settle_audit hillstown" "market_dump hillstown" "npc_list"; do
             echo "$cmd" >&3
             sleep 4
           done
