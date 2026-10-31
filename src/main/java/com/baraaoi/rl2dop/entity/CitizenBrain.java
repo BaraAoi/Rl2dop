@@ -34,6 +34,12 @@ public final class CitizenBrain {
 		if (citizen.getCitizenName().isEmpty()) {
 			citizen.setCitizenName(EconomyState.randomName(citizen.getRandom()));
 		}
+		// Распорядок дня вместо «всегда работа»: жители ходят на своё место, в полдень
+		// собираются на перерыв у таверны, вечером — у колокола, ночью спят дома.
+		// Занятие считаем ДО ранних выходов: оно показывает, чем житель должен быть занят,
+		// и иначе подпись над головой отстаёт от расписания на целый игровой день.
+		CitizenActivity activity = schedule(level, citizen);
+		citizen.setActivity(activity);
 		Settlement settlement = state.settlement(citizen.getSettlementId());
 		if (settlement == null) {
 			citizen.setCitizenState(CitizenState.IDLE);
@@ -45,10 +51,6 @@ public final class CitizenBrain {
 		if (citizen.getHunger() < 35 && handleHunger(citizen, level, settlement)) {
 			return;
 		}
-		// Распорядок дня вместо «всегда работа»: жители ходят на своё место, в полдень
-		// собираются на перерыв у таверны, вечером — у колокола, ночью спят дома.
-		CitizenActivity activity = schedule(level, citizen);
-		citizen.setActivity(activity);
 		switch (activity) {
 			case POST -> handlePost(citizen);
 			case SLEEP -> handleSleep(citizen);
@@ -153,7 +155,7 @@ public final class CitizenBrain {
 		int with = Math.max(0, nearby(citizen, level, 6.0D));
 		if (with > 0) {
 			citizen.setMood(citizen.getMood() + 1);
-			if (citizen.getRandom().nextInt(24) == 0) {
+			if (citizen.getRandom().nextInt(8) == 0) {
 				EconomyState.get(level.getServer()).log("поселение " + settlement.id + ": перерыв у таверны, собралось "
 						+ (with + 1) + " жител(ей)");
 			}

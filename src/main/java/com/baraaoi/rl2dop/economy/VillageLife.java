@@ -34,6 +34,7 @@ public final class VillageLife {
 			return;   // сначала ратуша, участки и улицы — потом уже жизнь
 		}
 		housingDemand(level, settlement, state);
+		finishGoal(level, settlement, state);
 		fillVacancies(level, settlement, state);
 		immigrants(level, settlement, state);
 	}
@@ -204,7 +205,23 @@ public final class VillageLife {
 			return;
 		}
 		if (builder.blockPosition().distSqr(goal) > 64.0D) {
-			builder.setWorkPos(SettlementBuilds.safeStand(level, goal));
+			builder.setWorkPos(SettlementBuilds.safeStand(level, goal));   // идти на участок
+			return;
+		}
+		finishGoal(level, settlement, EconomyState.get(level.getServer()));
+	}
+
+	/**
+	 * Достройка задуманного дома: материал на складе, на участке стоит строитель — дом готов.
+	 * Отдельный шаг нужен потому, что рабочий цикл NPC стоит на перерыве и на сходке: стройка не
+	 * должна ждать, пока у жителей кончится полдник.
+	 */
+	private static void finishGoal(ServerLevel level, Settlement settlement, EconomyState state) {
+		BlockPos goal = settlement.houseGoalPos();
+		if (!Rl2dopConfig.selfBuildHouses || goal == null) {
+			return;
+		}
+		if (!level.hasChunkAt(goal) || !builderNear(level, settlement, goal)) {
 			return;
 		}
 		int cobble = Math.max(0, Rl2dopConfig.houseCostCobble);
@@ -221,10 +238,20 @@ public final class VillageLife {
 		if (built != null) {
 			SettlementService.assignHomes(level, settlement);
 			SignBoards.refresh(level, settlement);
-			EconomyState.get(level.getServer()).log("поселение " + settlement.id + ": строитель поставил дом в "
-					+ built.toShortString() + ", домов теперь " + settlement.houses.size());
+			state.log("поселение " + settlement.id + ": строитель поставил дом в " + built.toShortString()
+					+ ", домов теперь " + settlement.houses.size());
 		}
-		EconomyState.get(level.getServer()).setDirty();
+		state.setDirty();
+	}
+
+	/** На участке есть свой строитель (любой из поселения, не только «назначенный»)? */
+	private static boolean builderNear(ServerLevel level, Settlement settlement, BlockPos goal) {
+		for (CitizenEntity citizen : citizens(level, settlement)) {
+			if (citizen.getProfession() == Profession.BUILDER && citizen.blockPosition().distSqr(goal) <= 64.0D) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/** Принудительно принять N переселенцев (команда /settle_settlers, отладка, CI). */

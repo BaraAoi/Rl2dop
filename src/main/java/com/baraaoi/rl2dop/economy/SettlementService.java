@@ -106,7 +106,10 @@ public final class SettlementService {
 	 * точки» здесь сбивал учёт — житель считался бездомным, хотя спал у своей двери.
 	 */
 	public static BlockPos houseSpot(ServerLevel level, Settlement settlement, int index, BlockPos fallback) {
-		BlockPos house = settlement == null ? null : settlement.houseFor(index);
+		BlockPos house = settlement == null ? null : freeHouse(level, settlement);
+		if (house == null && settlement != null) {
+			house = settlement.houseFor(index);   // мест нет, но дом как ориентир всё равно пригодится
+		}
 		if (house != null && level != null && level.isLoaded(house)) {
 			return house;
 		}
@@ -115,6 +118,38 @@ public final class SettlementService {
 			return jitter(level, gatherPoint(level, settlement), 1);
 		}
 		return SettlementBuilds.safeStand(level, jitter(level, fallback == null ? settlement.hall() : fallback, 6));
+	}
+
+	/** Первый дом, где ещё есть места (villagersPerHouse на дом); null — если все дома забиты до отказа. */
+	private static BlockPos freeHouse(ServerLevel level, Settlement settlement) {
+		int perHouse = Math.max(1, Rl2dopConfig.villagersPerHouse);
+		Map<String, Integer> used = new java.util.HashMap<>();
+		List<CitizenEntity> people = new ArrayList<>();
+		for (String raw : new ArrayList<>(settlement.npcs)) {
+			net.minecraft.world.entity.Entity entity;
+			try {
+				entity = level == null ? null : level.getEntity(java.util.UUID.fromString(raw));
+			} catch (IllegalArgumentException e) {
+				continue;
+			}
+			if (entity instanceof CitizenEntity citizen && !citizen.isRemoved() && !citizen.isMayor()) {
+				people.add(citizen);
+				String key = settlement.houseKeyNear(citizen.getHomePos());
+				if (key != null) {
+					used.merge(key, 1, Integer::sum);
+				}
+			}
+		}
+		for (int i = 0; i < settlement.houses.size(); i++) {
+			BlockPos house = settlement.houseFor(i);
+			if (house == null || (level != null && !level.isLoaded(house))) {
+				continue;
+			}
+			if (used.getOrDefault(house.getX() + ";" + house.getZ(), 0) < perHouse) {
+				return house;
+			}
+		}
+		return null;
 	}
 
 	/** Глава поселения: ставит его у табличек; один на поселение, переживает перезагрузку. */
