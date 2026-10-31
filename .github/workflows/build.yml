@@ -92,7 +92,7 @@ jobs:
             sleep 2
           done
           sleep 3
-          for cmd in "settle_spawn SmokeTown" "give_coins 500" "spawn_npc farmer" "spawn_npc trader" "spawn_npc guard" "spawn_npc cook" "market_dump" "npc_list" "salary_set farmer 15" "price_set minecraft:bread 5" "shelf_add minecraft:bread" "hall_board" "econ_log 8"; do
+          for cmd in "settle_spawn SmokeTown" "give_coins 500" "spawn_npc farmer" "spawn_npc trader" "spawn_npc guard" "spawn_npc cook" "market_dump" "npc_list" "salary_set farmer 15" "price_set minecraft:bread 5" "shelf_add minecraft:bread" "hall_board" "shop_marker" "npc_profession lumberjack" "settle_bind SmokeVillage" "market_dump smoketown" "econ_log 8"; do
             echo "=== CMD: $cmd ===" >> ci/smoke.log
             echo "$cmd" >&3
             sleep 2
@@ -104,6 +104,10 @@ jobs:
           pkill -f "net.minecraft.server" || true
           sleep 3
           {
+            echo "=== файлы мода ==="
+            ls -la run/config/rl2dop.json run/world/data/ 2>&1 || true
+            head -c 900 run/config/rl2dop.json 2>&1 || true
+            echo ""
             echo "=== rl2dop: строки мода ==="
             grep -a "rl2dop" ci/smoke.log | tail -30 || true
             echo "=== ошибки/исключения ==="

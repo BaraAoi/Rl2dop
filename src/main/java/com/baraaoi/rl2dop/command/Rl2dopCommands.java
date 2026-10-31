@@ -20,6 +20,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.commands.arguments.ResourceLocationArgument;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -48,6 +49,7 @@ public final class Rl2dopCommands {
 			registerShelfAdd(dispatcher);
 			registerHallBoard(dispatcher);
 			registerShopMarker(dispatcher);
+			registerNpcProfession(dispatcher);
 			registerNpcList(dispatcher);
 			registerEconLog(dispatcher);
 			registerRoot(dispatcher);
@@ -98,7 +100,7 @@ public final class Rl2dopCommands {
 		dispatcher.register(Commands.literal("give_coins")
 				.requires(source -> source.hasPermission(2))
 				.then(Commands.argument("amount", IntegerArgumentType.integer(1, 1_000_000))
-						.executes(context -> giveCoins(context, context.getSource().getPlayerOrException(),
+						.executes(context -> giveCoins(context, context.getSource().getPlayer(),
 								IntegerArgumentType.getInteger(context, "amount")))
 						.then(Commands.argument("player", EntityArgument.player())
 								.executes(context -> giveCoins(context, EntityArgument.getPlayer(context, "player"),
@@ -114,13 +116,28 @@ public final class Rl2dopCommands {
 					+ Rl2dopConfig.mintLimit));
 			return 0;
 		}
-		CoinUtil.give(target, (int) minted);
-		state.log("эмиссия " + minted + " монет для " + target.getGameProfile().getName()
-				+ " (всего " + state.minted + "/" + Rl2dopConfig.mintLimit + ")");
-		ModPackets.syncTo(target);
-		source.sendSuccess(() -> Component.literal("§aВыдано §f" + minted + "м §aигроку §f"
-				+ target.getGameProfile().getName() + "§a. Эмиссия: " + state.minted + "/"
-				+ Rl2dopConfig.mintLimit), true);
+		String who;
+		if (target != null) {
+			CoinUtil.give(target, (int) minted);
+			ModPackets.syncTo(target);
+			who = target.getGameProfile().getName();
+			state.log("эмиссия " + minted + " монет для " + who + " (всего " + state.minted + "/"
+					+ Rl2dopConfig.mintLimit + ")");
+		} else {
+			// из консоли печатаем прямо в казну ближайшего поселения
+			Settlement settlement = settlementAt(source, targetPos(source));
+			if (settlement != null) {
+				settlement.treasury += minted;
+				who = "казна " + settlement.displayName();
+			} else {
+				who = "никуда (нет поселений)";
+			}
+			state.log("эмиссия " + minted + " монет в " + who + " (всего " + state.minted + "/"
+					+ Rl2dopConfig.mintLimit + ")");
+		}
+		String targetName = who;
+		source.sendSuccess(() -> Component.literal("§aНапечатано §f" + minted + "м §a→ §f" + targetName
+				+ "§a. Эмиссия: " + state.minted + "/" + Rl2dopConfig.mintLimit), true);
 		if (minted < amount) {
 			source.sendSuccess(() -> Component.literal("§eЧасть монет не напечатана: достигнут лимит."), false);
 		}
@@ -290,11 +307,11 @@ public final class Rl2dopCommands {
 	private static void registerPriceSet(CommandDispatcher<CommandSourceStack> dispatcher) {
 		dispatcher.register(Commands.literal("price_set")
 				.requires(source -> source.hasPermission(2))
-				.then(Commands.argument("item", StringArgumentType.word())
+				.then(Commands.argument("item", ResourceLocationArgument.id())
 						.suggests((context, builder) -> SharedSuggestionProvider.suggest(Rl2dopConfig.goodIds(), builder))
 						.then(Commands.argument("base", IntegerArgumentType.integer(1, 10000))
 								.executes(context -> {
-									String item = StringArgumentType.getString(context, "item");
+									String item = ResourceLocationArgument.getId(context, "item").toString();
 									Rl2dopConfig.Good good = Rl2dopConfig.good(item);
 									if (good == null) {
 										context.getSource().sendFailure(Component.literal("Нет такого товара в конфиге."));
@@ -335,12 +352,12 @@ public final class Rl2dopCommands {
 	private static void registerShelfAdd(CommandDispatcher<CommandSourceStack> dispatcher) {
 		dispatcher.register(Commands.literal("shelf_add")
 				.requires(source -> source.hasPermission(2))
-				.then(Commands.argument("item", StringArgumentType.word())
+				.then(Commands.argument("item", ResourceLocationArgument.id())
 						.suggests((context, builder) -> SharedSuggestionProvider.suggest(Rl2dopConfig.goodIds(), builder))
 						.executes(context -> {
 							CommandSourceStack source = context.getSource();
 							ServerLevel level = source.getLevel();
-							String item = StringArgumentType.getString(context, "item");
+							String item = ResourceLocationArgument.getId(context, "item").toString();
 							BlockPos pos = targetPos(source).above();
 							Settlement settlement = settlementAt(source, pos);
 							if (settlement == null) {
@@ -392,6 +409,47 @@ public final class Rl2dopCommands {
 							+ "» привязан к " + pos.toShortString()), true);
 					return 1;
 				}));
+	}
+
+	private static void registerNpcProfession(CommandDispatcher<CommandSourceStack> dispatcher) {
+		dispatcher.register(Commands.literal("npc_profession")
+				.requires(source -> source.hasPermission(2))
+				.then(Commands.argument("profession", StringArgumentType.word())
+						.suggests((context, builder) -> SharedSuggestionProvider.suggest(Profession.ids(), builder))
+						.executes(context -> {
+							CommandSourceStack source = context.getSource();
+							ServerLevel level = source.getLevel();
+							BlockPos pos = targetPos(source);
+							CitizenEntity citizen = nearestCitizen(level, pos);
+							if (citizen == null) {
+								source.sendFailure(Component.literal("Рядом нет NPC."));
+								return 0;
+							}
+							Profession profession = Profession.byId(StringArgumentType.getString(context, "profession"));
+							citizen.setProfession(profession);
+							Settlement settlement = settlementAt(source, pos);
+							if (settlement != null) {
+								citizen.setWorkPos(SettlementService.workSpot(level, settlement, profession));
+							}
+							source.sendSuccess(() -> Component.literal("§a" + citizen.getCitizenName()
+									+ " теперь " + profession.id()), true);
+							return 1;
+						})));
+	}
+
+	private static CitizenEntity nearestCitizen(ServerLevel level, BlockPos pos) {
+		List<CitizenEntity> citizens = level.getEntitiesOfClass(CitizenEntity.class,
+				new net.minecraft.world.phys.AABB(pos).inflate(24.0D));
+		CitizenEntity best = null;
+		double bestDistance = Double.MAX_VALUE;
+		for (CitizenEntity citizen : citizens) {
+			double distance = citizen.blockPosition().distSqr(pos);
+			if (distance < bestDistance) {
+				bestDistance = distance;
+				best = citizen;
+			}
+		}
+		return best;
 	}
 
 	private static void registerNpcList(CommandDispatcher<CommandSourceStack> dispatcher) {
@@ -455,6 +513,7 @@ public final class Rl2dopCommands {
 							"§f/shop_marker§7 — точка входа магазина поселения",
 							"§f/salary_set <profession> <amount>§7 — зарплата",
 							"§f/price_set <item> <base>§7 — базовая цена",
+							"§f/npc_profession <profession>§7 — сменить профессию ближайшему NPC",
 							"§f/npc_list§7, §f/econ_log [n]§7, §f/reset_economy confirm"
 					};
 					for (String line : help) {

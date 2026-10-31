@@ -79,6 +79,7 @@ public final class SettlementService {
 		citizen.setWorkPos(workSpot(level, settlement, profession));
 		citizen.setShopPos(settlement.shop());
 		citizen.setWallet(Math.max(citizen.getWallet(), 20));
+		citizen.setProfessionCooldown(Rl2dopConfig.autoProfessionCooldownTicks);
 		settlement.registerNpc(citizen.getUUID());
 		citizen.refreshNameTag();
 		state.setDirty();
@@ -92,9 +93,9 @@ public final class SettlementService {
 		}
 		citizen.moveTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, level.random.nextFloat() * 360.0F, 0.0F);
 		citizen.setProfession(profession);
-		if (name != null && !name.isBlank()) {
-			citizen.setCitizenName(name);
-		}
+		citizen.setCitizenName(name != null && !name.isBlank() ? name : EconomyState.randomName(level.random));
+		// не даём свежеспавненному NPC сразу бежать менять профессию
+		citizen.setProfessionCooldown(Rl2dopConfig.autoProfessionCooldownTicks);
 		citizen.setSettlementId(settlement.id);
 		citizen.setHomePos(jitter(level, settlement.hall(), 8));
 		citizen.setWorkPos(workSpot(level, settlement, profession));
