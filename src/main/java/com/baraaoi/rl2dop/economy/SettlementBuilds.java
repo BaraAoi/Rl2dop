@@ -498,7 +498,7 @@ public final class SettlementBuilds {
 		}
 		for (int x = -1; x <= 1; x++) {
 			plan.set(base.offset(x, 1, -2), Blocks.SPRUCE_LOG.defaultBlockState()
-					.setValue(BlockStateProperties.AXIS, Direction.X));
+						.setValue(BlockStateProperties.AXIS, Direction.Axis.X));
 		}
 		plan.set(base.offset(0, 1, -2), Blocks.LANTERN.defaultBlockState());
 		// руда в породе вокруг устья — шахтёр её «добывает», ничего копать не надо

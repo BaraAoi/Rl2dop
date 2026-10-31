@@ -204,6 +204,7 @@ public final class Rl2dopConfig {
 		addGood("minecraft:oak_log", 3.0, 1.0, 24.0, 96, 1.2);
 		addGood("minecraft:iron_ingot", 12.0, 4.0, 90.0, 48, 1.3);
 		addGood("minecraft:cobblestone", 1.5, 1.0, 12.0, 128, 1.4);
+		addGood("minecraft:coal", 3.0, 1.0, 30.0, 64, 1.2);
 		addGood("minecraft:leather", 5.0, 2.0, 45.0, 48, 1.1);
 		addGood("minecraft:white_wool", 4.0, 1.0, 30.0, 48, 1.1);
 		addGood("minecraft:stick", 1.5, 1.0, 10.0, 64, 1.2);

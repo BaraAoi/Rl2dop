@@ -36,6 +36,7 @@ import net.minecraft.server.level.ServerPlayer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /** Все команды отладки и администрирования экономики. */
 public final class Rl2dopCommands {
@@ -286,10 +287,17 @@ public final class Rl2dopCommands {
 	private static List<String> dumpSettlement(Settlement settlement) {
 		List<String> lines = new ArrayList<>();
 		lines.add("Поселение " + settlement.displayName() + " (" + settlement.id + ") dim=" + settlement.dimension);
-		lines.add("  казна=" + settlement.treasury + "м  NPC=" + settlement.npcs.size()
+		lines.add("  казна=" + settlement.treasury + "м"
+				+ (Rl2dopConfig.infiniteNpcMoney ? " §a(бесконечная)§7" : "")
+				+ "  NPC=" + settlement.npcs.size()
 				+ "  постройка=" + settlement.buildProgress + "%"
 				+ "  лавка=" + settlement.shop().toShortString()
+				+ "  домов=" + settlement.houses.size()
+				+ "  мастерских=" + settlement.workSites.size()
 				+ "  табличек=" + settlement.boards.size());
+		for (Map.Entry<String, String> site : settlement.workSites.entrySet()) {
+			lines.add("  работа " + site.getKey() + ": " + site.getValue().replace(';', ','));
+		}
 		for (Rl2dopConfig.Good good : Rl2dopConfig.goods.values()) {
 			lines.add(String.format("  %s: сток=%d цена=%.2f спрос=%d",
 					good.item, settlement.stock(good.item), settlement.price(good.item),

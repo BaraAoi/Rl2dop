@@ -300,12 +300,15 @@ public final class CitizenBrain {
 				settlement.addStock("minecraft:coal", 1);
 				settlement.addDemand("minecraft:coal", -1);
 			} else if (luck == 2 && Rl2dopConfig.workshopYield > 0) {
-				settlement.addStock("minecraft:flint", 1);
+				settlement.addStock("minecraft:coal", 1);
+				settlement.addDemand("minecraft:coal", -1);
 			}
 		}
 		if (profession == Profession.FARMER && citizen.getRandom().nextInt(3) == 0) {
 			// на ферме всегда что-то да вырастает: морковь/картофель разбавляют склад
-			settlement.addStock(citizen.getRandom().nextBoolean() ? "minecraft:carrot" : "minecraft:potato", 1);
+			String extra = citizen.getRandom().nextBoolean() ? "minecraft:carrot" : "minecraft:wheat";
+			settlement.addStock(extra, 1);
+			settlement.addDemand(extra, -1);
 		}
 		if (profession == Profession.BUILDER) {
 			// ратуша не нуждается в стройке, поэтому строитель растит жилые дома
