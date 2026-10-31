@@ -33,19 +33,19 @@ duplicate input class net/fabricmc/fabric/mixin/tag/package-info, from /home/run
 > Task :processResources
 
 > Task :compileJava
-/home/runner/work/Rl2dop/Rl2dop/src/main/java/com/baraaoi/rl2dop/command/Rl2dopCommands.java:551: error: local variables referenced from a lambda expression must be final or effectively final
-						source.sendSuccess(() -> Component.literal("§7" + primary.id + ": коек "
-						                                                  ^
-/home/runner/work/Rl2dop/Rl2dop/src/main/java/com/baraaoi/rl2dop/command/Rl2dopCommands.java:552: error: local variables referenced from a lambda expression must be final or effectively final
-								+ summary[0] + " из " + primary.houses.size() + " дом(ов) · размещено "
-								                        ^
+/home/runner/work/Rl2dop/Rl2dop/src/main/java/com/baraaoi/rl2dop/economy/SettlementBuilds.java:1623: error: package net.minecraft.registry.tag does not exist
+					if (fluid.is(net.minecraft.registry.tag.FluidTags.WATER)
+					                                       ^
+/home/runner/work/Rl2dop/Rl2dop/src/main/java/com/baraaoi/rl2dop/economy/SettlementBuilds.java:1624: error: package net.minecraft.registry.tag does not exist
+							|| fluid.is(net.minecraft.registry.tag.FluidTags.LAVA)) {
+							                                      ^
 Note: Some input files use or override a deprecated API.
 Note: Recompile with -Xlint:deprecation for details.
 2 errors
 
 > Task :compileJava FAILED
 > Task :remapSourcesJar
-gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1793465157517.json
+gradle/actions: Writing build results to /home/runner/work/_temp/.gradle-actions/build-results/__run_2-1793478007032.json
 
 [Incubating] Problems report is available at: file:///home/runner/work/Rl2dop/Rl2dop/build/reports/problems/problems-report.html
 
@@ -54,12 +54,12 @@ FAILURE: Build failed with an exception.
 * What went wrong:
 Execution failed for task ':compileJava' (registered by plugin class 'org.gradle.api.plugins.JavaBasePlugin').
 > Compilation failed; see the compiler output below.
-  /home/runner/work/Rl2dop/Rl2dop/src/main/java/com/baraaoi/rl2dop/command/Rl2dopCommands.java:551: error: local variables referenced from a lambda expression must be final or effectively final
-  						source.sendSuccess(() -> Component.literal("§7" + primary.id + ": коек "
-  						                                                  ^
-  /home/runner/work/Rl2dop/Rl2dop/src/main/java/com/baraaoi/rl2dop/command/Rl2dopCommands.java:552: error: local variables referenced from a lambda expression must be final or effectively final
-  								+ summary[0] + " из " + primary.houses.size() + " дом(ов) · размещено "
-  								                        ^
+  /home/runner/work/Rl2dop/Rl2dop/src/main/java/com/baraaoi/rl2dop/economy/SettlementBuilds.java:1623: error: package net.minecraft.registry.tag does not exist
+  					if (fluid.is(net.minecraft.registry.tag.FluidTags.WATER)
+  					                                       ^
+  /home/runner/work/Rl2dop/Rl2dop/src/main/java/com/baraaoi/rl2dop/economy/SettlementBuilds.java:1624: error: package net.minecraft.registry.tag does not exist
+  							|| fluid.is(net.minecraft.registry.tag.FluidTags.LAVA)) {
+  							                                      ^
   Note: Some input files use or override a deprecated API.
   Note: Recompile with -Xlint:deprecation for details.
   2 errors
@@ -99,12 +99,12 @@ org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':compile
 	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:65)
 	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:47)
 Caused by: org.gradle.api.internal.tasks.compile.CompilationFailedException: Compilation failed; see the compiler output below.
-/home/runner/work/Rl2dop/Rl2dop/src/main/java/com/baraaoi/rl2dop/command/Rl2dopCommands.java:551: error: local variables referenced from a lambda expression must be final or effectively final
-						source.sendSuccess(() -> Component.literal("§7" + primary.id + ": коек "
-						                                                  ^
-/home/runner/work/Rl2dop/Rl2dop/src/main/java/com/baraaoi/rl2dop/command/Rl2dopCommands.java:552: error: local variables referenced from a lambda expression must be final or effectively final
-								+ summary[0] + " из " + primary.houses.size() + " дом(ов) · размещено "
-								                        ^
+/home/runner/work/Rl2dop/Rl2dop/src/main/java/com/baraaoi/rl2dop/economy/SettlementBuilds.java:1623: error: package net.minecraft.registry.tag does not exist
+					if (fluid.is(net.minecraft.registry.tag.FluidTags.WATER)
+					                                       ^
+/home/runner/work/Rl2dop/Rl2dop/src/main/java/com/baraaoi/rl2dop/economy/SettlementBuilds.java:1624: error: package net.minecraft.registry.tag does not exist
+							|| fluid.is(net.minecraft.registry.tag.FluidTags.LAVA)) {
+							                                      ^
 Note: Some input files use or override a deprecated API.
 Note: Recompile with -Xlint:deprecation for details.
 2 errors
@@ -242,6 +242,6 @@ Note: Recompile with -Xlint:deprecation for details.
 	... 25 more
 
 
-BUILD FAILED in 58s
+BUILD FAILED in 41s
 5 actionable tasks: 5 executed
 Configuration cache entry stored.
