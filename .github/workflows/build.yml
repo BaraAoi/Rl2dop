@@ -39,6 +39,18 @@ jobs:
           git commit -m "ci: build log [skip ci]" || true
           git push || true
 
+      - name: add stable asset name
+        run: |
+          cd build/libs
+          for f in rl2dop-*.jar
+          do
+            case "$f" in
+              *-sources.jar) ;;
+              *) cp -f "$f" rl2dop-latest.jar ;;
+            esac
+          done
+          ls -la
+
       - name: capture build artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -53,7 +65,9 @@ jobs:
           name: Latest build (1.21.1)
           body: |
             Автоматическая сборка мода Rl2dop для Minecraft 1.21.1 (Fabric).
-            Скачай `rl2dop-*.jar` и положи в папку `mods` вместе с Fabric API.
+            Постоянная ссылка (всегда последняя сборка): `rl2dop-latest.jar`.
+            Версия в имени файла растётся на каждое обновление (`mod_version` в gradle.properties).
+            Положи jar в папку `mods` вместе с Fabric API.
           files: build/libs/*.jar
           prerelease: true
           make_latest: true
@@ -88,7 +102,7 @@ jobs:
           exec 3> /tmp/cmd1
           for i in $(seq 1 150); do grep -q "Done (" ci/smoke.log 2>/dev/null && break; sleep 2; done
           sleep 3
-          for cmd in "settle_spawn SmokeTown" "settle_build" "give_coins 500" "wallet" "spawn_npc farmer" "spawn_npc trader" "spawn_npc guard" "spawn_npc cook" "market_dump" "npc_list" "salary_set farmer 15" "price_set minecraft:bread 5" "shelf_add minecraft:bread" "hall_board" "shop_marker" "npc_profession lumberjack" "settle_bind SmokeVillage" "econ_log 8"; do
+          for cmd in "settle_spawn SmokeTown" "settle_build" "settle_mayor" "house_add" "give_coins 500" "wallet" "spawn_npc farmer" "spawn_npc trader" "spawn_npc guard" "spawn_npc cook" "market_dump" "npc_list" "salary_set farmer 15" "price_set minecraft:bread 5" "shelf_add minecraft:bread" "hall_board" "shop_marker" "npc_profession lumberjack" "settle_bind SmokeVillage" "econ_log 8"; do
             echo "$cmd" >&3
             sleep 2
           done
@@ -108,6 +122,8 @@ jobs:
           sleep 3
           echo "market_dump smoketown" >&3; sleep 3
           echo "settle_build smoketown grow" >&3; sleep 3
+          echo "settle_mayor smoketown" >&3; sleep 3
+          echo "house_add smoketown" >&3; sleep 3
           echo "market_dump smoketown" >&3; sleep 3
           echo "npc_list" >&3; sleep 3
           sleep 10

@@ -16,7 +16,9 @@ public enum Profession {
 	RANCHER("rancher", "minecraft:leather", 1, null, 0, 300),
 	CRAFTSMAN("craftsman", "minecraft:stick", 4, "minecraft:oak_log", 1, 200),
 	BUILDER("builder", null, 0, "minecraft:cobblestone", 4, 260),
-	HEALER("healer", "rl2dop:bandage", 1, null, 0, 400);
+	HEALER("healer", "rl2dop:bandage", 1, null, 0, 400),
+	/** Глава поселения: стоит у табличек, скупает всё что угодно без торга. */
+	MAYOR("mayor", null, 0, null, 0, 0);
 
 	private final String id;
 	private final String produceItem;
@@ -68,7 +70,12 @@ public enum Profession {
 
 	/** Профессии, которые можно назвать "рабочими" (получают зарплату и работают на точке). */
 	public boolean isWorker() {
-		return this != TRADER && this != GUARD;
+		return this != TRADER && this != GUARD && this != MAYOR;
+	}
+
+	/** Не работает и не меняет профессию сам: глава стоит на своём месте. */
+	public boolean isStatic() {
+		return this == MAYOR;
 	}
 
 	public String translationKey() {

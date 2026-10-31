@@ -208,6 +208,24 @@ public class CitizenEntity extends PathfinderMob {
 		this.professionCooldown = Math.max(0, professionCooldown);
 	}
 
+	public boolean isMayor() {
+		return profession == Profession.MAYOR;
+	}
+
+	/** Повернуться лицом к точке (глава стоит у табличек и смотрит в зал, а не в стену). */
+	public void lookAtBlock(BlockPos pos) {
+		double dx = pos.getX() + 0.5D - this.getX();
+		double dz = pos.getZ() + 0.5D - this.getZ();
+		if (Math.abs(dx) < 1.0E-3D && Math.abs(dz) < 1.0E-3D) {
+			return;
+		}
+		float yaw = net.minecraft.util.Mth.wrapDegrees(
+				(float) Math.toDegrees(Math.atan2(dz, dx)) - 90.0F);
+		this.setYRot(yaw);
+		this.setXRot(0.0F);
+		this.yHeadRot = yaw;
+	}
+
 	public boolean isArcherGuard() {
 		return profession == Profession.GUARD && guardVariant == 1;
 	}
@@ -264,7 +282,9 @@ public class CitizenEntity extends PathfinderMob {
 
 	private void applyEquipment() {
 		ItemStack hand = ItemStack.EMPTY;
-		if (profession == Profession.GUARD) {
+		if (profession == Profession.MAYOR) {
+			hand = new ItemStack(Items.CLOCK);
+		} else if (profession == Profession.GUARD) {
 			hand = new ItemStack(guardVariant == 1 ? Items.BOW : Items.IRON_SWORD);
 		} else if (profession == Profession.FARMER) {
 			hand = new ItemStack(Items.IRON_HOE);
@@ -281,7 +301,8 @@ public class CitizenEntity extends PathfinderMob {
 
 	public void refreshNameTag() {
 		String name = citizenName.isEmpty() ? "Житель" : citizenName;
-		Component tag = Component.literal("§e" + name + " ")
+		String color = isMayor() ? "§6" : "§e";
+		Component tag = Component.literal(color + name + " ")
 				.append(Component.translatable(profession.translationKey()).withStyle(ChatFormatting.GRAY));
 		this.setCustomName(tag);
 		this.setCustomNameVisible(true);
@@ -305,6 +326,15 @@ public class CitizenEntity extends PathfinderMob {
 						+ Component.translatable(profession.translationKey()).getString()
 						+ " · " + Component.translatable(citizenState.translationKey()).getString()
 						+ " · кошелёк " + wallet + "м · голод " + hunger + "% · настрой " + mood + "%"), false);
+				return InteractionResult.CONSUME;
+			}
+			if (profession == Profession.MAYOR) {
+				com.baraaoi.rl2dop.economy.Settlement settlement =
+						com.baraaoi.rl2dop.economy.SettlementService.byId(serverPlayer.serverLevel(), settlementId);
+				if (settlement == null) {
+					settlement = com.baraaoi.rl2dop.economy.SettlementService.forPlayer(serverPlayer);
+				}
+				ShopService.openMayor(serverPlayer, this, settlement);
 				return InteractionResult.CONSUME;
 			}
 			if (profession == Profession.TRADER || profession == Profession.HEALER) {

@@ -43,7 +43,9 @@ public final class CitizenBrain {
 		if (citizen.getHunger() < 35 && handleHunger(citizen, level, settlement)) {
 			return;
 		}
-		if (isNight(level)) {
+		if (citizen.getProfession().isStatic()) {
+			handlePost(citizen);
+		} else if (isNight(level)) {
 			handleSleep(citizen);
 		} else {
 			handleWork(citizen, level, settlement);
@@ -98,6 +100,29 @@ public final class CitizenBrain {
 		double horizontal = Math.sqrt(dx * dx + dz * dz);
 		arrow.shoot(dx, dy + horizontal * 0.2D, dz, 1.6F, 6.0F);
 		level.addFreshEntity(arrow);
+	}
+
+	/**
+	 * «Пост»: глава стоит у табличок и день, и ночь — только если голоден, отлучается в лавку
+	 * (handleHunger отрабатывает до этого) и возвращается.
+	 */
+	private static void handlePost(CitizenEntity citizen) {
+		BlockPos post = citizen.getWorkPos();
+		if (post == null) {
+			citizen.getNavigation().stop();
+			citizen.setCitizenState(CitizenState.IDLE);
+			return;
+		}
+		if (citizen.blockPosition().distSqr(post) > 4.0D) {
+			citizen.setCitizenState(CitizenState.WALKING);
+			if (citizen.getNavigation().isDone()) {
+				walkTo(citizen, post);
+			}
+			return;
+		}
+		citizen.getNavigation().stop();
+		citizen.setCitizenState(CitizenState.IDLE);
+		citizen.lookAtBlock(post);
 	}
 
 	// ---------- голод ----------

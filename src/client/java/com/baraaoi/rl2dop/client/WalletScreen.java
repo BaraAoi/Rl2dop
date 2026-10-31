@@ -60,25 +60,25 @@ public class WalletScreen extends Screen {
 		int x = this.panelX;
 		int y = this.panelY;
 		graphics.fill(x - 3, y + 4, x + WIDTH + 3, y + HEIGHT + 5, 0x60000000);
-		graphics.fill(x - 2, y - 2, x + WIDTH + 2, y + HEIGHT + 2, 0xFF2A1C10);
-		graphics.fill(x - 1, y - 1, x + WIDTH + 1, y + HEIGHT + 1, 0xFF6B4A2A);
-		graphics.fill(x, y, x + WIDTH, y + HEIGHT, 0xFFE7D6AE);
-		graphics.fill(x, y, x + WIDTH, y + 22, 0xFF3A2716);
-		graphics.drawCenteredString(this.font, this.title, x + WIDTH / 2, y + 8, 0xFFFFD966);
+		graphics.fill(x - 2, y - 2, x + WIDTH + 2, y + HEIGHT + 2, 0xFF1B1208);
+		graphics.fill(x - 1, y - 1, x + WIDTH + 1, y + HEIGHT + 1, 0xFF8A6B3F);
+		graphics.fill(x, y, x + WIDTH, y + HEIGHT, 0xF2181410);
+		graphics.fill(x, y, x + WIDTH, y + 22, 0xFF241B12);
+		graphics.drawCenteredString(this.font, this.title, x + WIDTH / 2, y + 8, 0xFFFFF2CC);
 
 		int rowY = y + 32;
 		graphics.drawString(this.font, "§6Золотые", x + 14, rowY, 0xFFFFFF, false);
 		graphics.drawString(this.font, "§fx " + ClientEconomy.walletGold, x + WIDTH - 44, rowY, 0xFFFFFF, false);
 		graphics.drawString(this.font, "§fЖелезные", x + 14, rowY + 14, 0xFFFFFF, false);
 		graphics.drawString(this.font, "§fx " + ClientEconomy.walletIron, x + WIDTH - 44, rowY + 14, 0xFFFFFF, false);
-		graphics.drawString(this.font, "§7Бронзовые", x + 14, rowY + 28, 0xFFFFFF, false);
+		graphics.drawString(this.font, "§fБронзовые", x + 14, rowY + 28, 0xFFFFFF, false);
 		graphics.drawString(this.font, "§fx " + ClientEconomy.walletBronze, x + WIDTH - 44, rowY + 28, 0xFFFFFF, false);
-		graphics.fill(x + 12, rowY + 44, x + WIDTH - 12, rowY + 45, 0x40000000);
+		graphics.fill(x + 12, rowY + 44, x + WIDTH - 12, rowY + 45, 0xFF6E5630);
 		graphics.drawString(this.font, "§7" + ClientEconomy.walletSummary, x + 14, rowY + 50, 0xFFFFFF, false);
 		graphics.drawString(this.font, "§7Всего со мной: §f" + ClientEconomy.coins + "м",
 				x + 14, rowY + 62, 0xFFFFFF, false);
-		graphics.drawString(this.font, "§8Монеты в карманах — предметы; «Положить всё» соберёт их в кошелёк",
-				x + 6, y + HEIGHT - 42, 0xFFFFFF, false);
+		graphics.drawString(this.font, "§7Монеты в карманах — предметы; «Положить всё» соберёт их в кошелёк",
+				x + 6, y + HEIGHT - 42, 0xFFE8E0C8, true);
 		super.render(graphics, mouseX, mouseY, delta);
 	}
 

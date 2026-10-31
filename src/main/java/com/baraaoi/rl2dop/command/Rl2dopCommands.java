@@ -5,6 +5,7 @@ import com.baraaoi.rl2dop.economy.CoinType;
 import com.baraaoi.rl2dop.economy.Money;
 import com.baraaoi.rl2dop.economy.Displays;
 import com.baraaoi.rl2dop.economy.EconomyState;
+import com.baraaoi.rl2dop.economy.EconomyTicker;
 import com.baraaoi.rl2dop.economy.Settlement;
 import com.baraaoi.rl2dop.economy.SettlementBuilds;
 import com.baraaoi.rl2dop.economy.SettlementService;
@@ -49,6 +50,8 @@ public final class Rl2dopCommands {
 			registerSettleSpawn(dispatcher);
 			registerSettleBind(dispatcher);
 			registerSettleBuild(dispatcher);
+			registerHouseAdd(dispatcher);
+			registerSettleMayor(dispatcher);
 			registerWallet(dispatcher);
 			registerMarketDump(dispatcher);
 			registerResetEconomy(dispatcher);
@@ -209,16 +212,18 @@ public final class Rl2dopCommands {
 		Settlement settlement = EconomyState.get(source.getServer()).createSettlement(name, pos,
 				level.dimension().location().toString());
 		Displays.ensureBoard(level, settlement, pos.above(2));
-		int progress;
-		if (Rl2dopConfig.autoBuild) {
-			progress = SettlementBuilds.buildInstant(level, settlement);
-		} else {
-			SignBoards.install(level, settlement);
-			progress = settlement.buildProgress;
-		}
+		// таблички нужд вывешиваем сразу: потребности порождает стройка, а не «пустое место»
+		SignBoards.install(level, settlement);
+		int progress = Rl2dopConfig.autoBuild ? SettlementBuilds.buildInstant(level, settlement)
+				: settlement.buildProgress;
+		EconomyTicker.settlementStep(source.getServer(), EconomyState.get(source.getServer()));
+		int houses = settlement.houses.size();
+		CitizenEntity mayor = SettlementService.findMayor(level, settlement);
 		source.sendSuccess(() -> Component.literal("§aПоселение «§f" + settlement.displayName()
 				+ "§a» создано. Ратуша: §f" + pos.toShortString()
-				+ "§a, постройка §f" + progress + "%§a. Дальше: §f/settle_bind§a или §f/spawn_npc farmer"), true);
+				+ "§a, постройка §f" + progress + "%§a, домов §f" + houses
+				+ "§a, глава: §f" + (mayor == null ? "не выбран" : mayor.getCitizenName())
+				+ "§a. Таблички нужд уже висят. Дальше: §f/settle_bind§a, §f/house_add§a или §f/spawn_npc farmer"), true);
 		return 1;
 	}
 
@@ -539,7 +544,9 @@ public final class Rl2dopCommands {
 							"§f/settle_spawn <name>§7 — ратуша/поселение в текущей точке",
 							"§f/settle_bind [name]§7 — привязать к ванильной деревне",
 						"§f/settle_build [settlement] [instant|grow|reset]§7 — постройки поселения",
-						"§f/wallet [give|deposit|withdraw]§7 — кошелёк и монеты",
+						"§f/house_add [settlement]§7 — поставить жилой дом и поселить в него NPC",
+						"§f/settle_mayor [settlement] [remove]§7 — глава: стоит у табличек, скупает всё без торга",
+						"§f/wallet [give|deposit|withdraw|change]§7 — кошелёк и монеты",
 							"§f/market_dump [settlement]§7 — цены, сток, спрос",
 							"§f/shop_open§7 — открыть торговый экран",
 							"§f/shelf_add <item>§7 — полка с живым стоком",
@@ -595,24 +602,145 @@ public final class Rl2dopCommands {
 			}
 			case "grow" -> {
 				int progress = SettlementBuilds.build(level, settlement, Math.max(1, Rl2dopConfig.buildBlocksPerTick));
-				EconomyState.get(source.getServer()).setDirty();
+				EconomyTicker.settlementStep(source.getServer(), EconomyState.get(source.getServer()));
 				source.sendSuccess(() -> Component.literal("§aПостроено до §f" + progress + "%§a (шаг §f"
-						+ Rl2dopConfig.buildBlocksPerTick + "§a блоков)."), true);
+						+ Rl2dopConfig.buildBlocksPerTick + "§a блоков), материалов съедено на этом шаге: §f"
+						+ settlement.stock("minecraft:cobblestone") + "§a камня на складе."), true);
 				return 1;
 			}
 			default -> {
 				int progress = SettlementBuilds.buildInstant(level, settlement);
+				EconomyTicker.settlementStep(source.getServer(), EconomyState.get(source.getServer()));
 				SignBoards.refresh(level, settlement);
 				EconomyState.get(source.getServer()).setDirty();
-				source.sendSuccess(() -> Component.literal("§aРатуша, рынок и лавки поселения §f"
-						+ settlement.displayName() + "§a: постройка §f" + progress + "%§a, точка магазина §f"
-						+ settlement.shop().toShortString()), true);
+				int houses = settlement.houses.size();
+				source.sendSuccess(() -> Component.literal("§aРатуша, площадь, лавка, склад и §f" + houses
+						+ "§a домов поселения §f" + settlement.displayName() + "§a: постройка §f" + progress
+						+ "%§a, точка магазина §f" + settlement.shop().toShortString()
+						+ "§a, таблички нужд внутри зала."), true);
 				return 1;
 			}
 		}
 	}
 
 	// ---------- 1: кошелёк и монеты ----------
+
+	// ---------- 9: свои дома (/house_add) и глава поселения (/settle_mayor) ----------
+
+	private static void registerHouseAdd(CommandDispatcher<CommandSourceStack> dispatcher) {
+		dispatcher.register(Commands.literal("house_add")
+				.requires(source -> source.hasPermission(2))
+				.executes(context -> houseAdd(context, null))
+				.then(Commands.argument("settlement", StringArgumentType.word())
+						.executes(context -> houseAdd(context, StringArgumentType.getString(context, "settlement")))));
+	}
+
+	/**
+	 * Поставить жилой дом: в точке прицела (или под ногами), привязать к поселению. Дом встаёт на
+	 * грунт (фундамент достраивается вниз), записывается в {@code Settlement.houses}, и в него
+	 * сразу расселяются жители без жилья.
+	 */
+	private static int houseAdd(CommandContext<CommandSourceStack> context, String settlementId)
+			throws CommandSyntaxException {
+		CommandSourceStack source = context.getSource();
+		ServerLevel level = source.getLevel();
+		Settlement settlement = resolveSettlement(source, settlementId, targetPos(source));
+		if (settlement == null) {
+			source.sendFailure(Component.literal("§cПоселение не найдено — встань рядом с ратушей "
+					+ "или укажи id: /house_add <settlement>"));
+			return 0;
+		}
+		BlockPos raw = targetPos(source);
+		// с-console ставим дом восточнее стартовых застроек, чтобы не залезать на них
+		BlockPos pos = source.getEntity() == null
+				? settlement.hall().offset(SettlementBuilds.HOUSE_X + 8 + settlement.houses.size() * 8, 0,
+						SettlementBuilds.HOUSE_Z)
+				: BlockPos.containing(source.getEntity().getX(), raw.getY(), source.getEntity().getZ());
+		BlockPos built = SettlementBuilds.buildHouse(level, settlement, pos);
+		if (built == null) {
+			source.sendFailure(Component.literal("§cДом не встал: место занято игроком или чанк выгружен."));
+			return 0;
+		}
+		int houses = settlement.houses.size();
+		int settled = SettlementService.assignHomes(level, settlement);
+		source.sendSuccess(() -> Component.literal("§aДом поставлен в §f" + built.toShortString()
+				+ "§a. Домов в поселении: §f" + houses + "§a, поселено жителей: §f" + settled
+				+ "§a. Вход с южной стороны, внутри сундук и верстак. Откат: §f/settle_build <id> reset"), true);
+		return 1;
+	}
+
+	private static void registerSettleMayor(CommandDispatcher<CommandSourceStack> dispatcher) {
+		dispatcher.register(Commands.literal("settle_mayor")
+				.requires(source -> source.hasPermission(2))
+				.executes(context -> settleMayor(context, null))
+				.then(Commands.argument("settlement", StringArgumentType.word())
+						.executes(context -> settleMayor(context, StringArgumentType.getString(context, "settlement")))
+						.then(Commands.literal("remove")
+								.executes(context -> removeMayor(context,
+										StringArgumentType.getString(context, "settlement"))))));
+	}
+
+	/** Выбрать/переизбрать главу: стоит у табличек, скупает всё без торга. */
+	private static int settleMayor(CommandContext<CommandSourceStack> context, String settlementId)
+			throws CommandSyntaxException {
+		CommandSourceStack source = context.getSource();
+		ServerLevel level = source.getLevel();
+		Settlement settlement = resolveSettlement(source, settlementId, targetPos(source));
+		if (settlement == null) {
+			source.sendFailure(Component.literal("§cПоселение не найдено."));
+			return 0;
+		}
+		if (!SettlementBuilds.hallStanding(settlement)) {
+			SignBoards.install(level, settlement);
+		}
+		CitizenEntity old = SettlementService.findMayor(level, settlement);
+		if (old != null) {
+			old.discard();
+		}
+		CitizenEntity mayor = SettlementService.spawnMayor(level, settlement);
+		if (mayor == null) {
+			source.sendFailure(Component.literal("§cНе удалось поставить главу (нет ратуши?)."));
+			return 0;
+		}
+		mayor.refreshNameTag();
+		int bonus = (int) Math.round((Math.max(1.0D, Rl2dopConfig.mayorBuyBonus) - 1.0D) * 100.0D);
+		source.sendSuccess(() -> Component.literal("§aГлавой поселения «§f" + settlement.displayName()
+				+ "§a» назначен §f" + mayor.getCitizenName() + "§a. Он стоит у табличек и скупает всё без торга "
+				+ "(скупка +§f" + bonus + "%§a). Снять: §f/settle_mayor " + settlement.id + " remove"), true);
+		return 1;
+	}
+
+	private static int removeMayor(CommandContext<CommandSourceStack> context, String settlementId)
+			throws CommandSyntaxException {
+		CommandSourceStack source = context.getSource();
+		Settlement settlement = resolveSettlement(source, settlementId, targetPos(source));
+		if (settlement == null) {
+			source.sendFailure(Component.literal("§cПоселение не найдено."));
+			return 0;
+		}
+		CitizenEntity mayor = SettlementService.findMayor(source.getLevel(), settlement);
+		if (mayor == null) {
+			source.sendFailure(Component.literal("§cГлавы нет."));
+			return 0;
+		}
+		mayor.discard();
+		settlement.mayor = "";
+		EconomyState.get(source.getServer()).setDirty();
+		source.sendSuccess(() -> Component.literal("§aГлава снят, его запись удалена."), true);
+		return 1;
+	}
+
+	/** Поселение по id, иначе ближайшее к точке, иначе «по умолчанию». */
+	private static Settlement resolveSettlement(CommandSourceStack source, String settlementId, BlockPos at) {
+		if (settlementId != null && !settlementId.isBlank()) {
+			Settlement settlement = EconomyState.get(source.getServer()).settlement(settlementId);
+			if (settlement != null) {
+				return settlement;
+			}
+		}
+		Settlement nearest = SettlementService.nearest(source.getLevel(), at);
+		return nearest != null ? nearest : EconomyState.get(source.getServer()).defaultSettlement();
+	}
 
 	private static void registerWallet(CommandDispatcher<CommandSourceStack> dispatcher) {
 		dispatcher.register(Commands.literal("wallet")

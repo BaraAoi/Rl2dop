@@ -28,7 +28,7 @@ public final class EconomyTicker {
 			state.lastMarketTick = time;
 			MarketMath.updateAll(state);
 			Displays.refresh(server, state);
-			buildStep(server, state);
+			settlementStep(server, state);
 		}
 
 		// таблички с нуждами обновляем чаще, чем рынок, но не каждый тик
@@ -50,20 +50,34 @@ public final class EconomyTicker {
 		}
 	}
 
-	/** Ращу постройки поселения понемногу за каждый такт рынка. */
-	private static void buildStep(MinecraftServer server, EconomyState state) {
-		if (!Rl2dopConfig.autoBuild) {
-			return;
-		}
+	/**
+	 * Хозяйственный шаг поселения: таблички нужд, рост построек, глава и расселение по домам.
+	 * Нужды появляются сразу при основании — их рождает стройка, а не «пустое место».
+	 */
+	public static void settlementStep(MinecraftServer server, EconomyState state) {
 		for (Settlement settlement : state.all()) {
-			if (settlement.buildProgress >= 100) {
-				continue;
-			}
 			ServerLevel level = Displays.levelOf(server, settlement.dimension);
 			if (level == null) {
 				continue;
 			}
-			SettlementBuilds.build(level, settlement, Math.max(1, Rl2dopConfig.buildBlocksPerTick));
+			if (settlement.boards.isEmpty()) {
+				SignBoards.install(level, settlement);
+				state.log("поселение " + settlement.id + ": вывесили таблички нужд (стройка "
+						+ settlement.buildProgress + "%)");
+			}
+			if (Rl2dopConfig.autoBuild && settlement.buildProgress < 100) {
+				SettlementBuilds.build(level, settlement, Math.max(1, Rl2dopConfig.buildBlocksPerTick));
+			}
+			if (!settlement.hasMayor() && SettlementBuilds.hallStanding(settlement)) {
+				com.baraaoi.rl2dop.entity.CitizenEntity mayor = SettlementService.spawnMayor(level, settlement);
+				if (mayor != null) {
+					state.log("поселение " + settlement.id + ": главой стал " + mayor.getCitizenName()
+							+ " у табличек");
+				}
+			}
+			if (settlement.buildProgress >= 100) {
+				SettlementService.assignHomes(level, settlement);
+			}
 			state.setDirty();
 		}
 	}

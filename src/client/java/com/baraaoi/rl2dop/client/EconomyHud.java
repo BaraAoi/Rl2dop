@@ -27,7 +27,7 @@ public final class EconomyHud {
 			y += 10;
 		}
 		if (!ClientEconomy.ticker.isEmpty()) {
-			graphics.drawString(font, "§8" + ClientEconomy.ticker, x, y, 0xFFFFFF, true);
+			graphics.drawString(font, "§7" + ClientEconomy.ticker, x, y, 0xFFFFFF, true);
 		}
 	}
 }

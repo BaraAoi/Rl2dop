@@ -25,5 +25,18 @@
   "rl2dop.state.panic": "panicking",
   "rl2dop.state.attack": "fighting",
   "rl2dop.state.shopping": "shopping",
-  "item.rl2dop.coin": "Old Coin (replaced by bronze)"
+  "item.rl2dop.coin": "Old Coin (replaced by bronze)",
+  "rl2dop.short.wheat": "wheat",
+  "rl2dop.short.bread": "bread",
+  "rl2dop.short.potato": "potato",
+  "rl2dop.short.carrot": "carrot",
+  "rl2dop.short.cod": "cod",
+  "rl2dop.short.mutton": "mutton",
+  "rl2dop.short.beef": "beef",
+  "rl2dop.short.coal": "coal",
+  "rl2dop.short.iron_ingot": "iron",
+  "rl2dop.short.oak_log": "log",
+  "rl2dop.short.cobblestone": "stone",
+  "rl2dop.short.flint": "flint",
+  "rl2dop.profession.mayor": "Settlement Mayor"
 }

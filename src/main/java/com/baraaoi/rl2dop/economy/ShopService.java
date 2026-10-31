@@ -18,6 +18,15 @@ public final class ShopService {
 
 	public static final int HALL_ID = -1;
 
+	/** Открыть окно главы поселения: скупает всё, торг не нужен. */
+	public static void openMayor(ServerPlayer player, CitizenEntity citizen, Settlement settlement) {
+		player.displayClientMessage(Component.literal("§6" + citizen.getCitizenName()
+				+ " §7(глава)§f: «Неси всё, что накопал и напёк. Торг не нужен — цена и так честная.»"), false);
+		ModPackets.sendShop(player, citizen.getId(), "Глава " + citizen.getCitizenName() + " · " + settlement.displayName(),
+				ShopService.feed(player, settlement, settlement.reputation(player.getUUID()), 1.0D,
+						Math.max(1.0D, com.baraaoi.rl2dop.Rl2dopConfig.mayorBuyBonus)));
+	}
+
 	public static void open(ServerPlayer player, CitizenEntity citizen) {
 		Settlement settlement = SettlementService.byId(player.serverLevel(), citizen.getSettlementId());
 		if (settlement == null) {
@@ -46,10 +55,17 @@ public final class ShopService {
 
 	/** Строки вида {@code itemId|buy|sell|stock|demand|held} — клиент разбирает их сам. */
 	public static List<String> feed(ServerPlayer player, Settlement settlement, int reputation, double haggle) {
+		return feed(player, settlement, reputation, haggle, 1.0D);
+	}
+
+	/** {@code sellBonus} — надбавка скупщика (ратуша и глава поселения платят больше). */
+	public static List<String> feed(ServerPlayer player, Settlement settlement, int reputation, double haggle,
+			double sellBonus) {
 		List<String> rows = new ArrayList<>();
 		for (Rl2dopConfig.Good good : Rl2dopConfig.goods.values()) {
 			int buy = MarketMath.buyPrice(settlement, good, reputation, haggle);
-			int sell = MarketMath.sellPrice(settlement, good, reputation, haggle);
+			int sell = (int) Math.ceil(MarketMath.sellPrice(settlement, good, reputation, haggle)
+					* Math.max(1.0D, sellBonus));
 			int held = InventoryUtil.countItems(player, TradeService.resolveItem(good.item));
 			rows.add(good.item + "|" + buy + "|" + sell + "|" + settlement.stock(good.item) + "|"
 					+ settlement.demand(good.item) + "|" + held);

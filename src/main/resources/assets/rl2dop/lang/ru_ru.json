@@ -25,5 +25,18 @@
   "rl2dop.state.panic": "паника",
   "rl2dop.state.attack": "бой",
   "rl2dop.state.shopping": "в магазине",
-  "item.rl2dop.coin": "Старая монета (заменена на бронзу)"
+  "item.rl2dop.coin": "Старая монета (заменена на бронзу)",
+  "rl2dop.short.wheat": "пшеница",
+  "rl2dop.short.bread": "хлеб",
+  "rl2dop.short.potato": "картофель",
+  "rl2dop.short.carrot": "морковь",
+  "rl2dop.short.cod": "рыба",
+  "rl2dop.short.mutton": "баранина",
+  "rl2dop.short.beef": "говядина",
+  "rl2dop.short.coal": "уголь",
+  "rl2dop.short.iron_ingot": "железо",
+  "rl2dop.short.oak_log": "бревно",
+  "rl2dop.short.cobblestone": "камень",
+  "rl2dop.short.flint": "кремень",
+  "rl2dop.profession.mayor": "Глава поселения"
 }

@@ -58,6 +58,13 @@ public final class Rl2dopConfig {
 	public static int npcHitReputationPenalty = 5;
 
 	// --- постройка поселения ---
+	/** Какая доля целевого склада есть у нового поселения (меньше = больше нужд на старте). */
+	public static double startStockFraction = 0.35;
+	/** Сколько жилых домов ставится вместе с ратушей. */
+	public static int starterHouses = 2;
+	/** Надбавка главы поселения к цене скупки (он берёт всё и без торга). */
+	public static double mayorBuyBonus = 1.05;
+
 	/** Строить ратушу, рынок и лавки автоматически (блоки ставятся только на пустом месте). */
 	public static boolean autoBuild = true;
 	/** Сколько блоков ставится за один такт экономики (0 = мгновенно). */
@@ -103,6 +110,9 @@ public final class Rl2dopConfig {
 			coinIronValue = Math.max(2, intOr(root, "coinIronValue", coinIronValue));
 			coinGoldValue = Math.max(coinIronValue + 1, intOr(root, "coinGoldValue", coinGoldValue));
 			giveWalletOnMint = boolOr(root, "giveWalletOnMint", giveWalletOnMint);
+			startStockFraction = doubleOr(root, "startStockFraction", startStockFraction);
+			starterHouses = intOr(root, "starterHouses", starterHouses);
+			mayorBuyBonus = doubleOr(root, "mayorBuyBonus", mayorBuyBonus);
 			autoBuild = boolOr(root, "autoBuild", autoBuild);
 			buildBlocksPerTick = Math.max(0, intOr(root, "buildBlocksPerTick", buildBlocksPerTick));
 			needsOnSigns = boolOr(root, "needsOnSigns", needsOnSigns);
@@ -188,6 +198,7 @@ public final class Rl2dopConfig {
 		salaries.put("craftsman", 15);
 		salaries.put("builder", 14);
 		salaries.put("healer", 15);
+		salaries.put("mayor", 20);
 	}
 
 	public static final String MOD_BANDAGE = "rl2dop:bandage";
@@ -224,6 +235,9 @@ public final class Rl2dopConfig {
 			root.addProperty("coinIronValue", coinIronValue);
 			root.addProperty("coinGoldValue", coinGoldValue);
 			root.addProperty("giveWalletOnMint", giveWalletOnMint);
+			root.addProperty("startStockFraction", startStockFraction);
+			root.addProperty("starterHouses", starterHouses);
+			root.addProperty("mayorBuyBonus", mayorBuyBonus);
 			root.addProperty("autoBuild", autoBuild);
 			root.addProperty("buildBlocksPerTick", buildBlocksPerTick);
 			root.addProperty("needsOnSigns", needsOnSigns);

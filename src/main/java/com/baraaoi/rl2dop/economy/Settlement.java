@@ -43,6 +43,12 @@ public class Settlement {
 	public final List<String> shelves = new ArrayList<>();
 	/** Таблички с нуждами/ценами: "x;y;z;kind". */
 	public final List<String> boards = new ArrayList<>();
+	/** Прогресс, на котором последний раз жаловались на нехватку материалов (не сохраняется). */
+	public int lastShortageAt = -100;
+	/** Построенные жилые дома: "x;y;z" — к ним привязываются точки сна NPC. */
+	public final List<String> houses = new ArrayList<>();
+	/** UUID главы поселения (стоит у табличек и скупает всё без торга). */
+	public String mayor = "";
 
 	public Settlement(String id, String name) {
 		this.id = id;
@@ -55,8 +61,10 @@ public class Settlement {
 		settlement.dimension = dimension;
 		settlement.treasury = 400L;
 		settlement.coinLimit = Rl2dopConfig.mintLimit;
+		// склад нового поселения неполный: с первого дня есть что закупать и что нести на таблички
+		double fraction = Math.max(0.05D, Math.min(1.0D, Rl2dopConfig.startStockFraction));
 		for (Rl2dopConfig.Good good : Rl2dopConfig.goods.values()) {
-			settlement.stock.put(good.item, good.targetStock);
+			settlement.stock.put(good.item, Math.max(0, (int) Math.round(good.targetStock * fraction)));
 			settlement.prices.put(good.item, good.base);
 			settlement.demand.put(good.item, 0);
 		}
@@ -171,6 +179,54 @@ public class Settlement {
 		npcs.remove(uuid.toString());
 	}
 
+	public void addHouse(BlockPos pos) {
+		String record = pos.getX() + ";" + pos.getY() + ";" + pos.getZ();
+		if (!houses.contains(record)) {
+			houses.add(record);
+		}
+	}
+
+	/** Жилой дом стоит рядом с этой точкой (чтобы не переселять NPC каждый такт). */
+	public boolean hasHouseNear(BlockPos pos) {
+		for (String record : houses) {
+			String[] parts = record.split(";");
+			if (parts.length != 3) {
+				continue;
+			}
+			try {
+				BlockPos house = new BlockPos(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]),
+						Integer.parseInt(parts[2]));
+				if (Math.abs(pos.getX() - house.getX()) <= 5 && Math.abs(pos.getZ() - house.getZ()) <= 5
+						&& Math.abs(pos.getY() - house.getY()) <= 4) {
+					return true;
+				}
+			} catch (NumberFormatException ignored) {
+				// битая запись пропускаем
+			}
+		}
+		return false;
+	}
+
+	public boolean hasMayor() {
+		return mayor != null && !mayor.isEmpty();
+	}
+
+	/** Один из домов для NPC без жилья. */
+	public BlockPos houseFor(int index) {
+		if (houses.isEmpty() || index < 0) {
+			return null;
+		}
+		String[] parts = houses.get(index % houses.size()).split(";");
+		if (parts.length != 3) {
+			return null;
+		}
+		try {
+			return new BlockPos(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]) + 1, Integer.parseInt(parts[2]));
+		} catch (NumberFormatException e) {
+			return null;
+		}
+	}
+
 	public boolean near(BlockPos pos, double radius) {
 		BlockPos hall = hall();
 		return hall.distSqr(pos) <= (long) (radius * radius);
@@ -206,6 +262,8 @@ public class Settlement {
 		tag.put("Npcs", stringList(npcs));
 		tag.put("Shelves", stringList(shelves));
 		tag.put("Boards", stringList(boards));
+		tag.put("Houses", stringList(houses));
+		tag.putString("Mayor", mayor == null ? "" : mayor);
 		return tag;
 	}
 
@@ -230,9 +288,12 @@ public class Settlement {
 		readStringList(tag.getList("Npcs", 8), settlement.npcs);
 		readStringList(tag.getList("Shelves", 8), settlement.shelves);
 		readStringList(tag.getList("Boards", 8), settlement.boards);
+		readStringList(tag.getList("Houses", 8), settlement.houses);
+		settlement.mayor = tag.contains("Mayor") ? tag.getString("Mayor") : "";
 		// если конфиг поменялся — добить недостающие товары
 		for (Rl2dopConfig.Good good : Rl2dopConfig.goods.values()) {
-			settlement.stock.putIfAbsent(good.item, good.targetStock);
+			settlement.stock.putIfAbsent(good.item,
+					(int) Math.round(good.targetStock * Math.max(0.05D, Math.min(1.0D, Rl2dopConfig.startStockFraction))));
 			settlement.prices.putIfAbsent(good.item, good.base);
 			settlement.demand.putIfAbsent(good.item, 0);
 		}

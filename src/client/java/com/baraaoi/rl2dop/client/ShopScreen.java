@@ -20,7 +20,8 @@ import java.util.List;
  * сервер, поэтому дюпнуть через экран нельзя.
  *
  * <p>Фон окна рисуем сами и отключаем ванильный блюр: иначе Minecraft размывает всё под экраном
- * и панель выглядит частью фона, а не окном.
+ * и панель выглядит частью фона, а не окном. Панель тёмная и матовая, текст светлый и с тенью —
+ * на светлом пергаменте надписи терялись (на это и жаловались).
  */
 public class ShopScreen extends Screen {
 	private static final int ROW_HEIGHT = 16;
@@ -96,7 +97,7 @@ public class ShopScreen extends Screen {
 		for (int value : AMOUNTS) {
 			boolean active = amount() == value;
 			this.addRenderableWidget(Button.builder(
-							Component.literal(active ? "§e" + value : "§8" + value),
+							Component.literal(active ? "§e" + value : "§f" + value),
 							pressed -> {
 								pickAmount(value);
 								rebuildWidgets();
@@ -150,9 +151,9 @@ public class ShopScreen extends Screen {
 		drawPanel(graphics);
 
 		var font = this.font;
-		graphics.drawString(font, "§7Товар", panelX + 34, listTop - 13, 0xFFFFFF, false);
-		graphics.drawString(font, "§7покупка / продажа", panelX + panelWidth - 122, listTop - 13, 0xFFFFFF, false);
-		graphics.drawString(font, "§7сток / у тебя", panelX + panelWidth - 232, listTop - 13, 0xFFFFFF, false);
+		graphics.drawString(font, "§eТовар", panelX + 34, listTop - 13, 0xFFFFFF, true);
+		graphics.drawString(font, "§eпокупка / продажа", panelX + panelWidth - 122, listTop - 13, 0xFFFFFF, true);
+		graphics.drawString(font, "§eсток / у тебя", panelX + panelWidth - 232, listTop - 13, 0xFFFFFF, true);
 
 		int y = listTop;
 		for (int i = 0; i < rows.size(); i++) {
@@ -160,36 +161,36 @@ public class ShopScreen extends Screen {
 			boolean hovered = mouseX >= panelX + 8 && mouseX <= panelX + panelWidth - 8
 					&& mouseY >= y - 2 && mouseY < y + ROW_HEIGHT - 2;
 			if (i == selected) {
-				graphics.fill(panelX + 8, y - 3, panelX + panelWidth - 8, y + ROW_HEIGHT - 3, 0x50FFD966);
-				graphics.fill(panelX + 8, y + ROW_HEIGHT - 4, panelX + panelWidth - 8, y + ROW_HEIGHT - 3, 0x60FFD966);
+				graphics.fill(panelX + 8, y - 3, panelX + panelWidth - 8, y + ROW_HEIGHT - 3, 0x3DFFD966);
+				graphics.fill(panelX + 8, y + ROW_HEIGHT - 4, panelX + panelWidth - 8, y + ROW_HEIGHT - 3, 0xB3FFD966);
 			} else if (hovered) {
-				graphics.fill(panelX + 8, y - 3, panelX + panelWidth - 8, y + ROW_HEIGHT - 3, 0x28FFFFFF);
+				graphics.fill(panelX + 8, y - 3, panelX + panelWidth - 8, y + ROW_HEIGHT - 3, 0x33FFF2CC);
 			}
 			ItemStack stack = icon(row.itemId());
 			graphics.renderItem(stack, panelX + 12, y - 3);
-			int nameColor = i == selected ? 0xFFFFE066 : (hovered ? 0xFFFFFFFF : 0xFFB8B8B8);
-			graphics.drawString(font, row.name(), panelX + 34, y + 1, nameColor, false);
-			String prices = (i == selected ? "§e" : "§a") + row.buy() + "м §8/ §6" + row.sell() + "м";
-			graphics.drawString(font, prices, panelX + panelWidth - 122, y + 1, 0xFFFFFF, false);
-			String stocks = "§f" + row.stock() + (row.held() > 0 ? " §8/ §b" + row.held() : " §8/ ·");
-			graphics.drawString(font, stocks, panelX + panelWidth - 232, y + 1, 0xFFFFFF, false);
+			int nameColor = i == selected ? 0xFFFFFF88 : (hovered ? 0xFFFFFFFF : 0xFFFFF2CC);
+			graphics.drawString(font, "§f" + row.name(), panelX + 34, y + 1, nameColor, true);
+			String prices = "§a" + row.buy() + "м §7/ §6" + row.sell() + "м";
+			graphics.drawString(font, prices, panelX + panelWidth - 122, y + 1, 0xFFFFFF, true);
+			String stocks = "§f" + row.stock() + (row.held() > 0 ? " §7/ §b" + row.held() : " §7/ ·");
+			graphics.drawString(font, stocks, panelX + panelWidth - 232, y + 1, 0xFFFFFF, true);
 			if (row.demand() > 0) {
-				graphics.drawString(font, "§3▲", panelX + panelWidth - 138, y + 1, 0xFFFFFF, false);
+				graphics.drawString(font, "§b▲", panelX + panelWidth - 138, y + 1, 0xFF8CF2A6, true);
 			}
 			y += ROW_HEIGHT;
 		}
 		if (rows.isEmpty()) {
-			graphics.drawString(font, "§7Нет товаров в продаже.", panelX + 34, listTop, 0xFFFFFF, false);
+			graphics.drawString(font, "§eНет товаров в продаже.", panelX + 34, listTop, 0xFFFFFF, true);
 		}
 
 		super.render(graphics, mouseX, mouseY, delta);
 
-		graphics.drawString(font, "§7Кошелёк: §f" + purse, panelX + 10, panelY + panelHeight - 60, 0xFFFFFF, false);
-		graphics.drawString(font, "§8ЛКМ — выбрать, ПКМ — продать, колесо/стрелки — список",
-				panelX + panelWidth - 232, panelY + panelHeight - 18, 0xFFFFFF, false);
-		graphics.drawString(font, "§8" + (rows.isEmpty() ? "—" : rows.get(selected).name())
-						+ " §8· §7" + amount() + " шт §8| §7Esc — закрыть",
-				panelX + 10, panelY + panelHeight - 18, 0xFFFFFF, false);
+		graphics.drawString(font, "§eКошелёк: §f" + purse, panelX + 10, panelY + panelHeight - 60, 0xFFFFFF, true);
+		graphics.drawString(font, "§fЛКМ — выбрать, ПКМ — продать, колесо/стрелки — список",
+				panelX + panelWidth - 232, panelY + panelHeight - 18, 0xFFE8E0C8, true);
+		graphics.drawString(font, "§e" + (rows.isEmpty() ? "—" : rows.get(selected).name())
+						+ " §7· §f" + amount() + " шт §7| §fEsc — закрыть",
+				panelX + 10, panelY + panelHeight - 18, 0xFFFFFF, true);
 		if (hoveredRow(mouseX, mouseY) >= 0) {
 			graphics.renderComponentTooltip(font, List.of(
 					Component.literal("§aКупить " + amount() + " шт §7за "
@@ -206,18 +207,20 @@ public class ShopScreen extends Screen {
 		int y = this.panelY;
 		int w = this.panelWidth;
 		int h = this.panelHeight;
-		// тень, рамка, «дерево» окна
-		graphics.fill(x - 3, y + 4, x + w + 3, y + h + 5, 0x60000000);
-		graphics.fill(x - 2, y - 2, x + w + 2, y + h + 2, 0xFF2A1C10);
-		graphics.fill(x - 1, y - 1, x + w + 1, y + h + 1, 0xFF6B4A2A);
-		graphics.fill(x, y, x + w, y + h, 0xFFE7D6AE);
-		graphics.fill(x, y, x + w, y + 22, 0xFF3A2716);
-		graphics.fill(x, y + h - 26, x + w, y + h, 0xFFDCC496);
+		// тень, тёплая деревянная рамка и ТЁМНОЕ матовое стекло: светлый текст читается всегда
+		graphics.fill(x - 3, y + 4, x + w + 3, y + h + 5, 0x80000000);
+		graphics.fill(x - 2, y - 2, x + w + 2, y + h + 2, 0xFF1B1208);
+		graphics.fill(x - 1, y - 1, x + w + 1, y + h + 1, 0xFF8A6B3F);
+		graphics.fill(x, y, x + w, y + h, 0xF4161209);
+		graphics.fill(x, y, x + w, y + 22, 0xFF241A0F);
+		graphics.fill(x, y + 22, x + w, y + 23, 0xFF6E5630);
+		graphics.fill(x, y + h - 26, x + w, y + h, 0xFF1E1810);
+		graphics.fill(x, y + h - 27, x + w, y + h - 26, 0xFF6E5630);
 		for (int i = 0; i < h - 48; i += 4) {
-			graphics.fill(x, y + 22 + i, x + 1, y + 24 + i, 0xC0000000);
-			graphics.fill(x + w - 1, y + 22 + i, x + w, y + 24 + i, 0xC0000000);
+			graphics.fill(x, y + 23 + i, x + 1, y + 25 + i, 0x40FFF2CC);
+			graphics.fill(x + w - 1, y + 23 + i, x + w, y + 25 + i, 0x40FFF2CC);
 		}
-		graphics.drawCenteredString(this.font, this.title, x + w / 2, y + 8, 0xFFFFD966);
+		graphics.drawCenteredString(this.font, this.title, x + w / 2, y + 8, 0xFFFFF2CC);
 	}
 
 	private int hoveredRow(int mouseX, int mouseY) {

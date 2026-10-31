@@ -16,11 +16,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Постройки поселения: ратуша, рыночная площадь, лавка и склад.
+ * Постройки поселения: ратуша, рыночная площадь, лавка, склад и жилые дома.
  *
- * <p>План детерминированный (без рандома), а ставится только то, под чем воздух или «природный»
- * блок: то, что построил игрок или деревня, не ломается — такой блок просто пропускается.
- * Прогресс 0..100 даёт расти здание за несколько тактов экономики, а не одним тяжёлым тиком.
+ * <p>План детерминированный (без рандома). Уровень земли под зданием вычисляется по площадке,
+ * пол ставится на верхний твёрдый блок, а там, где земля ниже — достраивается фундамент. Так здание
+ * сидит на земле, а не висит в воздухе на неровном рельефе.
+ *
+ * <p>Блоки ставятся только туда, где воздух, трава, песок, вода или камень: то, что построил игрок
+ * или деревня, не ломается, а такой блок просто пропускается.
  */
 public final class SettlementBuilds {
 	private SettlementBuilds() {
@@ -30,25 +33,64 @@ public final class SettlementBuilds {
 	public record Entry(BlockPos pos, BlockState state) {
 	}
 
-	public static final int HALL_HALF_X = 4;
-	public static final int HALL_HALF_Z = 3;
-	private static final int WALLS_1 = 3;
-	private static final int LOFT = 4;
-	private static final int WALLS_2 = 2;
-	private static final int ROOF = LOFT + WALLS_2;
-	/** Ларёк стоит восточнее ратуши; склад — симметрично с западной стороны. */
-	private static final int SHOP_X = 6;
-	private static final int SHOP_Z = 0;
+	// габариты ратуши: интерьер 11x9, два этажа
+	public static final int HALL_HALF_X = 6;
+	public static final int HALL_HALF_Z = 5;
+	private static final int WALLS_1 = 4;
+	private static final int LOFT = 5;
+	private static final int WALLS_2 = 3;
+	private static final int ROOF = LOFT + WALLS_2 + 1;
+	/** Ларёк восточнее ратуши, склад — западнее. */
+	private static final int SHOP_X = 9;
+	private static final int STORE_X = -12;
+	/** Полоса застройки жилых домов: восточнее лавки, вдоль площади. */
+	public static final int HOUSE_X = 13;
+	public static final int HOUSE_Z = 4;
+	public static final int HOUSE_HALF = 3;
+
+	/** Уровень пола площадки: верхний твёрдый блок по максимуму габаритов. */
+	public static int platformLevel(ServerLevel level, BlockPos center) {
+		int best = Integer.MIN_VALUE;
+		for (int x = -SHOP_X - 4; x <= HOUSE_X + HOUSE_HALF; x++) {
+			for (int z = -HALL_HALF_Z - 2; z <= 10; z++) {
+				int y = topSolidY(level, center.getX() + x, center.getZ() + z, center.getY());
+				if (y > best) {
+					best = y;
+				}
+			}
+		}
+		return best == Integer.MIN_VALUE ? center.getY() : best;
+	}
+
+	/** Ставит точку ратуши на уровень земли, чтобы ничего не висело в воздухе. */
+	public static BlockPos snapToGround(ServerLevel level, Settlement settlement) {
+		BlockPos hall = settlement.hall();
+		int y = platformLevel(level, hall);
+		BlockPos snapped = new BlockPos(hall.getX(), y, hall.getZ());
+		if (snapped.getY() != hall.getY()) {
+			settlement.hallPos = snapped.asLong();
+			EconomyState.get(level.getServer()).setDirty();
+		}
+		return snapped;
+	}
+
+	private static int topSolidY(ServerLevel level, int x, int z, int fallbackY) {
+		int y = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, x, z) - 1;
+		if (y <= level.getMinBuildHeight() + 1) {
+			return fallbackY;
+		}
+		return y;
+	}
 
 	/** Полный план застройки для точки ратуши. */
 	public static List<Entry> plan(ServerLevel level, Settlement settlement) {
 		BlockPos origin = settlement.hall();
 		Plan plan = new Plan();
 
-		// расчистка: убираем траву, деревья и воду в габаритах стройки
-		for (int x = -SHOP_X - 4; x <= SHOP_X + 3; x++) {
-			for (int z = -HALL_HALF_Z - 1; z <= 9; z++) {
-				for (int dy = -1; dy <= ROOF + 4; dy++) {
+		// 1) расчистка объёма под здание (только природа)
+		for (int x = -SHOP_X - 6; x <= HOUSE_X + HOUSE_HALF + 1; x++) {
+			for (int z = -HALL_HALF_Z - 2; z <= 10; z++) {
+				for (int dy = 1; dy <= ROOF + 4; dy++) {
 					BlockPos pos = origin.offset(x, dy, z);
 					if (removable(level, pos)) {
 						plan.air(pos);
@@ -57,15 +99,28 @@ public final class SettlementBuilds {
 			}
 		}
 
-		// фундамент и пол
+		// 2) площадка: пол ратуши, фундамент, мостовая площади
 		for (int x = -HALL_HALF_X; x <= HALL_HALF_X; x++) {
 			for (int z = -HALL_HALF_Z; z <= HALL_HALF_Z; z++) {
-				plan.set(origin.offset(x, -1, z), Blocks.STONE_BRICKS.defaultBlockState());
-				plan.set(origin.offset(x, 0, z), floor(x, z));
+				BlockPos pos = origin.offset(x, 0, z);
+				plan.set(pos, floor(x, z));
+				fillFoundation(level, plan, pos);
+			}
+		}
+		for (int x = -SHOP_X - 3; x <= HOUSE_X + HOUSE_HALF; x++) {
+			for (int z = -HALL_HALF_Z - 1; z <= 10; z++) {
+				if (Math.abs(x) <= HALL_HALF_X && Math.abs(z) <= HALL_HALF_Z) {
+					continue;
+				}
+				BlockPos pos = origin.offset(x, 0, z);
+				if (groundLevel(level, pos)) {
+					plan.set(pos, paving(x, z));
+					fillFoundation(level, plan, pos);
+				}
 			}
 		}
 
-		// первый этаж, перекрытие, второй этаж
+		// 3) ратуша: два этажа, много света, широкий вход
 		walls(plan, origin, 1, WALLS_1, Blocks.OAK_PLANKS.defaultBlockState());
 		for (int x = -HALL_HALF_X + 1; x <= HALL_HALF_X - 1; x++) {
 			for (int z = -HALL_HALF_Z + 1; z <= HALL_HALF_Z - 1; z++) {
@@ -74,80 +129,197 @@ public final class SettlementBuilds {
 		}
 		walls(plan, origin, LOFT + 1, WALLS_2, Blocks.OAK_PLANKS.defaultBlockState());
 
-		// крыша: ступени по периметру, доски внутри, конёк и колокол
+		// крыша
 		for (int x = -HALL_HALF_X - 1; x <= HALL_HALF_X + 1; x++) {
 			for (int z = -HALL_HALF_Z - 1; z <= HALL_HALF_Z + 1; z++) {
 				boolean edgeX = Math.abs(x) == HALL_HALF_X + 1;
 				boolean edgeZ = Math.abs(z) == HALL_HALF_Z + 1;
 				if (!edgeX && !edgeZ) {
-					plan.set(origin.offset(x, ROOF + 1, z), Blocks.SPRUCE_PLANKS.defaultBlockState());
+					plan.set(origin.offset(x, ROOF, z), Blocks.SPRUCE_PLANKS.defaultBlockState());
 					continue;
 				}
 				Direction facing = edgeX
 						? (x > 0 ? Direction.WEST : Direction.EAST)
 						: (z > 0 ? Direction.NORTH : Direction.SOUTH);
-				plan.set(origin.offset(x, ROOF + 1, z), stairs(facing));
+				plan.set(origin.offset(x, ROOF, z), stairs(facing));
 			}
 		}
-		plan.set(origin.offset(0, ROOF + 2, 0), Blocks.SPRUCE_FENCE.defaultBlockState());
-		plan.set(origin.offset(0, ROOF + 3, 0), Blocks.BELL.defaultBlockState()
+		plan.set(origin.offset(0, ROOF + 1, 0), Blocks.SPRUCE_FENCE.defaultBlockState());
+		plan.set(origin.offset(0, ROOF + 2, 0), Blocks.BELL.defaultBlockState()
 				.setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.SOUTH));
 
-		// вход, окна, лестница на второй этаж
-		door(plan, origin.offset(0, 1, HALL_HALF_Z), Direction.SOUTH);
+		// вход: три проёма (двери по краям, арка в центре) — зайти можно свободно
+		entrance(plan, origin);
+
+		// окна: два ряда на первом этаже, ряд на втором — внутри светло
 		for (int dz : new int[]{-HALL_HALF_Z, HALL_HALF_Z}) {
-			for (int x : new int[]{-2, 2}) {
-				plan.set(origin.offset(x, 2, dz), Blocks.GLASS_PANE.defaultBlockState());
-				plan.set(origin.offset(x, LOFT + 1, dz), Blocks.GLASS_PANE.defaultBlockState());
+			for (int x = -HALL_HALF_X + 2; x <= HALL_HALF_X - 2; x += 2) {
+				if (dz == HALL_HALF_Z && Math.abs(x) <= 1) {
+					continue; // двери
+				}
+				plan.set(origin.offset(x, 2, dz), Blocks.GLASS.defaultBlockState());
+				plan.set(origin.offset(x, 3, dz), Blocks.GLASS.defaultBlockState());
+				plan.set(origin.offset(x, LOFT + 2, dz), Blocks.GLASS.defaultBlockState());
 			}
 		}
 		for (int dx : new int[]{-HALL_HALF_X, HALL_HALF_X}) {
-			for (int z : new int[]{-1, 1}) {
-				plan.set(origin.offset(dx, 2, z), Blocks.GLASS_PANE.defaultBlockState());
-				plan.set(origin.offset(dx, LOFT + 1, z), Blocks.GLASS_PANE.defaultBlockState());
+			for (int z = -HALL_HALF_Z + 2; z <= HALL_HALF_Z - 2; z += 2) {
+				plan.set(origin.offset(dx, 2, z), Blocks.GLASS.defaultBlockState());
+				plan.set(origin.offset(dx, 3, z), Blocks.GLASS.defaultBlockState());
+				plan.set(origin.offset(dx, LOFT + 2, z), Blocks.GLASS.defaultBlockState());
 			}
 		}
-		for (int i = 0; i < WALLS_2; i++) {
-			plan.set(origin.offset(-3, LOFT + 1 + i, -1), stairs(Direction.NORTH));
+
+		// свет внутри: морские фонари в полу + висячие лампы под перекрытием
+		for (int dx : new int[]{-4, 4}) {
+			for (int dz : new int[]{-3, 3}) {
+				plan.set(origin.offset(dx, 0, dz), Blocks.SEA_LANTERN.defaultBlockState());
+				plan.set(origin.offset(dx, LOFT - 1, dz), Blocks.LANTERN.defaultBlockState()
+						.setValue(BlockStateProperties.HANGING, true));
+			}
+		}
+		for (int dx : new int[]{-3, 3}) {
+			plan.set(origin.offset(dx, LOFT + WALLS_2 - 1, 0), Blocks.LANTERN.defaultBlockState()
+					.setValue(BlockStateProperties.HANGING, true));
 		}
 
-		// интерьер: стол совета, сундук казны, книжные полки, верстак и ткани
-		table(plan, origin.offset(0, 1, 0));
-		plan.set(origin.offset(3, 1, -2), Blocks.CHEST.defaultBlockState()
+		// интерьер: стол совета в центре, мебель у стен, лестница на второй этаж
+		councilTable(plan, origin.offset(-1, 1, 1));
+		plan.set(origin.offset(3, 1, -HALL_HALF_Z + 1), Blocks.CRAFTING_TABLE.defaultBlockState());
+		plan.set(origin.offset(4, 1, -HALL_HALF_Z + 1), Blocks.FURNACE.defaultBlockState()
+				.setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.WEST));
+		plan.set(origin.offset(-4, 1, -HALL_HALF_Z + 1), Blocks.CHEST.defaultBlockState()
 				.setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH));
-		plan.set(origin.offset(3, 1, -1), Blocks.BOOKSHELF.defaultBlockState());
-		plan.set(origin.offset(2, 1, -1), Blocks.BOOKSHELF.defaultBlockState());
-		plan.set(origin.offset(-3, 1, -2), Blocks.CRAFTING_TABLE.defaultBlockState());
-		plan.set(origin.offset(-3, 1, 2), Blocks.LOOM.defaultBlockState());
-		plan.set(origin.offset(-1, 1, -2), Blocks.LANTERN.defaultBlockState());
-		plan.set(origin.offset(1, LOFT + 1, -2), Blocks.LANTERN.defaultBlockState());
+		plan.set(origin.offset(-5, 1, -HALL_HALF_Z + 2), Blocks.BOOKSHELF.defaultBlockState());
+		plan.set(origin.offset(-5, 1, -HALL_HALF_Z + 3), Blocks.BOOKSHELF.defaultBlockState());
+		plan.set(origin.offset(5, 1, 1), Blocks.BARREL.defaultBlockState());
+		plan.set(origin.offset(0, 0, HALL_HALF_Z + 3), Blocks.OAK_SLAB.defaultBlockState());
+		for (int i = 0; i < 2; i++) {
+			plan.set(origin.offset(4, LOFT + 1 + i, 3 - i * 2), stairs(Direction.NORTH));
+			plan.set(origin.offset(5, LOFT + 1 + i, 3 - i * 2), stairs(Direction.NORTH));
+		}
+		// второй этаж: спальня старосты и архив
+		for (int dx = -2; dx <= -1; dx++) {
+			plan.set(origin.offset(dx, LOFT + 1, -HALL_HALF_Z + 1), Blocks.BOOKSHELF.defaultBlockState());
+		}
+		plan.set(origin.offset(2, LOFT + 1, -HALL_HALF_Z + 1), Blocks.CHEST.defaultBlockState()
+				.setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.NORTH));
 
 		// крыльцо
 		for (int z = HALL_HALF_Z + 1; z <= HALL_HALF_Z + 2; z++) {
-			plan.set(origin.offset(-1, 0, z), Blocks.OAK_SLAB.defaultBlockState());
-			plan.set(origin.offset(0, 0, z), Blocks.STONE_BRICKS.defaultBlockState());
-			plan.set(origin.offset(1, 0, z), Blocks.OAK_SLAB.defaultBlockState());
+			for (int x = -2; x <= 2; x++) {
+				plan.set(origin.offset(x, 0, z), x == 0 || Math.abs(x) == 2
+						? Blocks.STONE_BRICKS.defaultBlockState()
+						: Blocks.OAK_SLAB.defaultBlockState());
+			}
 		}
 
-		// рыночная площадь: тропа и фонари
-		for (int x = -6; x <= 6; x++) {
-			for (int z = HALL_HALF_Z + 3; z <= 9; z++) {
-				BlockPos pos = origin.offset(x, 0, z);
-				if (groundLevel(level, pos)) {
-					plan.set(pos, Blocks.DIRT_PATH.defaultBlockState());
+		// 4) площадь: фонари по углам, лавка и склад
+		for (int[] corner : new int[][]{{-8, 6}, {8, 6}, {-8, 10}, {8, 10}}) {
+			lampPost(plan, origin.offset(corner[0], 1, corner[1]), level);
+		}
+		stall(plan, origin.offset(SHOP_X, 0, 0), true);
+		stall(plan, origin.offset(STORE_X, 0, 0), false);
+
+		// 5) стартовые дома: поселение не начинается с пустого места
+		int starter = Math.max(0, Math.min(4, Rl2dopConfig.starterHouses));
+		for (int i = 0; i < starter; i++) {
+			int side = i % 2 == 0 ? 1 : -1;
+			BlockPos base = origin.offset(side * (HOUSE_X + 1), 0, HOUSE_Z + (i / 2) * 8);
+			housePlan(plan, level, base);
+		}
+
+		return plan.entries;
+	}
+
+	/** Дом 7x7: фундамент, стены, окна, дверь, крыша, кровать, сундук, свет. */
+	public static void housePlan(Plan plan, ServerLevel level, BlockPos base) {
+		int half = HOUSE_HALF;
+		for (int x = -half - 1; x <= half + 1; x++) {
+			for (int z = -half - 1; z <= half + 1; z++) {
+				for (int dy = 1; dy <= 6; dy++) {
+					BlockPos pos = base.offset(x, dy, z);
+					if (removable(level, pos)) {
+						plan.air(pos);
+					}
 				}
 			}
 		}
-		for (int[] corner : new int[][]{{-6, 6}, {6, 6}, {-6, 9}, {6, 9}}) {
-			lampPost(plan, origin.offset(corner[0], 1, corner[1]));
+		for (int x = -half; x <= half; x++) {
+			for (int z = -half; z <= half; z++) {
+				BlockPos pos = base.offset(x, 0, z);
+				boolean edge = Math.abs(x) == half || Math.abs(z) == half;
+				plan.set(pos, edge ? Blocks.COBBLESTONE.defaultBlockState() : Blocks.OAK_PLANKS.defaultBlockState());
+				fillFoundation(level, plan, pos);
+			}
 		}
+		for (int dy = 1; dy <= 3; dy++) {
+			for (int x = -half; x <= half; x++) {
+				boolean doorway = dy <= 2 && Math.abs(x) <= 1;
+				if (!doorway) {
+					plan.set(base.offset(x, dy, half), Blocks.OAK_PLANKS.defaultBlockState());
+				}
+				plan.set(base.offset(x, dy, -half), Blocks.OAK_PLANKS.defaultBlockState());
+			}
+			for (int z = -half + 1; z <= half - 1; z++) {
+				plan.set(base.offset(-half, dy, z), Blocks.OAK_PLANKS.defaultBlockState());
+				plan.set(base.offset(half, dy, z), Blocks.OAK_PLANKS.defaultBlockState());
+			}
+			for (int[] corner : new int[][]{{-1, -1}, {1, -1}, {-1, 1}, {1, 1}}) {
+				plan.set(base.offset(corner[0] * half, dy, corner[1] * half), Blocks.SPRUCE_LOG.defaultBlockState());
+			}
+		}
+		door(plan, base.offset(-1, 1, half), Direction.SOUTH);
+		// порог и ступень
+		plan.set(base.offset(-1, 0, half), Blocks.STONE_BRICKS.defaultBlockState());
+		plan.set(base.offset(-1, 0, half + 1), topSlab(Blocks.OAK_SLAB.defaultBlockState()));
+		// окна и свет
+		plan.set(base.offset(-half, 2, 0), Blocks.GLASS.defaultBlockState());
+		plan.set(base.offset(half, 2, 0), Blocks.GLASS.defaultBlockState());
+		plan.set(base.offset(0, 2, -half), Blocks.GLASS.defaultBlockState());
+		plan.set(base.offset(-2, 1, -half + 1), Blocks.CRAFTING_TABLE.defaultBlockState());
+		plan.set(base.offset(2, 1, -half + 1), Blocks.CHEST.defaultBlockState()
+				.setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.SOUTH));
+		plan.set(base.offset(0, 1, 0), Blocks.LANTERN.defaultBlockState());
+		plan.set(base.offset(0, 2, 0), Blocks.SPRUCE_FENCE.defaultBlockState());
+		// крыша
+		for (int x = -half - 1; x <= half + 1; x++) {
+			for (int z = -half - 1; z <= half + 1; z++) {
+				boolean edgeX = Math.abs(x) == half + 1;
+				boolean edgeZ = Math.abs(z) == half + 1;
+				if (!edgeX && !edgeZ) {
+					plan.set(base.offset(x, 4, z), Blocks.SPRUCE_PLANKS.defaultBlockState());
+					continue;
+				}
+				Direction facing = edgeX
+						? (x > 0 ? Direction.WEST : Direction.EAST)
+						: (z > 0 ? Direction.NORTH : Direction.SOUTH);
+				plan.set(base.offset(x, 4, z), stairs(facing));
+			}
+		}
+		// труба из булыжника
+		plan.set(base.offset(-half + 1, 5, -half + 1), Blocks.COBBLESTONE.defaultBlockState());
+		plan.set(base.offset(-half + 1, 6, -half + 1), Blocks.COBBLESTONE.defaultBlockState());
+	}
 
-		// лавка (восток) и склад (запад)
-		stall(plan, origin.offset(SHOP_X, 0, SHOP_Z), true);
-		stall(plan, origin.offset(-SHOP_X - 2, 0, SHOP_Z), false);
-
-		SignBoards.planPosts(plan, origin);
-		return plan.entries;
+	/** Построить дом мгновенно (команда /house_add). */
+	public static BlockPos buildHouse(ServerLevel level, Settlement settlement, BlockPos standing) {
+		BlockPos base = new BlockPos(standing.getX(),
+				topSolidY(level, standing.getX(), standing.getZ(), standing.getY()), standing.getZ());
+		Plan plan = new Plan();
+		housePlan(plan, level, base);
+		int built = 0;
+		for (Entry entry : plan.entries) {
+			if (place(level, entry)) {
+				built++;
+			}
+		}
+		String record = base.getX() + ";" + base.getY() + ";" + base.getZ();
+		if (!settlement.houses.contains(record)) {
+			settlement.houses.add(record);
+		}
+		EconomyState.get(level.getServer()).setDirty();
+		return built > 0 ? base : null;
 	}
 
 	/**
@@ -157,9 +329,9 @@ public final class SettlementBuilds {
 	 * @return прогресс 0..100
 	 */
 	public static int build(ServerLevel level, Settlement settlement, int budget) {
+		snapToGround(level, settlement);
 		BlockPos origin = settlement.hall();
 		if (!level.hasChunkAt(origin)) {
-			// чанки не загружены — не тратим прогресс, попробуем в следующий такт
 			return settlement.buildProgress;
 		}
 		List<Entry> plan = plan(level, settlement);
@@ -172,17 +344,49 @@ public final class SettlementBuilds {
 		int end = budget <= 0 ? total : Math.min(total, start + budget);
 		int placed = 0;
 		for (int i = start; i < end; i++) {
-			placed += place(level, plan.get(i)) ? 1 : 0;
+			if (place(level, plan.get(i))) {
+				placed++;
+			}
+		}
+		if (placed > 0) {
+			int shortage = consumeBuildMaterials(settlement, placed);
+			if (shortage > 0 && settlement.buildProgress - settlement.lastShortageAt >= 10) {
+				settlement.lastShortageAt = settlement.buildProgress;
+				EconomyState.get(level.getServer()).log("поселению " + settlement.id
+						+ " для стройки не хватает материалов (камень, брёвна) — нужды висят на табличках");
+			}
 		}
 		if (settlement.shopPos == Long.MIN_VALUE) {
-			// точка входа в магазин — у прилавка лавки
-			settlement.setShop(origin.offset(SHOP_X - 1, 0, SHOP_Z));
+			settlement.setShop(origin.offset(SHOP_X - 2, 0, 1));
 		}
 		settlement.buildProgress = Math.min(100, end * 100 / total);
 		if (settlement.buildProgress >= 100) {
 			SignBoards.install(level, settlement);
+			registerStarterHouses(settlement);
 		}
 		return settlement.buildProgress;
+	}
+
+	/**
+	 * Стройка создаёт реальные потребности: расходует склад и поднимает спрос на материалы.
+	 * Так таблички с нуждами появляются с начала стройки, а не «из ниоткуда».
+	 *
+	 * @return сколько материалов не хватило со склада
+	 */
+	private static int consumeBuildMaterials(Settlement settlement, int placed) {
+		int need = Math.max(1, placed / 5);
+		int shortage = 0;
+		for (String material : List.of("minecraft:cobblestone", "minecraft:oak_log")) {
+			int have = settlement.stock(material);
+			int take = Math.min(have, need);
+			if (take > 0) {
+				settlement.takeStock(material, take);
+			} else {
+				shortage += need;
+			}
+			settlement.addDemand(material, take > 0 ? need / 2 : need);
+		}
+		return shortage;
 	}
 
 	/** Построить всё сразу (команды, отладка, CI). */
@@ -193,10 +397,26 @@ public final class SettlementBuilds {
 		return progress;
 	}
 
-	/** Есть ли смысл строит: включён ли автострой и не достроено ли. */
 	public static boolean pending(Settlement settlement) {
 		return Rl2dopConfig.autoBuild && settlement.buildProgress < 100;
 	}
+
+	/** Зарегистрировать в поселении стартовые дома из плана (идемпотентно). */
+	private static void registerStarterHouses(Settlement settlement) {
+		int starter = Math.max(0, Math.min(4, Rl2dopConfig.starterHouses));
+		BlockPos origin = settlement.hall();
+		for (int i = 0; i < starter; i++) {
+			int side = i % 2 == 0 ? 1 : -1;
+			settlement.addHouse(origin.offset(side * (HOUSE_X + 1), 0, HOUSE_Z + (i / 2) * 8));
+		}
+	}
+
+	/** Таблички нужны стоят внутри зала, если ратуша построена. */
+	public static boolean hallStanding(Settlement settlement) {
+		return settlement.buildProgress >= 100;
+	}
+
+	// ---------- вспомогательное ----------
 
 	private static boolean place(ServerLevel level, Entry entry) {
 		BlockPos pos = entry.pos();
@@ -215,20 +435,28 @@ public final class SettlementBuilds {
 			return false;
 		}
 		if (!(current.isAir() || current.canBeReplaced() || naturalOnly(current))) {
-			// чужая постройка — не трогаем
 			return false;
 		}
 		level.setBlockAndUpdate(pos, entry.state());
 		return true;
 	}
 
-	private static void lampPost(Plan plan, BlockPos base) {
+	private static void fillFoundation(ServerLevel level, Plan plan, BlockPos floorPos) {
+		int top = topSolidY(level, floorPos.getX(), floorPos.getZ(), floorPos.getY() - 1);
+		for (int y = floorPos.getY() - 1; y > top; y--) {
+			BlockPos pos = new BlockPos(floorPos.getX(), y, floorPos.getZ());
+			if (level.getBlockState(pos).isAir()) {
+				plan.set(pos, Blocks.COBBLESTONE.defaultBlockState());
+			}
+		}
+	}
+
+	private static void lampPost(Plan plan, BlockPos base, ServerLevel level) {
 		plan.set(base, Blocks.SPRUCE_FENCE.defaultBlockState());
 		plan.set(base.above(), Blocks.SPRUCE_FENCE.defaultBlockState());
 		plan.set(base.above(2), Blocks.SEA_LANTERN.defaultBlockState());
 	}
 
-	/** Ларёк 3x2: прилавок, ящики, навес на столбах. */
 	private static void stall(Plan plan, BlockPos base, boolean shop) {
 		for (int dx = 0; dx < 3; dx++) {
 			for (int dz = 0; dz < 2; dz++) {
@@ -263,11 +491,30 @@ public final class SettlementBuilds {
 		}
 	}
 
-	private static void table(Plan plan, BlockPos center) {
-		for (int dx = 0; dx <= 1; dx++) {
+	private static void councilTable(Plan plan, BlockPos corner) {
+		for (int dx = 0; dx <= 2; dx++) {
 			for (int dz = 0; dz <= 1; dz++) {
-				plan.set(center.offset(dx, 0, dz), Blocks.OAK_FENCE.defaultBlockState());
-				plan.set(center.offset(dx, 1, dz), topSlab(Blocks.OAK_SLAB.defaultBlockState()));
+				plan.set(corner.offset(dx, 0, dz), Blocks.OAK_FENCE.defaultBlockState());
+				plan.set(corner.offset(dx, 1, dz), topSlab(Blocks.OAK_SLAB.defaultBlockState()));
+			}
+		}
+	}
+
+	/** Широкий вход: две двери и открытая арка между ними. */
+	private static void entrance(Plan plan, BlockPos origin) {
+		int z = HALL_HALF_Z;
+		for (int dy = 1; dy <= 2; dy++) {
+			plan.air(origin.offset(0, dy, z));
+		}
+		door(plan, origin.offset(-1, 1, z), Direction.SOUTH);
+		door(plan, origin.offset(1, 1, z), Direction.SOUTH);
+		// козырёк над входом
+		for (int x = -2; x <= 2; x++) {
+			plan.set(origin.offset(x, 4, z + 1), Blocks.SPRUCE_SLAB.defaultBlockState());
+		}
+		for (int[] post : new int[][]{{-2, z + 1}, {2, z + 1}}) {
+			for (int dy = 1; dy <= 3; dy++) {
+				plan.set(origin.offset(post[0], dy, post[1]), Blocks.OAK_FENCE.defaultBlockState());
 			}
 		}
 	}
@@ -280,7 +527,15 @@ public final class SettlementBuilds {
 		return (x + z) % 2 == 0 ? Blocks.OAK_PLANKS.defaultBlockState() : Blocks.SPRUCE_PLANKS.defaultBlockState();
 	}
 
-	/** В 1.21.1 у slab одно свойство `type` (bottom/top/double) — DOUBLE_BLOCK_HALF к нему не применять. */
+	private static BlockState paving(int x, int z) {
+		int ring = Math.max(Math.abs(x), Math.abs(z));
+		if (ring % 7 == 0) {
+			return Blocks.GRAVEL.defaultBlockState();
+		}
+		return Blocks.DIRT_PATH.defaultBlockState();
+	}
+
+	/** В 1.21.1 у slab одно свойство type (bottom/top/double) — DOUBLE_BLOCK_HALF к нему неприменим. */
 	private static BlockState topSlab(BlockState state) {
 		return state.setValue(BlockStateProperties.SLAB_TYPE, SlabType.TOP);
 	}
@@ -295,8 +550,12 @@ public final class SettlementBuilds {
 		for (int dy = 0; dy < height; dy++) {
 			int y = startY + dy;
 			for (int x = -HALL_HALF_X; x <= HALL_HALF_X; x++) {
+				// задняя стена сплошная, во фронтальной — проём 3 блока под двери и арку
 				plan.set(origin.offset(x, y, -HALL_HALF_Z), wall);
-				plan.set(origin.offset(x, y, HALL_HALF_Z), wall);
+				boolean doorway = y <= 2 && Math.abs(x) <= 1;
+				if (!doorway) {
+					plan.set(origin.offset(x, y, HALL_HALF_Z), wall);
+				}
 			}
 			for (int z = -HALL_HALF_Z + 1; z <= HALL_HALF_Z - 1; z++) {
 				plan.set(origin.offset(-HALL_HALF_X, y, z), wall);
@@ -318,7 +577,6 @@ public final class SettlementBuilds {
 				.setValue(BlockStateProperties.DOUBLE_BLOCK_HALF, DoubleBlockHalf.UPPER));
 	}
 
-	/** Годится ли блок под мостовую: он природный или заменяемый. */
 	private static boolean groundLevel(ServerLevel level, BlockPos pos) {
 		BlockState state = level.getBlockState(pos);
 		return state.canBeReplaced() || naturalOnly(state);
@@ -329,7 +587,6 @@ public final class SettlementBuilds {
 		return state.canBeReplaced() || naturalOnly(state);
 	}
 
-	/** Природные блоки, которые можно спокойно срезать. Постройки — нет. */
 	private static boolean naturalOnly(BlockState state) {
 		return state.is(BlockTags.DIRT)
 				|| state.is(BlockTags.SAND)
@@ -339,6 +596,7 @@ public final class SettlementBuilds {
 				|| state.is(Blocks.STONE)
 				|| state.is(Blocks.COBBLESTONE)
 				|| state.is(Blocks.DEEPSLATE)
+				|| state.is(Blocks.COBBLED_DEEPSLATE)
 				|| state.is(Blocks.ANDESITE)
 				|| state.is(Blocks.DIORITE)
 				|| state.is(Blocks.GRANITE)

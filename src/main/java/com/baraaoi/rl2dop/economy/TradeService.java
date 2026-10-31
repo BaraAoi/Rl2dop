@@ -85,7 +85,15 @@ public final class TradeService {
 			}
 		}
 
+		boolean mayor = citizen != null && citizen.isMayor();
+
 		if (action == ACTION_HAGGLE) {
+			if (mayor) {
+				message(player, "§e" + citizen.getCitizenName()
+						+ "§7: «Со мной торговаться незачем — я беру всё по заготовленной цене.»");
+				refresh(player, citizen, settlement);
+				return;
+			}
 			haggle(player, settlement, itemId);
 			refresh(player, citizen, settlement);
 			return;
@@ -102,9 +110,19 @@ public final class TradeService {
 		int reputation = settlement.reputation(player.getUUID());
 		double haggle = haggleFactor(player);
 
-		boolean ok = action == ACTION_BUY
-				? buy(player, settlement, good, amount, reputation, haggle)
-				: sell(player, settlement, good, amount, reputation, haggle, citizen == null);
+		boolean institution = citizen == null || mayor;
+		boolean ok;
+		if (action == ACTION_BUY) {
+			if (mayor) {
+				message(player, "§e" + citizen.getCitizenName()
+						+ "§7: «Я у табличек стою, а не торгую. За товаром — в лавку.»");
+				refresh(player, citizen, settlement);
+				return;
+			}
+			ok = buy(player, settlement, good, amount, reputation, haggle);
+		} else {
+			ok = sell(player, settlement, good, amount, reputation, haggle, institution);
+		}
 
 		refresh(player, citizen, settlement);
 		ModPackets.syncTo(player);
@@ -117,7 +135,7 @@ public final class TradeService {
 		state.log((action == ACTION_BUY ? "покупка " : "продажа ") + amount + "x " + good.item
 				+ " игроком " + player.getGameProfile().getName()
 				+ " в " + settlement.id
-				+ " по " + (action == ACTION_BUY ? "цене покупки" : "цене продажи"));
+				+ (mayor ? " (глава, без торга)" : (citizen == null ? " (ратуша)" : "")));
 		state.setDirty();
 	}
 
@@ -163,8 +181,8 @@ public final class TradeService {
 			return false;
 		}
 		int payout = MarketMath.sellPrice(settlement, good, reputation, haggle) * amount;
-		if (hall) {
-			payout = (int) Math.ceil(payout * 1.05D);
+		if (institution) {
+			payout = (int) Math.ceil(payout * Math.max(1.0D, Rl2dopConfig.mayorBuyBonus));
 		}
 		if (settlement.treasury < payout) {
 			message(player, "§cВ казне не хватает монет (" + settlement.treasury + "м). Продай позже.");
@@ -210,13 +228,16 @@ public final class TradeService {
 	}
 
 	private static void refresh(ServerPlayer player, CitizenEntity citizen, Settlement settlement) {
+		int reputation = settlement.reputation(player.getUUID());
 		if (citizen != null) {
+			double bonus = citizen.isMayor() ? Math.max(1.0D, Rl2dopConfig.mayorBuyBonus) : 1.0D;
 			ModPackets.sendShop(player, citizen.getId(),
-					citizen.getCitizenName() + " · " + settlement.displayName(),
-					ShopService.feed(player, settlement, settlement.reputation(player.getUUID()), haggleFactor(player)));
+					(citizen.isMayor() ? "Глава " : "") + citizen.getCitizenName() + " · " + settlement.displayName(),
+					ShopService.feed(player, settlement, reputation, haggleFactor(player), bonus));
 		} else {
 			ModPackets.sendShop(player, ShopService.HALL_ID, "Ратуша · " + settlement.displayName(),
-					ShopService.feed(player, settlement, settlement.reputation(player.getUUID()), haggleFactor(player)));
+					ShopService.feed(player, settlement, reputation, haggleFactor(player),
+							Math.max(1.0D, Rl2dopConfig.mayorBuyBonus)));
 		}
 	}
 

@@ -75,7 +75,7 @@ public final class SettlementService {
 			citizen.setCitizenName(EconomyState.randomName(level.random));
 		}
 		Profession profession = citizen.getProfession();
-		citizen.setHomePos(jitter(level, pos, 6));
+		citizen.setHomePos(houseSpot(level, settlement, settlement.npcs.size(), pos));
 		citizen.setWorkPos(workSpot(level, settlement, profession));
 		citizen.setShopPos(settlement.shop());
 		citizen.setWallet(Math.max(citizen.getWallet(), 20));
@@ -83,6 +83,82 @@ public final class SettlementService {
 		settlement.registerNpc(citizen.getUUID());
 		citizen.refreshNameTag();
 		state.setDirty();
+	}
+
+	/** Точка сна: первый свободный дом, а пока домов нет — площадь у ратуши. */
+	public static BlockPos houseSpot(ServerLevel level, Settlement settlement, int index, BlockPos fallback) {
+		BlockPos house = settlement == null ? null : settlement.houseFor(index);
+		if (house != null && level != null && level.isLoaded(house)) {
+			return house;
+		}
+		return jitter(level, fallback == null ? settlement.hall() : fallback, 6);
+	}
+
+	/** Глава поселения: ставит его у табличек; один на поселение, переживает перезагрузку. */
+	public static CitizenEntity spawnMayor(ServerLevel level, Settlement settlement) {
+		if (level == null || settlement == null) {
+			return null;
+		}
+		CitizenEntity existing = findMayor(level, settlement);
+		if (existing != null) {
+			return existing;
+		}
+		BlockPos post = SignBoards.mayorPost(settlement);
+		CitizenEntity mayor = spawnCitizen(level, settlement, Profession.MAYOR, post,
+				EconomyState.randomName(level.random));
+		if (mayor == null) {
+			return null;
+		}
+		mayor.setWorkPos(post);
+		mayor.lookAtBlock(settlement.hall());
+		mayor.setWallet(Math.max(mayor.getWallet(), 100));
+		settlement.mayor = mayor.getUUID().toString();
+		EconomyState.get(level.getServer()).setDirty();
+		return mayor;
+	}
+
+	public static CitizenEntity findMayor(ServerLevel level, Settlement settlement) {
+		if (level == null || settlement == null || !settlement.hasMayor()) {
+			return null;
+		}
+		try {
+			return level.getEntity(java.util.UUID.fromString(settlement.mayor)) instanceof CitizenEntity citizen
+					&& citizen.isMayor() ? citizen : null;
+		} catch (IllegalArgumentException e) {
+			return null;
+		}
+	}
+
+	/** Раздать NPC жилые дома (точка сна). Возвращает число поселённых. */
+	public static int assignHomes(ServerLevel level, Settlement settlement) {
+		if (level == null || settlement == null || settlement.houses.isEmpty()) {
+			return 0;
+		}
+		int index = 0;
+		int settled = 0;
+		for (String raw : new ArrayList<>(settlement.npcs)) {
+			net.minecraft.world.entity.Entity entity;
+			try {
+				entity = level.getEntity(java.util.UUID.fromString(raw));
+			} catch (IllegalArgumentException e) {
+				continue;
+			}
+			if (entity instanceof CitizenEntity citizen && !citizen.isMayor()) {
+				BlockPos home = citizen.getHomePos();
+				if (home != null && settlement.hasHouseNear(home)) {
+					continue; // уже живёт в доме — не трогаем
+				}
+				BlockPos house = settlement.houseFor(index++);
+				if (house != null) {
+					citizen.setHomePos(house);
+					settled++;
+				}
+			}
+		}
+		if (settled > 0) {
+			EconomyState.get(level.getServer()).setDirty();
+		}
+		return settled;
 	}
 
 	public static CitizenEntity spawnCitizen(ServerLevel level, Settlement settlement, Profession profession,
@@ -97,7 +173,7 @@ public final class SettlementService {
 		// не даём свежеспавненному NPC сразу бежать менять профессию
 		citizen.setProfessionCooldown(Rl2dopConfig.autoProfessionCooldownTicks);
 		citizen.setSettlementId(settlement.id);
-		citizen.setHomePos(jitter(level, settlement.hall(), 8));
+		citizen.setHomePos(houseSpot(level, settlement, settlement.npcs.size(), settlement.hall()));
 		citizen.setWorkPos(workSpot(level, settlement, profession));
 		citizen.setShopPos(settlement.shop());
 		citizen.setWallet(30);
