@@ -13,6 +13,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -319,7 +320,7 @@ public class CitizenEntity extends PathfinderMob {
 	public void refreshNameTag() {
 		String name = citizenName.isEmpty() ? "Житель" : citizenName;
 		String color = isMayor() ? "§6" : "§e";
-		Component tag = Component.literal(color + name + " ")
+		MutableComponent tag = Component.literal(color + name + " ")
 				.append(Component.translatable(profession.translationKey()).withStyle(ChatFormatting.GRAY));
 		// занятие видно прямо над головой: «Пётр — шахтёр · перерыв»
 		if (profession.isWorker() || profession.isJobless()) {

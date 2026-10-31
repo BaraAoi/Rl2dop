@@ -5,6 +5,7 @@ import com.baraaoi.rl2dop.entity.Profession;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
@@ -168,7 +169,7 @@ public final class SignBoards {
 			if (shown >= 2) {
 				break;
 			}
-			Component text = Component.translatable(profession.translationKey())
+			MutableComponent text = Component.translatable(profession.translationKey())
 					.append(Component.literal(" " + settlement.salaryFor(profession) + "м"));
 			lines.add(new Line(text.withStyle(ChatFormatting.WHITE), null));
 			shown++;

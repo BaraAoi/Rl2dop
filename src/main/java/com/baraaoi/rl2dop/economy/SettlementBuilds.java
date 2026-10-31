@@ -17,11 +17,17 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Постройки поселения: ратуша, рыночная площадь, лавка, склад и жилые дома.
+ * Постройки поселения: ратуша, площадь с колодцем, лавка, склад, жилые участки, таверна с прудом
+ * и рабочие мастерские.
  *
- * <p>План детерминированный (без рандома). Уровень земли под зданием вычисляется по площадке,
- * пол ставится на верхний твёрдый блок, а там, где земля ниже — достраивается фундамент. Так здание
- * сидит на земле, а не висит в воздухе на неровном рельефе.
+ * <p>План детерминированный (без рандома) и спланирован как ванильная деревня: ратуша в центре
+ * мощёной площади, две улицы с поперечными, переулок, десять жилых участков вдоль улиц, таверна с
+ * прудом во дворе и ряд мастерских за северной улицей. К каждой двери ведёт дорожка.
+ *
+ * <p>Рельеф подстраивается под посёлок, а не наоборот: `gradePad()` срезает холм и досыпает яму до
+ * уровня ратуши (оттого дома и дворы лежат в одной плоскости), а `roadLevel()` позволяет улицам
+ * отходить от этого уровня на ROAD_TILT блоков, чтобы дорога шла мягкими ступенями. Низ под
+ * площадками добивается фундаментом, поэтому ничего не висит в воздухе.
  *
  * <p>Блоки ставятся только туда, где воздух, трава, песок, вода или камень: то, что построил игрок
  * или деревня, не ломается, а такой блок просто пропускается.
@@ -74,9 +80,8 @@ public final class SettlementBuilds {
 	public static final int WORK_ROW_Z = -34;
 	public static final int[] WORK_X_FARM = {-30};
 	public static final int WORK_STEP_X = 20;
-	/** Максимальная глубина террасы: сильнее резать/насыпать холм не стоит, иначе посёлок «ляжет». */
-	private static final int MAX_CUT = 8;
-	private static final int MAX_FILL = 12;
+	/** Насколько улица может отойти от уровня площади, подстраиваясь под рельеф (в блоках). */
+	private static final int ROAD_TILT = 4;
 
 	/**
 	 * Уровень пола: верхний блок грунта под точкой ратуши. Мерим именно природный/чужой блок,
@@ -131,8 +136,9 @@ public final class SettlementBuilds {
 	}
 
 	/**
-	 * Точку работы профессии привязываем один раз: `ground()` после постройки считает грунт по
-	 * крыше готовой мастерской, и при каждой перестройке координаты «прыгали» бы на несколько блоков.
+	 * Точку работы профессии привязываем один раз: без этого уровень площадки при каждой
+	 * перестройке считался бы уже по крыше готовой мастерской, и координаты «прыгали» бы на
+	 * несколько блоков между запусками.
 	 */
 	private static void site(Settlement settlement, Profession profession, BlockPos pos) {
 		if (!settlement.workSites.containsKey(profession.id())) {
@@ -408,11 +414,6 @@ public final class SettlementBuilds {
 		return new BlockPos(center.getX(), y, center.getZ());
 	}
 
-	/** Уровень грунта под рабочей постройкой (на выгруженном столбце — уровень ратуши). */
-	private static BlockPos ground(ServerLevel level, BlockPos at, BlockPos origin) {
-		return new BlockPos(at.getX(), topSolidY(level, at.getX(), at.getZ(), origin.getY()), at.getZ());
-	}
-
 	/** Расчистка объёма над пятном постройки (только природное). */
 	private static void carve(Plan plan, ServerLevel level, BlockPos base, int halfX, int halfZ, int height) {
 		for (int x = -halfX - 1; x <= halfX + 1; x++) {
@@ -613,10 +614,10 @@ public final class SettlementBuilds {
 	// ---------- деревня: площадки, улицы, участки, таверна ----------
 
 	/**
-	 * Уровень, на котором должна лечь площадка: средний грунт по пятну, ограниченный сверху и снизу,
-	 * чтобы на склоне получалась терраса (как в ванильной деревне), а не плотина или карьер.
+	 * Уровень куска дороги: среднему грунту по куску, но не дальше ROAD_TILT от уровня площади —
+	 * тогда улица идёт мягкими ступенями (как в ванильной деревне), а не рампой и не карьером.
 	 */
-	private static int padLevel(ServerLevel level, BlockPos center, int halfX, int halfZ, int targetY) {
+	private static int roadLevel(ServerLevel level, BlockPos center, int halfX, int halfZ, int targetY) {
 		long sum = 0L;
 		int n = 0;
 		for (int x = -halfX; x <= halfX; x += 2) {
@@ -629,25 +630,26 @@ public final class SettlementBuilds {
 			return targetY;
 		}
 		int avg = (int) Math.round((double) sum / (double) n);
-		int y = targetY;
-		if (avg - y > MAX_CUT) {
-			y = avg - MAX_CUT;
+		if (avg > targetY + ROAD_TILT) {
+			return targetY + ROAD_TILT;
 		}
-		if (y - avg > MAX_FILL) {
-			y = avg + MAX_FILL;
+		if (avg < targetY - ROAD_TILT) {
+			return targetY - ROAD_TILT;
 		}
-		return y;
+		return targetY;
 	}
 
 	/**
-	 * Выравнивает пятно: срезает холм, досыпает яму, сверху кладёт `top`. После этого у всех
-	 * построек поселения один уровень, дороги идут ровно, а ничего не висит в воздухе.
+	 * Выравнивает пятно под постройку: срезает всё природное выше уровня, досыпает яму, сверху
+	 * кладёт `top`. Уровень всегда берётся тот же, что у ратуши, — поэтому посёлок выглядит одной
+	 * плоскостью (дома, дворы, площади), а не «на разных высотах», и ничего не висит в воздухе:
+	 * низины под площадкой досыпаны, холмы срезаны.
 	 *
-	 * @return уровень площадки (обычно уровень ратуши, на склоне — терраса)
+	 * @return уровень площадки
 	 */
 	public static int gradePad(Plan plan, ServerLevel level, BlockPos center, int halfX, int halfZ,
 								BlockState top, BlockState fill) {
-		int y = padLevel(level, center, halfX, halfZ, center.getY());
+		int y = center.getY();
 		for (int x = -halfX; x <= halfX; x++) {
 			for (int z = -halfZ; z <= halfZ; z++) {
 				gradeColumn(plan, level, new BlockPos(center.getX() + x, y, center.getZ() + z), y, top, fill);
@@ -683,7 +685,8 @@ public final class SettlementBuilds {
 			int sz0 = alongZ ? start : z0;
 			int sz1 = alongZ ? end : z1;
 			BlockPos center = new BlockPos((sx0 + sx1) / 2, origin.getY(), (sz0 + sz1) / 2);
-			int y = padLevel(level, center, Math.max(0, (sx1 - sx0) / 2), Math.max(0, (sz1 - sz0) / 2), origin.getY());
+			int y = roadLevel(level, center, Math.max(0, (sx1 - sx0) / 2), Math.max(0, (sz1 - sz0) / 2),
+					origin.getY());
 			for (int x = sx0; x <= sx1; x++) {
 				for (int z = sz0; z <= sz1; z++) {
 					gradeColumn(plan, level, new BlockPos(x, y, z), y, roadTop(x - origin.getX(), z - origin.getZ()),
@@ -904,7 +907,7 @@ public final class SettlementBuilds {
 	private static void pondPlan(Plan plan, ServerLevel level, BlockPos center) {
 		int halfX = 4;
 		int halfZ = 3;
-		int y = padLevel(level, center, halfX, halfZ, center.getY());
+		int y = center.getY();
 		for (int x = -halfX; x <= halfX; x++) {
 			for (int z = -halfZ; z <= halfZ; z++) {
 				boolean shore = Math.abs(x) == halfX || Math.abs(z) == halfZ;

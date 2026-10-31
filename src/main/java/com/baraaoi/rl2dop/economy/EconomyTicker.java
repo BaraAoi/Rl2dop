@@ -84,6 +84,11 @@ public final class EconomyTicker {
 				}
 			}
 			if (settlement.buildProgress >= 100) {
+				// дома есть — значит в них кто-то должен жить: посёлок не стартует пустым,
+				// первых жителей он принимает сразу, дальше приезжие приходят сами (VillageLife)
+				if (Rl2dopConfig.immigration && settlement.npcs.size() <= (settlement.hasMayor() ? 1 : 0)) {
+					VillageLife.invite(level, settlement, state, Math.max(1, Rl2dopConfig.starterHouses));
+				}
 				SettlementService.assignHomes(level, settlement);
 			}
 			state.setDirty();

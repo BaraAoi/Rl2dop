@@ -236,7 +236,13 @@ public final class VillageLife {
 	/** Принудительно принять N переселенцев (команда /settle_settlers, отладка, CI). */
 	public static int invite(ServerLevel level, Settlement settlement, EconomyState state, int count) {
 		int spawned = 0;
+		int ceiling = Rl2dopConfig.maxSettlers > 0
+				? Math.min(Rl2dopConfig.maxSettlers, Rl2dopConfig.maxNpcsPerSettlement)
+				: Rl2dopConfig.maxNpcsPerSettlement;
 		for (int i = 0; i < Math.max(1, Math.min(8, count)); i++) {
+			if (settlement.npcs.size() >= ceiling) {
+				break;
+			}
 			List<Profession> free = vacancies(settlement);
 			Profession profession = free.isEmpty() ? Profession.UNEMPLOYED : bestOf(settlement, free);
 			if (profession == null) {
