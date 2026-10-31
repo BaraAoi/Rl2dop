@@ -181,8 +181,8 @@ public final class VillageLife {
 			citizen.setProfession(Profession.BUILDER);
 			citizen.setWorkPos(SettlementBuilds.safeStand(level, plot));
 			citizen.refreshNameTag();
-			state.log("поселение " + settlement.id + ": " + citizen.getCitizenName()
-					+ " записался в строители и идёт на участок " + plot.toShortString());
+							state.log("поселение " + settlement.id + ": " + citizen.getCitizenName()
+						+ " берёт топор и идёт на участок " + plot.toShortString());
 			break;
 		}
 		state.setDirty();

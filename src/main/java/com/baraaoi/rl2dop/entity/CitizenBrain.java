@@ -155,7 +155,9 @@ public final class CitizenBrain {
 		int with = Math.max(0, nearby(citizen, level, 6.0D));
 		if (with > 0) {
 			citizen.setMood(citizen.getMood() + 1);
-			if (citizen.getRandom().nextInt(8) == 0) {
+			// «собрались вместе» — репортаж не по рандому, а раз в ~20 секунд реального времени:
+			// на случайной проверке строку можно было не дождаться ни в игре, ни в smoke-тесте
+			if (with >= 2 && level.getGameTime() % 400L < 10L) {
 				EconomyState.get(level.getServer()).log("поселение " + settlement.id + ": перерыв у таверны, собралось "
 						+ (with + 1) + " жител(ей)");
 			}
