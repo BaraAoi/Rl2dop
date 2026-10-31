@@ -38,5 +38,19 @@
   "rl2dop.short.oak_log": "log",
   "rl2dop.short.cobblestone": "stone",
   "rl2dop.short.flint": "flint",
-  "rl2dop.profession.mayor": "Settlement Mayor"
+  "rl2dop.profession.mayor": "Settlement Mayor",
+  "rl2dop.profession.unemployed": "unemployed",
+  "rl2dop.state.waiting": "waiting for a job",
+  "rl2dop.state.breaking": "on break",
+  "rl2dop.state.meeting": "village meeting",
+  "rl2dop.state.building": "building",
+  "rl2dop.activity.wake": "morning",
+  "rl2dop.activity.work": "work",
+  "rl2dop.activity.break": "lunch break",
+  "rl2dop.activity.meet": "meeting",
+  "rl2dop.activity.rest": "going home",
+  "rl2dop.activity.sleep": "sleeping",
+  "rl2dop.activity.wait_job": "looking for work",
+  "rl2dop.activity.building": "building a house",
+  "rl2dop.activity.post": "at the notice board"
 }

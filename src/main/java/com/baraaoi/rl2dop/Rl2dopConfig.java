@@ -72,6 +72,33 @@ public final class Rl2dopConfig {
 	public static int maxVillageHouses = 8;
 	/** Временно: у поселения и NPC всегда есть деньги (казна не тратится и не проверяется). */
 	public static boolean infiniteNpcMoney = true;
+	// --- жизнь деревни: таверна, приезжие, самострой, распорядок дня ---
+	/** Таверна у пруда: общий дом, где ждут работу приезжие и где проходят перерывы. */
+	public static boolean tavernEnabled = true;
+	/** Копать пруд рядом с таверной. */
+	public static boolean villagePond = true;
+	/** Переселенцы приходят сами, если есть где жить и есть вакансии. */
+	public static boolean immigration = true;
+	/** Как часто поселение смотрит, не время ли принять нового переселенца. */
+	public static int immigrationIntervalTicks = 400;
+	/** Сколько жителей приходится на один дом (сверх — ютятся в таверне). */
+	public static int villagersPerHouse = 2;
+	/** Потолок жителей в поселении (0 = без потолка). */
+	public static int maxSettlers = 24;
+	/** Поселение само решает ставить дома, когда людям негде жить. */
+	public static boolean selfBuildHouses = true;
+	/** Сколько камня и брёвен поселение копит на один жилой дом. */
+	public static int houseCostCobble = 16;
+	public static int houseCostLogs = 8;
+	/** Как далеко житель может отойти от своего рабочего места, прежде чем вернётся (блоки). */
+	public static int workLeash = 6;
+	/** Распорядок дня: работа → перерыв на площади → вечерняя сходка → сон (как у ванильных жителей). */
+	public static boolean citizenSchedule = true;
+	/** Момент дня (0..24000): с которого работают, когда полуденный перерыв и когда сходка у колокола. */
+	public static int dayWorkStart = 2000;
+	public static int dayBreakStart = 6000;
+	public static int dayMeetStart = 12000;
+
 	/** Подарок: сколько настроения и репутации даёт подарок жителю (за предмет). */
 	public static double giftMoodPerItem = 0.5;
 	public static int giftReputationPerItem = 1;
@@ -135,6 +162,20 @@ public final class Rl2dopConfig {
 			builderExpands = boolOr(root, "builderExpands", builderExpands);
 			maxVillageHouses = intOr(root, "maxVillageHouses", maxVillageHouses);
 			infiniteNpcMoney = boolOr(root, "infiniteNpcMoney", infiniteNpcMoney);
+			tavernEnabled = boolOr(root, "tavernEnabled", tavernEnabled);
+			villagePond = boolOr(root, "villagePond", villagePond);
+			immigration = boolOr(root, "immigration", immigration);
+			immigrationIntervalTicks = Math.max(60, intOr(root, "immigrationIntervalTicks", immigrationIntervalTicks));
+			villagersPerHouse = Math.max(1, intOr(root, "villagersPerHouse", villagersPerHouse));
+			maxSettlers = Math.max(0, intOr(root, "maxSettlers", maxSettlers));
+			selfBuildHouses = boolOr(root, "selfBuildHouses", selfBuildHouses);
+			houseCostCobble = Math.max(0, intOr(root, "houseCostCobble", houseCostCobble));
+			houseCostLogs = Math.max(0, intOr(root, "houseCostLogs", houseCostLogs));
+			workLeash = Math.max(2, intOr(root, "workLeash", workLeash));
+			citizenSchedule = boolOr(root, "citizenSchedule", citizenSchedule);
+			dayWorkStart = Math.max(0, intOr(root, "dayWorkStart", dayWorkStart));
+			dayBreakStart = Math.max(0, intOr(root, "dayBreakStart", dayBreakStart));
+			dayMeetStart = Math.max(0, intOr(root, "dayMeetStart", dayMeetStart));
 			giftMoodPerItem = doubleOr(root, "giftMoodPerItem", giftMoodPerItem);
 			giftReputationPerItem = intOr(root, "giftReputationPerItem", giftReputationPerItem);
 			startStockFraction = doubleOr(root, "startStockFraction", startStockFraction);
@@ -216,6 +257,7 @@ public final class Rl2dopConfig {
 		addGood(MOD_MEDKIT, 14.0, 5.0, 80.0, 12, 0.9);
 
 		salaries.clear();
+		salaries.put("unemployed", 0);
 		salaries.put("farmer", 10);
 		salaries.put("trader", 14);
 		salaries.put("guard", 16);
@@ -270,6 +312,20 @@ public final class Rl2dopConfig {
 			root.addProperty("builderExpands", builderExpands);
 			root.addProperty("maxVillageHouses", maxVillageHouses);
 			root.addProperty("infiniteNpcMoney", infiniteNpcMoney);
+			root.addProperty("tavernEnabled", tavernEnabled);
+			root.addProperty("villagePond", villagePond);
+			root.addProperty("immigration", immigration);
+			root.addProperty("immigrationIntervalTicks", immigrationIntervalTicks);
+			root.addProperty("villagersPerHouse", villagersPerHouse);
+			root.addProperty("maxSettlers", maxSettlers);
+			root.addProperty("selfBuildHouses", selfBuildHouses);
+			root.addProperty("houseCostCobble", houseCostCobble);
+			root.addProperty("houseCostLogs", houseCostLogs);
+			root.addProperty("workLeash", workLeash);
+			root.addProperty("citizenSchedule", citizenSchedule);
+			root.addProperty("dayWorkStart", dayWorkStart);
+			root.addProperty("dayBreakStart", dayBreakStart);
+			root.addProperty("dayMeetStart", dayMeetStart);
 			root.addProperty("giftMoodPerItem", giftMoodPerItem);
 			root.addProperty("giftReputationPerItem", giftReputationPerItem);
 			root.addProperty("startStockFraction", startStockFraction);

@@ -85,11 +85,28 @@ public final class SettlementService {
 		state.setDirty();
 	}
 
-	/** Точка сна: первый свободный дом, а пока домов нет — площадь у ратуши. */
+	/**
+	 * Место встреч деревни: крыльцо таверны, а пока её нет — площадь у входа в ратушу. Тут ждут
+	 * работу приезжие, тут же перерыв и вечерняя сходка (как у ванильных жителей у колокола).
+	 */
+	public static BlockPos gatherPoint(net.minecraft.server.level.ServerLevel level, Settlement settlement) {
+		BlockPos hall = settlement.hall();
+		BlockPos at = settlement.hasTavern() ? settlement.tavern() : hall.offset(0, 1, SettlementBuilds.HALL_HALF_Z + 3);
+		if (at == null) {
+			at = hall.offset(0, 1, SettlementBuilds.HALL_HALF_Z + 3);
+		}
+		return level == null ? at : SettlementBuilds.safeStand(level, at);
+	}
+
+	/** Точка сна: первый свободный дом, а пока домов нет — таверна/площадь. */
 	public static BlockPos houseSpot(ServerLevel level, Settlement settlement, int index, BlockPos fallback) {
 		BlockPos house = settlement == null ? null : settlement.houseFor(index);
 		if (house != null && level != null && level.isLoaded(house)) {
 			return SettlementBuilds.safeStand(level, house);
+		}
+		if (settlement != null && settlement.hasTavern()) {
+			// без дома житель ночует в таверне: у него всё равно есть куда пойти ночью
+			return jitter(level, gatherPoint(level, settlement), 1);
 		}
 		return SettlementBuilds.safeStand(level, jitter(level, fallback == null ? settlement.hall() : fallback, 6));
 	}

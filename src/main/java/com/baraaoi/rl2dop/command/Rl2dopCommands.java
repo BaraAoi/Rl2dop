@@ -16,6 +16,7 @@ import com.baraaoi.rl2dop.registry.ModItems;
 import com.baraaoi.rl2dop.entity.CitizenEntity;
 import com.baraaoi.rl2dop.entity.Profession;
 import com.baraaoi.rl2dop.net.ModPackets;
+import com.baraaoi.rl2dop.economy.VillageLife;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -64,6 +65,8 @@ public final class Rl2dopCommands {
 			registerShopMarker(dispatcher);
 			registerNpcProfession(dispatcher);
 			registerNpcList(dispatcher);
+			registerSettleTavern(dispatcher);
+			registerSettleSettlers(dispatcher);
 			registerEconLog(dispatcher);
 			registerRoot(dispatcher);
 		});
@@ -294,7 +297,15 @@ public final class Rl2dopCommands {
 				+ "  лавка=" + settlement.shop().toShortString()
 				+ "  домов=" + settlement.houses.size()
 				+ "  мастерских=" + settlement.workSites.size()
-				+ "  табличек=" + settlement.boards.size());
+				+ "  табличек=" + settlement.boards.size()
+				+ "  таверна=" + (settlement.hasTavern() ? settlement.tavern().toShortString() : "нет")
+				+ "  без работы=" + settlement.joblessCount
+				+ "  вакансий=" + VillageLife.vacancies(settlement).size()
+				+ "  мест под дома=" + (SettlementBuilds.plotCount() - settlement.houses.size()));
+		if (settlement.hasHouseGoal() && settlement.houseGoalPos() != null) {
+			lines.add("  §aстроят дом: §f" + settlement.houseGoalPos().toShortString()
+					+ "§7 (без жилья сейчас: " + settlement.buildDesire + ")");
+		}
 		for (Map.Entry<String, String> site : settlement.workSites.entrySet()) {
 			lines.add("  работа " + site.getKey() + ": " + site.getValue().replace(';', ','));
 		}
@@ -511,14 +522,87 @@ public final class Rl2dopCommands {
 					}
 					for (CitizenEntity citizen : citizens) {
 						String line = "§e" + citizen.getCitizenName() + "§7 " + citizen.getProfession().id()
+								+ " · §b" + citizen.getActivity().id() + "§7"
 								+ " · " + citizen.getCitizenState().id()
 								+ " · кошелёк " + citizen.getWallet() + "м"
 								+ " · голод " + citizen.getHunger() + "%"
+								+ " · дом " + (citizen.getHomePos() == null ? "нет" : "есть")
+								+ " · до работы " + workDistance(citizen)
 								+ " · поселение " + citizen.getSettlementId();
 						source.sendSuccess(() -> Component.literal(line), false);
 					}
 					return citizens.size();
 				}));
+	}
+
+	/** Сколько блоков до рабочего места (проверка, что житель держится у своей постройки). */
+	private static String workDistance(CitizenEntity citizen) {
+		BlockPos work = citizen.getWorkPos();
+		if (work == null) {
+			return "—";
+		}
+		return Math.round(Math.sqrt(citizen.blockPosition().distSqr(work))) + "м";
+	}
+
+	private static void registerSettleTavern(CommandDispatcher<CommandSourceStack> dispatcher) {
+		dispatcher.register(Commands.literal("settle_tavern")
+				.requires(source -> source.hasPermission(2))
+				.executes(context -> settleTavern(context, null))
+				.then(Commands.argument("settlement", StringArgumentType.word())
+						.suggests((context, builder) -> SharedSuggestionProvider.suggest(
+								EconomyState.get(context.getSource().getServer()).settlements.keySet(), builder))
+						.executes(context -> settleTavern(context,
+								StringArgumentType.getString(context, "settlement")))));
+	}
+
+	private static int settleTavern(CommandContext<CommandSourceStack> context, String settlementId)
+			throws CommandSyntaxException {
+		CommandSourceStack source = context.getSource();
+		Settlement settlement = resolveSettlement(source, settlementId, targetPos(source));
+		if (settlement == null) {
+			source.sendFailure(Component.literal("§cПоселение не найдено — встань рядом с ратушей "
+					+ "или укажи id: /settle_tavern <settlement>"));
+			return 0;
+		}
+		BlockPos at = SettlementBuilds.buildTavern(source.getLevel(), settlement);
+		if (at == null) {
+			source.sendFailure(Component.literal("§cТаверна не встала: чанки вокруг ратуши не выгружены."));
+			return 0;
+		}
+		SignBoards.install(source.getLevel(), settlement);
+		source.sendSuccess(() -> Component.literal("§aТаверна у §f" + at.toShortString()
+				+ "§a. Тут ждут работу приезжие и проходят перерывы; доска вакансий — рядом с дверью."), true);
+		return 1;
+	}
+
+	private static void registerSettleSettlers(CommandDispatcher<CommandSourceStack> dispatcher) {
+		dispatcher.register(Commands.literal("settle_settlers")
+				.requires(source -> source.hasPermission(2))
+				.executes(context -> settleSettlers(context, null, 1))
+				.then(Commands.argument("settlement", StringArgumentType.word())
+						.suggests((context, builder) -> SharedSuggestionProvider.suggest(
+								EconomyState.get(context.getSource().getServer()).settlements.keySet(), builder))
+						.executes(context -> settleSettlers(context,
+								StringArgumentType.getString(context, "settlement"), 1))
+						.then(Commands.argument("count", IntegerArgumentType.integer(1, 8))
+								.executes(context -> settleSettlers(context,
+										StringArgumentType.getString(context, "settlement"),
+										IntegerArgumentType.getInteger(context, "count")))));
+	}
+
+	private static int settleSettlers(CommandContext<CommandSourceStack> context, String settlementId, int count)
+			throws CommandSyntaxException {
+		CommandSourceStack source = context.getSource();
+		Settlement settlement = resolveSettlement(source, settlementId, targetPos(source));
+		if (settlement == null) {
+			source.sendFailure(Component.literal("§cПоселение не найдено — укажи id: /settle_settlers <settlement> [n]"));
+			return 0;
+		}
+		int spawned = VillageLife.invite(source.getLevel(), settlement, EconomyState.get(source.getServer()), count);
+		source.sendSuccess(() -> Component.literal("§aПринято жителей: §f" + spawned
+				+ "§a. " + (settlement.joblessCount > 0 ? "Часть без работы — ждут вакансию у таверны."
+						: "Всех расписали по вакансиям.")), true);
+		return spawned;
 	}
 
 	private static void registerEconLog(CommandDispatcher<CommandSourceStack> dispatcher) {
@@ -660,10 +744,11 @@ public final class Rl2dopCommands {
 		}
 		BlockPos raw = targetPos(source);
 		// с-console ставим дом восточнее стартовых застроек, чтобы не залезать на них
-		BlockPos pos = source.getEntity() == null
-				? settlement.hall().offset(SettlementBuilds.HOUSE_X + 8 + settlement.houses.size() * 8, 0,
-						SettlementBuilds.HOUSE_Z)
-				: BlockPos.containing(source.getEntity().getX(), raw.getY(), source.getEntity().getZ());
+			BlockPos free = SettlementBuilds.freePlot(source.getLevel(), settlement);
+			BlockPos pos = source.getEntity() == null
+					? (free != null ? free : settlement.hall().offset(SettlementBuilds.HOUSE_X + 8
+							+ settlement.houses.size() * 8, 0, SettlementBuilds.HOUSE_Z))
+					: BlockPos.containing(source.getEntity().getX(), raw.getY(), source.getEntity().getZ());
 		BlockPos built = SettlementBuilds.buildHouse(level, settlement, pos);
 		if (built == null) {
 			source.sendFailure(Component.literal("§cДом не встал: место занято игроком или чанк выгружен."));

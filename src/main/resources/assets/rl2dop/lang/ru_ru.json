@@ -38,5 +38,19 @@
   "rl2dop.short.oak_log": "бревно",
   "rl2dop.short.cobblestone": "камень",
   "rl2dop.short.flint": "кремень",
-  "rl2dop.profession.mayor": "Глава поселения"
+  "rl2dop.profession.mayor": "Глава поселения",
+  "rl2dop.profession.unemployed": "без работы",
+  "rl2dop.state.waiting": "ждёт работу",
+  "rl2dop.state.breaking": "перерыв",
+  "rl2dop.state.meeting": "сходка",
+  "rl2dop.state.building": "строит",
+  "rl2dop.activity.wake": "утро",
+  "rl2dop.activity.work": "работа",
+  "rl2dop.activity.break": "перерыв",
+  "rl2dop.activity.meet": "сходка",
+  "rl2dop.activity.rest": "домой",
+  "rl2dop.activity.sleep": "спит",
+  "rl2dop.activity.wait_job": "ждёт работу",
+  "rl2dop.activity.building": "строит дом",
+  "rl2dop.activity.post": "у табличек"
 }

@@ -18,7 +18,12 @@ public enum Profession {
 	BUILDER("builder", null, 0, "minecraft:cobblestone", 4, 260),
 	HEALER("healer", "rl2dop:bandage", 1, null, 0, 400),
 	/** Глава поселения: стоит у табличек, скупает всё что угодно без торга. */
-	MAYOR("mayor", null, 0, null, 0, 0);
+	MAYOR("mayor", null, 0, null, 0, 0),
+	/**
+	 * Безработный странник: пришёл в поселение сам, живёт в таверне и ждёт вакансию.
+	 * Не рабочий (зарплату не требует, профессию сам не меняет), но и не «статичный».
+	 */
+	UNEMPLOYED("unemployed", null, 0, null, 0, 0);
 
 	private final String id;
 	private final String produceItem;
@@ -70,7 +75,12 @@ public enum Profession {
 
 	/** Профессии, которые можно назвать "рабочими" (получают зарплату и работают на точке). */
 	public boolean isWorker() {
-		return this != TRADER && this != GUARD && this != MAYOR;
+		return this != TRADER && this != GUARD && this != MAYOR && this != UNEMPLOYED;
+	}
+
+	/** Безработный: ждёт работу у таверны, сам никуда не нанимается. */
+	public boolean isJobless() {
+		return this == UNEMPLOYED;
 	}
 
 	/** Не работает и не меняет профессию сам: глава стоит на своём месте. */

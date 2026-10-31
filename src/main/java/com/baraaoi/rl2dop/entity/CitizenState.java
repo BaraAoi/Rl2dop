@@ -11,7 +11,15 @@ public enum CitizenState {
 	SLEEPING("sleeping"),
 	PANIC("panic"),
 	ATTACK("attack"),
-	SHOPPING("shopping");
+	SHOPPING("shopping"),
+	/** Безработный ждёт вакансию в таверне. */
+	WAITING("waiting"),
+	/** Перерыв: сошлись на площади/в таверне, едят и болтают. */
+	BREAKING("breaking"),
+	/** Вечерняя сходка у колокола (как «meet» у ванильных жителей). */
+	MEETING("meeting"),
+	/** Строит дом. */
+	BUILDING("building");
 
 	private final String id;
 

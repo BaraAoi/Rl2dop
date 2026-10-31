@@ -52,6 +52,8 @@ public class CitizenEntity extends PathfinderMob {
 	private int wallet = 20;
 	private int hunger = 100;
 	private int mood = 60;
+	/** Чем занят прямо сейчас (не сохраняется: пересчитывается по расписанию). */
+	private CitizenActivity activity = CitizenActivity.WORK;
 	private int workTicks;
 	private int salaryTimer;
 	private int professionCooldown;
@@ -299,11 +301,32 @@ public class CitizenEntity extends PathfinderMob {
 		this.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
 	}
 
+	public CitizenActivity getActivity() {
+		return activity == null ? CitizenActivity.WORK : activity;
+	}
+
+	/** @return true, если занятие изменилось (чтобы не обновлять именной тег каждый такт) */
+	public boolean setActivity(CitizenActivity activity) {
+		CitizenActivity previous = this.activity;
+		this.activity = activity == null ? CitizenActivity.WORK : activity;
+		if (previous != this.activity) {
+			refreshNameTag();
+			return true;
+		}
+		return false;
+	}
+
 	public void refreshNameTag() {
 		String name = citizenName.isEmpty() ? "Житель" : citizenName;
 		String color = isMayor() ? "§6" : "§e";
 		Component tag = Component.literal(color + name + " ")
 				.append(Component.translatable(profession.translationKey()).withStyle(ChatFormatting.GRAY));
+		// занятие видно прямо над головой: «Пётр — шахтёр · перерыв»
+		if (profession.isWorker() || profession.isJobless()) {
+			tag.append(Component.literal(" · ").withStyle(ChatFormatting.DARK_GRAY))
+					.append(Component.translatable(getActivity().translationKey())
+							.withStyle(ChatFormatting.AQUA));
+		}
 		this.setCustomName(tag);
 		this.setCustomNameVisible(true);
 	}

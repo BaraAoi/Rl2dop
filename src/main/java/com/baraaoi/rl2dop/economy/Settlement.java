@@ -45,11 +45,22 @@ public class Settlement {
 	public final List<String> boards = new ArrayList<>();
 	/** Прогресс, на котором последний раз жаловались на нехватку материалов (не сохраняется). */
 	public int lastShortageAt = -100;
+	/** Игровое время последнего приезда переселенца (не сохраняется: кулдаун при заходе в мир). */
+	public long lastSettlerTick = -9999L;
 	/** Построенные жилые дома: "x;y;z" — к ним привязываются точки сна NPC. */
 	public final List<String> houses = new ArrayList<>();
 	/** UUID главы поселения (стоит у табличек и скупает всё без торга). */
 	public String mayor = "";
 	/** Рабочие точки построек: profession -> "x;y;z" (ферма, шахта, дом лесоруба, мастерская). */
+	/** Таверна (null = ещё не построена): у неё селятся безработные и проходят перерывы. */
+	public long tavernPos = Long.MIN_VALUE;
+	/** Участок под следующий дом, который поселение само задумало построить ("x;y;z"). */
+	public String houseGoal = "";
+	/** Насколько поселению нужны дома: сколько жителей ютится без жилья (растёт спрос на материал). */
+	public int buildDesire;
+	/** Сколько жителей сейчас без работы (ждут вакансию у таверны). */
+	public int joblessCount;
+
 	public final Map<String, String> workSites = new LinkedHashMap<>();
 
 	public Settlement(String id, String name) {
@@ -239,6 +250,42 @@ public class Settlement {
 		return false;
 	}
 
+	public BlockPos tavern() {
+		return tavernPos == Long.MIN_VALUE ? null : BlockPos.of(tavernPos);
+	}
+
+	public void setTavern(BlockPos pos) {
+		this.tavernPos = pos == null ? Long.MIN_VALUE : pos.asLong();
+	}
+
+	public boolean hasTavern() {
+		return tavernPos != Long.MIN_VALUE;
+	}
+
+	/** Участок, который поселение выбрало под следующий дом (строитель идёт именно туда). */
+	public boolean hasHouseGoal() {
+		return houseGoal != null && !houseGoal.isBlank();
+	}
+
+	public BlockPos houseGoalPos() {
+		if (!hasHouseGoal()) {
+			return null;
+		}
+		String[] parts = houseGoal.split(";");
+		if (parts.length != 3) {
+			return null;
+		}
+		try {
+			return new BlockPos(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]), Integer.parseInt(parts[2]));
+		} catch (NumberFormatException e) {
+			return null;
+		}
+	}
+
+	public void setHouseGoal(BlockPos pos) {
+		this.houseGoal = pos == null ? "" : pos.getX() + ";" + pos.getY() + ";" + pos.getZ();
+	}
+
 	public boolean hasMayor() {
 		return mayor != null && !mayor.isEmpty();
 	}
@@ -281,6 +328,10 @@ public class Settlement {
 		tag.putLong("Hall", hallPos);
 		tag.putLong("Board", boardPos);
 		tag.putLong("ShopPos", shopPos);
+		tag.putLong("Tavern", tavernPos);
+		tag.putString("HouseGoal", houseGoal == null ? "" : houseGoal);
+		tag.putInt("Desire", buildDesire);
+		tag.putInt("Jobless", joblessCount);
 		tag.putLong("Treasury", treasury);
 		tag.putInt("CoinLimit", coinLimit);
 		tag.putInt("Build", buildProgress);
@@ -312,6 +363,10 @@ public class Settlement {
 		settlement.hallPos = tag.getLong("Hall");
 		settlement.boardPos = tag.contains("Board") ? tag.getLong("Board") : Long.MIN_VALUE;
 		settlement.shopPos = tag.contains("ShopPos") ? tag.getLong("ShopPos") : Long.MIN_VALUE;
+		settlement.tavernPos = tag.contains("Tavern") ? tag.getLong("Tavern") : Long.MIN_VALUE;
+		settlement.houseGoal = tag.contains("HouseGoal") ? tag.getString("HouseGoal") : "";
+		settlement.buildDesire = tag.contains("Desire") ? tag.getInt("Desire") : 0;
+		settlement.joblessCount = tag.contains("Jobless") ? tag.getInt("Jobless") : 0;
 		settlement.treasury = tag.getLong("Treasury");
 		settlement.coinLimit = tag.contains("CoinLimit") ? tag.getInt("CoinLimit") : Rl2dopConfig.mintLimit;
 		settlement.buildProgress = tag.getInt("Build");

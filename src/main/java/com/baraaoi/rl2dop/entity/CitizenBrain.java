@@ -6,6 +6,7 @@ import com.baraaoi.rl2dop.economy.MarketMath;
 import com.baraaoi.rl2dop.economy.Settlement;
 import com.baraaoi.rl2dop.economy.SettlementBuilds;
 import com.baraaoi.rl2dop.economy.SettlementService;
+import com.baraaoi.rl2dop.economy.VillageLife;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -44,45 +45,181 @@ public final class CitizenBrain {
 		if (citizen.getHunger() < 35 && handleHunger(citizen, level, settlement)) {
 			return;
 		}
-		if (citizen.getProfession().isStatic()) {
-			handlePost(citizen);
-		} else if (isNight(level)) {
-			handleSleep(citizen);
-		} else {
-			handleWork(citizen, level, settlement);
+		// Распорядок дня вместо «всегда работа»: жители ходят на своё место, в полдень
+		// собираются на перерыв у таверны, вечером — у колокола, ночью спят дома.
+		CitizenActivity activity = schedule(level, citizen);
+		citizen.setActivity(activity);
+		switch (activity) {
+			case POST -> handlePost(citizen);
+			case SLEEP -> handleSleep(citizen);
+			case REST -> handleRest(citizen);
+			case BREAK -> handleBreak(citizen, level, settlement);
+			case MEET -> handleMeet(citizen, level, settlement);
+			case WAIT_JOB -> handleWaitJob(citizen, level, settlement);
+			default -> handleWork(citizen, level, settlement);
 		}
 		paySalary(citizen, settlement);
 		maybeAutoSwitch(citizen, level, settlement);
 	}
 
+	// ---------- распорядок дня ----------
+
 	/**
-	 * Строитель раз в несколько циклов достраивает поселению новый жилой дом, если на складе
-	 * есть материал. Так у профессии «строитель» есть реальное дело, когда ратуша уже готова.
+	 * Чем занят житель прямо сейчас. Расписание взято с ванильного {@code Schedule} жителей
+	 * (work → meet → rest) и дополнено двумя вещами: полуденным перерывом у таверны и
+	 * ожиданием работы для тех, кто приехал без профессии.
 	 */
-	private static void growHouse(CitizenEntity citizen, ServerLevel level, Settlement settlement) {
-		if (!Rl2dopConfig.builderExpands) {
+	public static CitizenActivity schedule(ServerLevel level, CitizenEntity citizen) {
+		Profession profession = citizen.getProfession();
+		if (profession.isStatic()) {
+			return CitizenActivity.POST;
+		}
+		long day = level.getDayTime() % 24000L;
+		if (isNight(level) || day >= 23000L) {
+			return CitizenActivity.SLEEP;
+		}
+		if (profession.isJobless()) {
+			return CitizenActivity.WAIT_JOB;
+		}
+		if (!Rl2dopConfig.citizenSchedule) {
+			return CitizenActivity.WORK;
+		}
+		long workStart = Math.max(0, Rl2dopConfig.dayWorkStart);
+		long breakStart = Math.max(workStart + 500L, Rl2dopConfig.dayBreakStart);
+		long meetStart = Math.max(breakStart + 2000L, Rl2dopConfig.dayMeetStart);
+		if (day < workStart) {
+			return CitizenActivity.WAKE;
+		}
+		if (day < breakStart) {
+			return CitizenActivity.WORK;
+		}
+		if (day < breakStart + 2000L) {
+			return CitizenActivity.BREAK;
+		}
+		if (day < meetStart) {
+			return CitizenActivity.WORK;
+		}
+		if (day < meetStart + 1500L) {
+			return CitizenActivity.MEET;
+		}
+		return CitizenActivity.REST;
+	}
+
+	/** Личная точка у места встреч: чтобы жители собирались вместе, но не вставали друг в друга. */
+	private static BlockPos gatherSpot(CitizenEntity citizen, ServerLevel level, Settlement settlement) {
+		BlockPos spot = SettlementService.gatherPoint(level, settlement);
+		int hash = Math.abs(citizen.getUUID().hashCode());
+		BlockPos at = spot.offset(hash % 5 - 2, 0, (hash / 7) % 5 - 2);
+		return SettlementBuilds.safeStand(level, at);
+	}
+
+	/** Сколько жителей рядом (для «болтают на перерыве»). */
+	private static int nearby(CitizenEntity citizen, ServerLevel level, double radius) {
+		return level.getEntitiesOfClass(CitizenEntity.class, citizen.getBoundingBox().inflate(radius)).size() - 1;
+	}
+
+	/** Полуденный перерыв: идут к таверне, едят то, что есть на складе, болтают. */
+	private static void handleBreak(CitizenEntity citizen, ServerLevel level, Settlement settlement) {
+		BlockPos spot = gatherSpot(citizen, level, settlement);
+		if (citizen.blockPosition().distSqr(spot) > 4.0D) {
+			citizen.setCitizenState(CitizenState.WALKING);
+			if (citizen.getNavigation().isDone()) {
+				walkTo(citizen, spot);
+			}
 			return;
 		}
-		if (settlement.houses.size() >= Rl2dopConfig.maxVillageHouses) {
+		citizen.getNavigation().stop();
+		citizen.setCitizenState(CitizenState.IDLE);
+		citizen.lookAtBlock(spot);
+		if (citizen.getRandom().nextInt(3) != 0) {
 			return;
 		}
-		if (citizen.getRandom().nextInt(40) != 0) {
+		String food = "minecraft:bread";
+		Rl2dopConfig.Good good = Rl2dopConfig.good(food);
+		int price = good == null ? 0 : MarketMath.buyPrice(settlement, good, 0, 1.0D);
+		if (good != null && settlement.stock(food) > 0 && citizen.getWallet() >= price) {
+			citizen.setWallet(citizen.getWallet() - price);
+			settlement.treasury += price;
+			settlement.takeStock(food, 1);
+			citizen.addCarried(food, 1);
+			citizen.setHunger(citizen.getHunger() + 15);
+			citizen.setMood(citizen.getMood() + 2);
+			EconomyState.get(level.getServer()).setDirty();
+		} else {
+			// пообедать нечем — это сразу видно на табличке нужд
+			settlement.addDemand(food, 2);
+			citizen.setMood(citizen.getMood() - 1);
+		}
+		int with = Math.max(0, nearby(citizen, level, 6.0D));
+		if (with > 0) {
+			citizen.setMood(citizen.getMood() + 1);
+			if (citizen.getRandom().nextInt(24) == 0) {
+				EconomyState.get(level.getServer()).log("поселение " + settlement.id + ": перерыв у таверны, собралось "
+						+ (with + 1) + " жител(ей)");
+			}
+		}
+	}
+
+	/** Вечерняя сходка (ванильный «meet»): у колокола, новости, настроение и репутация игрокам рядом. */
+	private static void handleMeet(CitizenEntity citizen, ServerLevel level, Settlement settlement) {
+		BlockPos spot = gatherSpot(citizen, level, settlement);
+		if (citizen.blockPosition().distSqr(spot) > 4.0D) {
+			citizen.setCitizenState(CitizenState.WALKING);
+			if (citizen.getNavigation().isDone()) {
+				walkTo(citizen, spot);
+			}
 			return;
 		}
-		if (settlement.stock("minecraft:cobblestone") < 16 || settlement.stock("minecraft:oak_log") < 8) {
-			settlement.addDemand("minecraft:cobblestone", 8);
-			settlement.addDemand("minecraft:oak_log", 6);
+		citizen.getNavigation().stop();
+		citizen.setCitizenState(CitizenState.IDLE);
+		citizen.lookAtBlock(settlement.hall());
+		citizen.setMood(citizen.getMood() + 1);
+		for (net.minecraft.server.level.ServerPlayer player
+				: level.getEntitiesOfClass(net.minecraft.server.level.ServerPlayer.class,
+						citizen.getBoundingBox().inflate(10.0D))) {
+			if (citizen.getRandom().nextInt(20) == 0) {
+				// мирный игрок рядом на сходке — деревня это запоминает
+				settlement.addReputation(player.getUUID(), 1);
+			}
+		}
+	}
+
+	/** Вечер: идёт домой, ложится уже ночью. */
+	private static void handleRest(CitizenEntity citizen) {
+		BlockPos home = citizen.getHomePos();
+		if (home == null) {
+			citizen.getNavigation().stop();
+			citizen.setCitizenState(CitizenState.IDLE);
 			return;
 		}
-		settlement.takeStock("minecraft:cobblestone", 16);
-		settlement.takeStock("minecraft:oak_log", 8);
-		BlockPos hall = settlement.hall();
-		BlockPos at = hall.offset(SettlementBuilds.HOUSE_X + 8 + settlement.houses.size() * 8, 0,
-				SettlementBuilds.HOUSE_Z);
-		if (SettlementBuilds.buildHouse(level, settlement, at) != null) {
-			SettlementService.assignHomes(level, settlement);
-			EconomyState.get(level.getServer()).log("поселение " + settlement.id
-					+ ": строитель поставил дом в " + at.toShortString());
+		if (citizen.blockPosition().distSqr(home) > 4.0D) {
+			citizen.setCitizenState(CitizenState.WALKING);
+			if (citizen.getNavigation().isDone()) {
+				walkTo(citizen, home);
+			}
+		} else {
+			citizen.getNavigation().stop();
+			citizen.setCitizenState(CitizenState.IDLE);
+		}
+	}
+
+	/** Безработный: живёт при таверне, слоняется и ждёт, когда его позовут на работу. */
+	private static void handleWaitJob(CitizenEntity citizen, ServerLevel level, Settlement settlement) {
+		BlockPos spot = gatherSpot(citizen, level, settlement);
+		citizen.setCitizenState(CitizenState.WAITING);
+		if (citizen.blockPosition().distSqr(spot) > 9.0D) {
+			if (citizen.getNavigation().isDone()) {
+				walkTo(citizen, spot);
+			}
+			return;
+		}
+		if (citizen.getRandom().nextInt(8) == 0) {
+			walkTo(citizen, SettlementBuilds.safeStand(level, SettlementService.jitter(level, spot, 2)));
+		} else {
+			citizen.getNavigation().stop();
+		}
+		if (citizen.getRandom().nextInt(30) == 0) {
+			citizen.setMood(citizen.getMood() - 1);
 		}
 	}
 
@@ -252,7 +389,8 @@ public final class CitizenBrain {
 			citizen.setCitizenState(CitizenState.IDLE);
 			return;
 		}
-		if (citizen.blockPosition().distSqr(work) > 4.0D) {
+		double leash = Math.max(2, Rl2dopConfig.workLeash);
+		if (citizen.blockPosition().distSqr(work) > leash * leash) {
 			citizen.setCitizenState(CitizenState.WALKING);
 			if (citizen.getNavigation().isDone()) {
 				walkTo(citizen, work);
@@ -261,6 +399,13 @@ public final class CitizenBrain {
 		}
 		citizen.getNavigation().stop();
 		citizen.setCitizenState(CitizenState.WORKING);
+
+		// посёлку нужен дом — строитель идёт на участок и строит, станок ждёт
+		if (profession == Profession.BUILDER && settlement.hasHouseGoal()) {
+			citizen.setCitizenState(CitizenState.BUILDING);
+			VillageLife.buildGoal(level, settlement, citizen);
+			return;
+		}
 
 		int threshold = Math.max(1, profession.workTicks() / Math.max(1, Rl2dopConfig.brainIntervalTicks));
 		citizen.setWorkTicks(citizen.getWorkTicks() + 1);
@@ -312,10 +457,14 @@ public final class CitizenBrain {
 		}
 		if (profession == Profession.BUILDER) {
 			// ратуша не нуждается в стройке, поэтому строитель растит жилые дома
-			growHouse(citizen, level, settlement);
+			VillageLife.buildGoal(level, settlement, citizen);
 		}
 		if (profession == Profession.HEALER) {
 			healNearby(citizen, level);
+		}
+		// не стоит истуканом на месте: перебирается к соседней грядке/станку, но не уходит далеко
+		if (citizen.getRandom().nextInt(5) == 0) {
+			walkTo(citizen, SettlementBuilds.safeStand(level, SettlementService.jitter(level, work, 2)));
 		}
 		EconomyState.get(level.getServer()).setDirty();
 	}

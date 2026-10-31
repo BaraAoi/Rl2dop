@@ -1,6 +1,7 @@
 package com.baraaoi.rl2dop.economy;
 
 import com.baraaoi.rl2dop.Rl2dopConfig;
+import com.baraaoi.rl2dop.entity.Profession;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -34,9 +35,11 @@ public final class SignBoards {
 	public static final String KIND_NAME = "name";
 	public static final String KIND_NEEDS = "needs";
 	public static final String KIND_MARKET = "market";
+	/** Доска вакансий у таверны: кого поселение готово принять. */
+	public static final String KIND_JOBS = "jobs";
 
 	private static final int[] SPOTS_X = {-2, 0, 2};
-	private static final String[] SPOTS_KIND = {KIND_NEEDS, KIND_NAME, KIND_MARKET};
+	private static final String[] SPOTS_KIND = {KIND_NEEDS, KIND_NAME, KIND_MARKET, KIND_JOBS};
 	/** Глубина расстановки: внутри зала у дальней стены или на площади перед ратушей. */
 	private static final int INSIDE_Z_OFFSET = -SettlementBuilds.HALL_HALF_Z + 2;
 	private static final int OUTSIDE_Z = 7;
@@ -44,6 +47,12 @@ public final class SignBoards {
 	/** Позиция знака выбранного типа для поселения. */
 	public static BlockPos pos(Settlement settlement, String kind) {
 		BlockPos hall = settlement.hall();
+		if (KIND_JOBS.equals(kind)) {
+			// у двери таверны, а пока её нет — на площади напротив входа в ратушу
+			return settlement.hasTavern()
+					? settlement.tavern().offset(3, 1, 0)
+					: hall.offset(-SPOTS_X[0] - 4, 1, SettlementBuilds.HALL_HALF_Z + 3);
+		}
 		int index = KIND_NEEDS.equals(kind) ? 0 : (KIND_NAME.equals(kind) ? 1 : 2);
 		int x = SPOTS_X[index];
 		int z = SettlementBuilds.hallStanding(settlement) ? INSIDE_Z_OFFSET : OUTSIDE_Z;
@@ -149,6 +158,31 @@ public final class SignBoards {
 		}
 	}
 
+	/** Кого поселение готово принять прямо сейчас и что оно само задумало построить. */
+	private static List<Line> jobLines(Settlement settlement) {
+		List<Line> lines = new ArrayList<>();
+		lines.add(new Line(Component.literal("вакансии").withStyle(ChatFormatting.GOLD), null));
+		List<Profession> free = VillageLife.vacancies(settlement);
+		int shown = 0;
+		for (Profession profession : free) {
+			if (shown >= 2) {
+				break;
+			}
+			Component text = Component.translatable(profession.translationKey())
+					.append(Component.literal(" " + settlement.salaryFor(profession) + "м"));
+			lines.add(new Line(text.withStyle(ChatFormatting.WHITE), null));
+			shown++;
+		}
+		if (shown == 0) {
+			lines.add(new Line(Component.literal("мест занято всё").withStyle(ChatFormatting.GREEN), null));
+		}
+		String plan = settlement.hasHouseGoal() ? "строим дом"
+				: (settlement.buildDesire > 0 ? "нужны дома: " + settlement.buildDesire : "домов хватает");
+		lines.add(new Line(Component.literal(plan + " · без работы " + settlement.joblessCount)
+				.withStyle(ChatFormatting.GRAY), null));
+		return lines;
+	}
+
 	private static List<Line> nameLines(Settlement settlement) {
 		List<Line> lines = new ArrayList<>();
 		lines.add(new Line(Component.literal("поселение").withStyle(ChatFormatting.GOLD), null));
@@ -215,6 +249,7 @@ public final class SignBoards {
 		return switch (kind) {
 			case KIND_NAME -> nameLines(settlement);
 			case KIND_MARKET -> marketLines(settlement);
+			case KIND_JOBS -> jobLines(settlement);
 			default -> needsLines(settlement);
 		};
 	}

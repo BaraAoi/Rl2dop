@@ -89,6 +89,7 @@ public final class EconomyTicker {
 			state.setDirty();
 		}
 		workshopStep(server, state);
+		VillageLife.step(server, state);
 	}
 
 	/**
