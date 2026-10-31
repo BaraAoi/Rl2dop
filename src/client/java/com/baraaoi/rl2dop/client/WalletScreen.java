@@ -67,11 +67,11 @@ public class WalletScreen extends Screen {
 		graphics.drawCenteredString(this.font, this.title, x + WIDTH / 2, y + 8, 0xFFFFD966);
 
 		int rowY = y + 32;
-		graphics.drawString(this.font, "§6Золото (100м)", x + 14, rowY, 0xFFFFFF, false);
+		graphics.drawString(this.font, "§6Золотые", x + 14, rowY, 0xFFFFFF, false);
 		graphics.drawString(this.font, "§fx " + ClientEconomy.walletGold, x + WIDTH - 44, rowY, 0xFFFFFF, false);
-		graphics.drawString(this.font, "§fЖелезо (10м)", x + 14, rowY + 14, 0xFFFFFF, false);
+		graphics.drawString(this.font, "§fЖелезные", x + 14, rowY + 14, 0xFFFFFF, false);
 		graphics.drawString(this.font, "§fx " + ClientEconomy.walletIron, x + WIDTH - 44, rowY + 14, 0xFFFFFF, false);
-		graphics.drawString(this.font, "§7Бронза (1м)", x + 14, rowY + 28, 0xFFFFFF, false);
+		graphics.drawString(this.font, "§7Бронзовые", x + 14, rowY + 28, 0xFFFFFF, false);
 		graphics.drawString(this.font, "§fx " + ClientEconomy.walletBronze, x + WIDTH - 44, rowY + 28, 0xFFFFFF, false);
 		graphics.fill(x + 12, rowY + 44, x + WIDTH - 12, rowY + 45, 0x40000000);
 		graphics.drawString(this.font, "§7" + ClientEconomy.walletSummary, x + 14, rowY + 50, 0xFFFFFF, false);
