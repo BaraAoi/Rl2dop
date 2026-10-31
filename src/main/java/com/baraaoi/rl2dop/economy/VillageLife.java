@@ -6,7 +6,6 @@ import com.baraaoi.rl2dop.entity.CitizenEntity;
 import com.baraaoi.rl2dop.entity.CitizenState;
 import com.baraaoi.rl2dop.entity.Profession;
 import net.minecraft.core.BlockPos;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 
 import java.util.ArrayList;
@@ -29,19 +28,14 @@ public final class VillageLife {
 			Profession.BUILDER, Profession.COOK, Profession.CRAFTSMAN, Profession.RANCHER, Profession.HEALER,
 			Profession.TRADER, Profession.GUARD};
 
-	public static void step(MinecraftServer server, EconomyState state) {
-		for (Settlement settlement : state.all()) {
-			if (settlement.buildProgress < 100) {
-				continue;   // сначала ратуша, участки и улицы — потом уже жизнь
-			}
-			ServerLevel level = Displays.levelOf(server, settlement.dimension);
-			if (level == null || !level.hasChunkAt(settlement.hall())) {
-				continue;
-			}
-			housingDemand(level, settlement, state);
-			fillVacancies(level, settlement, state);
-			immigrants(level, settlement, state);
+	/** Хозяйственный шаг одного поселения (вызывается из EconomyTicker с try/catch). */
+	public static void settlementStep(ServerLevel level, Settlement settlement, EconomyState state) {
+		if (settlement.buildProgress < 100 || level == null || !level.hasChunkAt(settlement.hall())) {
+			return;   // сначала ратуша, участки и улицы — потом уже жизнь
 		}
+		housingDemand(level, settlement, state);
+		fillVacancies(level, settlement, state);
+		immigrants(level, settlement, state);
 	}
 
 	/** Все жители поселения, которые сейчас в мире. */

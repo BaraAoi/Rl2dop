@@ -68,11 +68,24 @@ public final class EconomyTicker {
 			}
 			if (settlement.buildProgress < 100) {
 				// ратуша не «строится» — поселение рождается с готовым зданием и постройками;
-				// постепенная стройка остаётся только если instantTownHall=false
-				if (Rl2dopConfig.instantTownHall || !Rl2dopConfig.autoBuild) {
-					SettlementBuilds.buildInstant(level, settlement);
-				} else {
-					SettlementBuilds.build(level, settlement, Math.max(1, Rl2dopConfig.buildBlocksPerTick));
+				// постепенная стройка остаётся только если instantTownHall=false.
+				// План ставим в try/catch: кривой рельеф не должен ронять сервер — поселение
+				// дозавершается как есть, а ошибка уходит в лог (её видно в ci/smoke.log).
+				try {
+					if (Rl2dopConfig.instantTownHall || !Rl2dopConfig.autoBuild) {
+						SettlementBuilds.buildInstant(level, settlement);
+					} else {
+						SettlementBuilds.build(level, settlement, Math.max(1, Rl2dopConfig.buildBlocksPerTick));
+					}
+				} catch (RuntimeException e) {
+					com.baraaoi.rl2dop.Rl2dop.LOGGER.error("[rl2dop] поселение {}: план застройки не применился",
+							settlement.id, e);
+					state.log("поселение " + settlement.id + ": застройка остановилась на ошибке ("
+							+ e.getClass().getSimpleName() + ") — остальное можно достроить /settle_build "
+							+ settlement.id + " instant");
+					settlement.buildProgress = 100;
+					settlement.lastShortageAt = -100;
+					SignBoards.install(level, settlement);
 				}
 			}
 			// глава нужен поселению с первого дня: без ратуши он стоит у временных табличек
@@ -91,10 +104,18 @@ public final class EconomyTicker {
 				}
 				SettlementService.assignHomes(level, settlement);
 			}
+			// жизнь деревни (вакансии, самострой, приезжие) тоже не должна ронять сервер
+			try {
+				VillageLife.settlementStep(level, settlement, state);
+			} catch (RuntimeException e) {
+				com.baraaoi.rl2dop.Rl2dop.LOGGER.error("[rl2dop] поселение {}: жизнь деревни остановилась",
+						settlement.id, e);
+				state.log("поселение " + settlement.id + ": ошибка в хозяйственном шаге ("
+						+ e.getClass().getSimpleName() + ")");
+			}
 			state.setDirty();
 		}
 		workshopStep(server, state);
-		VillageLife.step(server, state);
 	}
 
 	/**

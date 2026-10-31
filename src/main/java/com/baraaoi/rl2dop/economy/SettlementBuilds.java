@@ -856,9 +856,9 @@ public final class SettlementBuilds {
 					.setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.SOUTH));
 			plan.set(base.offset(x, 2, -halfZ + 1), topSlab(Blocks.OAK_SLAB.defaultBlockState()));
 		}
+		// у бочки свойство facing шестистороннее — HORIZONTAL_FACING на него вешать нельзя (краш)
 		for (int dx : new int[]{-3, 3}) {
-			plan.set(base.offset(dx, 1, -halfZ + 2), Blocks.BARREL.defaultBlockState()
-					.setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.SOUTH));
+			plan.set(base.offset(dx, 1, -halfZ + 2), Blocks.BARREL.defaultBlockState());
 		}
 		plan.set(base.offset(4, 1, -halfZ + 1), Blocks.SMOKER.defaultBlockState()
 				.setValue(BlockStateProperties.HORIZONTAL_FACING, Direction.WEST));
