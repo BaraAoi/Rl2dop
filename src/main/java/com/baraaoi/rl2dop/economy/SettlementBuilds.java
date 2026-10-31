@@ -1619,9 +1619,9 @@ public final class SettlementBuilds {
 					if (!level.hasChunkAt(pos)) {
 						continue;
 					}
-					net.minecraft.world.level.material.FluidState fluid = level.getFluidState(pos);
-					if (fluid.is(net.minecraft.registry.tag.FluidTags.WATER)
-							|| fluid.is(net.minecraft.registry.tag.FluidTags.LAVA)) {
+					// любая жидкость в пятне (вода, лава) — место под постройку не подходит;
+					// теги в Mojang-маппинге лежат в другом пакете, поэтому смотрим на сам FluidState
+					if (!level.getFluidState(pos).isEmpty()) {
 						return true;
 					}
 				}
