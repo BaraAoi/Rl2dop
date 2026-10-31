@@ -65,7 +65,9 @@ public final class Rl2dopCommands {
 			registerShopMarker(dispatcher);
 			registerNpcProfession(dispatcher);
 			registerNpcList(dispatcher);
-			registerSettleTavern(dispatcher);
+	registerSettleAudit(dispatcher);
+		registerSettleRegrade(dispatcher);
+				registerSettleTavern(dispatcher);
 			registerSettleSettlers(dispatcher);
 			registerEconLog(dispatcher);
 			registerRoot(dispatcher);
@@ -213,8 +215,13 @@ public final class Rl2dopCommands {
 		ServerLevel level = source.getLevel();
 		BlockPos raw = targetPos(source);
 		BlockPos pos = SettlementService.surface(level, raw.getX(), raw.getZ(), raw.getY());
-		Settlement settlement = EconomyState.get(source.getServer()).createSettlement(name, pos,
+		// поселение само выбирает, где встать: ищем ровное место рядом с указанной точкой,
+		// чтобы не получать котлован на холме и «дома на разных высотах»
+		int[] spread = new int[1];
+		BlockPos site = SettlementBuilds.chooseSite(level, pos, spread);
+		Settlement settlement = EconomyState.get(source.getServer()).createSettlement(name, site,
 				level.dimension().location().toString());
+		int flat = spread[0];
 		Displays.ensureBoard(level, settlement, pos.above(2));
 		// таблички нужд вывешиваем сразу: потребности порождает стройка, а не «пустое место»
 		SignBoards.install(level, settlement);
@@ -224,7 +231,9 @@ public final class Rl2dopCommands {
 		int houses = settlement.houses.size();
 		CitizenEntity mayor = SettlementService.findMayor(level, settlement);
 		source.sendSuccess(() -> Component.literal("§aПоселение «§f" + settlement.displayName()
-				+ "§a» создано. Ратуша: §f" + pos.toShortString()
+				+ "§a» создано. Ратуша: §f" + site.toShortString()
+				+ "§a (перепад грунта §f" + Math.max(0, flat) + "§a блоков"
+				+ (site.equals(pos) ? "" : ", §aподвинул на ровное") + "§a)"
 				+ "§a, постройка §f" + progress + "%§a, домов §f" + houses
 				+ "§a, глава: §f" + (mayor == null ? "не выбран" : mayor.getCitizenName())
 				+ "§a. Таблички нужд уже висят. Дальше: §f/settle_bind§a, §f/house_add§a или §f/spawn_npc farmer"), true);
@@ -572,6 +581,73 @@ public final class Rl2dopCommands {
 		return Math.round(Math.sqrt(citizen.blockPosition().distSqr(work))) + "м";
 	}
 
+	/** Аудит застройки: ровно ли лежат площадки и мягко ли идут дороги. */
+	private static void registerSettleAudit(CommandDispatcher<CommandSourceStack> dispatcher) {
+		dispatcher.register(Commands.literal("settle_audit")
+				.requires(source -> source.hasPermission(2))
+				.executes(context -> settleAudit(context, null))
+				.then(Commands.argument("settlement", StringArgumentType.word())
+						.executes(context -> settleAudit(context,
+								StringArgumentType.getString(context, "settlement")))));
+	}
+
+	private static int settleAudit(CommandContext<CommandSourceStack> context, String settlementId) {
+		CommandSourceStack source = context.getSource();
+		ServerLevel level = source.getLevel();
+		Settlement settlement = settlementId == null
+				? settlementAt(source, targetPos(source))
+				: EconomyState.get(source.getServer()).settlement(settlementId);
+		if (settlement == null) {
+			source.sendFailure(Component.literal("Поселение не найдено."));
+			return 0;
+		}
+		String report = SettlementBuilds.audit(level, settlement);
+		source.sendSuccess(() -> Component.literal("§7аудит §f" + settlement.id + "§7: " + report), false);
+		return 1;
+	}
+
+	/**
+	 * Перенести поселение на самое ровное место рядом (для поселений, основанных до этой генерации):
+	 * точка ратуши сдвигается, план пересчитывается, площадки притираются заново.
+	 */
+	private static void registerSettleRegrade(CommandDispatcher<CommandSourceStack> dispatcher) {
+		dispatcher.register(Commands.literal("settle_regrade")
+				.requires(source -> source.hasPermission(2))
+				.executes(context -> settleRegrade(context, null))
+				.then(Commands.argument("settlement", StringArgumentType.word())
+						.executes(context -> settleRegrade(context,
+								StringArgumentType.getString(context, "settlement")))));
+	}
+
+	private static int settleRegrade(CommandContext<CommandSourceStack> context, String settlementId) {
+		CommandSourceStack source = context.getSource();
+		ServerLevel level = source.getLevel();
+		Settlement settlement = settlementId == null
+				? settlementAt(source, targetPos(source))
+				: EconomyState.get(source.getServer()).settlement(settlementId);
+		if (settlement == null) {
+			source.sendFailure(Component.literal("Поселение не найдено."));
+			return 0;
+		}
+		BlockPos before = settlement.hall();
+		int[] spread = new int[1];
+		BlockPos site = SettlementBuilds.chooseSite(level, before, spread);
+		if (site.equals(before)) {
+			source.sendSuccess(() -> Component.literal("§7Уже стоит на ровном: §f" + before.toShortString()
+					+ "§7, перепад грунта §f" + SettlementBuilds.siteSpread(level, before) + "§7."), true);
+			return 0;
+		}
+		settlement.hallPos = site.asLong();
+		SettlementBuilds.forgetPlots(settlement);
+		settlement.buildProgress = 0;
+		int progress = SettlementBuilds.buildInstant(level, settlement);
+		EconomyState.get(source.getServer()).setDirty();
+		source.sendSuccess(() -> Component.literal("§aПоселение перенесено на ровное место: §f"
+				+ before.toShortString() + "§a → §f" + site.toShortString() + "§a (перепад §f"
+				+ Math.max(0, spread[0]) + "§a блоков), постройка §f" + progress + "%§a."), true);
+		return 1;
+	}
+
 	private static void registerSettleTavern(CommandDispatcher<CommandSourceStack> dispatcher) {
 		dispatcher.register(Commands.literal("settle_tavern")
 				.requires(source -> source.hasPermission(2))
@@ -671,6 +747,8 @@ public final class Rl2dopCommands {
 							"§f/shop_open§7 — открыть торговый экран",
 							"§f/shelf_add <item>§7 — полка с живым стоком",
 							"§f/shop_marker§7 — точка входа магазина поселения",
+							"§f/settle_audit [поселение]§7 — проверка площадок и дорог",
+							"§f/settle_regrade [поселение]§7 — переставить на ровное место",
 							"§f/salary_set <profession> <amount>§7 — зарплата",
 							"§f/price_set <item> <base>§7 — базовая цена",
 							"§f/npc_profession <profession>§7 — сменить профессию ближайшему NPC",
@@ -715,6 +793,7 @@ public final class Rl2dopCommands {
 		switch (mode) {
 			case "reset" -> {
 				settlement.buildProgress = 0;
+				SettlementBuilds.forgetPlots(settlement);   // участки пересчитаются по рельефу
 				EconomyState.get(source.getServer()).setDirty();
 				source.sendSuccess(() -> Component.literal("§eПостройка §f" + settlement.displayName()
 						+ "§e сброшена: дальше растёт автоматически (autoBuild)."), true);

@@ -14,7 +14,9 @@ import net.minecraft.world.level.block.state.properties.Half;
 import net.minecraft.world.level.block.state.properties.SlabType;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Постройки поселения: ратуша, площадь с колодцем, лавка, склад, жилые участки, таверна с прудом
@@ -24,10 +26,11 @@ import java.util.List;
  * мощёной площади, две улицы с поперечными, переулок, десять жилых участков вдоль улиц, таверна с
  * прудом во дворе и ряд мастерских за северной улицей. К каждой двери ведёт дорожка.
  *
- * <p>Рельеф подстраивается под посёлок, а не наоборот: `gradePad()` срезает холм и досыпает яму до
- * уровня ратуши (оттого дома и дворы лежат в одной плоскости), а `roadLevel()` позволяет улицам
- * отходить от этого уровня на ROAD_TILT блоков, чтобы дорога шла мягкими ступенями. Низ под
- * площадками добивается фундаментом, поэтому ничего не висит в воздухе.
+ * <p>Рельеф не «выпрямляется силой»: `Ground.pick()` для каждой постройки ищет ровное место рядом
+ * с точкой плана и берёт уровень этого места, `Ground.grade()` ровняет только саму площадку
+ * (плюс откос в 1 блок по краю), а `Ground.path()` кладёт улицы лентами, которые идут по грунту и
+ * меняют высоту не больше чем на блок за шаг. Поэтому посёлок не выглядит карьером ни на равнине,
+ * ни на склоне, а низ под площадками добивается фундаментом — ничего не висит в воздухе.
  *
  * <p>Блоки ставятся только туда, где воздух, трава, песок, вода или камень: то, что построил игрок
  * или деревня, не ломается, а такой блок просто пропускается.
@@ -136,6 +139,105 @@ public final class SettlementBuilds {
 	}
 
 	/**
+	 * Место под основание поселения: ищем ровное пятно размером с площадку ратуши в окрестности
+	 * запрошенной точки (шаг 3 блока, радиус ±18) и берём то, где меньше всего земляных работ.
+	 * Так деревня «выбирает», где ей встать, а не получает котлован на холме.
+	 *
+	 * @return выбранная точка (y — уровень площадки) или исходная, если окрестность не выгружена
+	 */
+	public static BlockPos chooseSite(ServerLevel level, BlockPos desired, int[] outSpread) {
+		if (level == null) {
+			return desired;
+		}
+		int halfX = PLAZA_HALF_X / 2;
+		int halfZ = PLAZA_HALF_Z / 2;
+		Ground ground = new Ground(level, desired.getY());
+		BlockPos site = ground.pick(desired.getX(), desired.getZ(), halfX, halfZ, 6, 3);
+		if (site == null) {
+			site = desired;
+		}
+		if (outSpread != null) {
+			outSpread[0] = ground.spread(site.getX(), site.getZ(), halfX, halfZ);
+		}
+		return site;
+	}
+
+	/** Перепад грунта над площадкой ратуши — показатель «ровное ли место» (0 = идеально). */
+	public static int siteSpread(ServerLevel level, BlockPos center) {
+		return level == null ? 0
+				: new Ground(level, center.getY()).spread(center.getX(), center.getZ(), PLAZA_HALF_X / 2,
+						PLAZA_HALF_Z / 2);
+	}
+
+	/**
+	 * Проверка качества застройки: у каждой постройки площадка ровная (перепад ≤ 1 блока),
+	 * дорога не делает перепад больше блока на шаг, под постройкой есть опора. Нужна потому,
+	 * что «красиво» глазами в CI не проверить — проверяем числа, на которых красота держится.
+	 *
+	 * @return человекочитаемый отчёт; нарушений быть не должно
+	 */
+	public static String audit(ServerLevel level, Settlement settlement) {
+		if (level == null || settlement == null) {
+			return "нет поселения";
+		}
+		BlockPos origin = settlement.hall();
+		Ground ground = new Ground(level, origin.getY());
+		List<BlockPos> spots = new ArrayList<>();
+		spots.add(origin);
+		for (String record : settlement.houses) {
+			String[] parts = record.split(";");
+			if (parts.length != 3) {
+				continue;
+			}
+			try {
+				spots.add(new BlockPos(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]),
+						Integer.parseInt(parts[2])));
+			} catch (NumberFormatException ignored) {
+				// битую запись не считаем
+			}
+		}
+		if (settlement.hasTavern()) {
+			spots.add(settlement.tavern());
+		}
+		for (int i = 0; i < 4; i++) {
+			BlockPos base = workBase(level, origin, i);
+			BlockPos spot = ground.pick(base.getX(), base.getZ(), 8, 7);
+			spots.add(spot != null ? spot : base);
+		}
+		int pads = 0;
+		int uneven = 0;
+		int floating = 0;
+		for (BlockPos spot : spots) {
+			if (spot == null || !level.hasChunkAt(spot)) {
+				continue;
+			}
+			pads++;
+			if (ground.spread(spot.getX(), spot.getZ(), 3, 3) > 1) {
+				uneven++;
+			}
+			BlockPos under = spot.below();
+			if (!level.getBlockState(under).isRedstoneConductor(level, under)) {
+				floating++;   // под постройкой пустота/несплошной блок — «висит»
+			}
+		}
+		// шаг улицы: перепад соседних колонок мощения (2+ это ещё ступенька, 4+ уже обрыв)
+		int roadMaxStep = 0;
+		int cells = 0;
+		for (int z : new int[]{origin.getZ() + STREET_SOUTH_Z, origin.getZ() + STREET_NORTH_Z}) {
+			int prev = ground.level(origin.getX() - ROAD_X, z);
+			for (int x = origin.getX() - ROAD_X + 1; x <= origin.getX() + ROAD_X; x++) {
+				int now = ground.level(x, z);
+				roadMaxStep = Math.max(roadMaxStep, Math.abs(now - prev));
+				prev = now;
+				cells++;
+			}
+		}
+		int violations = uneven + floating + (roadMaxStep > 3 ? 1 : 0);
+		return "площадок " + pads + ", кривых " + uneven + ", висячих " + floating
+				+ " · шагов дороги " + cells + ", макс перепад " + roadMaxStep + " · нарушений " + violations;
+	}
+
+	/**
 	 * Точку работы профессии привязываем один раз: без этого уровень площадки при каждой
 	 * перестройке считался бы уже по крыше готовой мастерской, и координаты «прыгали» бы на
 	 * несколько блоков между запусками.
@@ -154,11 +256,13 @@ public final class SettlementBuilds {
 	public static List<Entry> plan(ServerLevel level, Settlement settlement) {
 		BlockPos origin = settlement.hall();
 		Plan plan = new Plan();
+		Ground ground = new Ground(level, origin.getY());
 
-		// 1) территория: площадь, улицы и участки выравниваются в один уровень (террасы, как в
-		//    ванильной деревне) — иначе дома «на разных высотах», а мощение на склоне не ложится
-		gradePad(plan, level, origin, PLAZA_HALF_X, PLAZA_HALF_Z, Blocks.DIRT_PATH.defaultBlockState(),
-				Blocks.DIRT.defaultBlockState());
+		// 1) ПЛОЩАДКА ТОЛЬКО вокруг ратуши (крыльцо + колодец): ровный пятачок, где стоит главное
+		//    здание. Раньше выравнивался весь квадрат площади 37x43 — на холме это выглядело
+		//    карьером. Теперь рельеф остаётся рельефом, а к нему притираются и дома, и дороги.
+		ground.grade(plan, origin.getX(), origin.getZ(), PLAZA_HALF_X / 2, PLAZA_HALF_Z / 2, origin.getY(),
+				Blocks.DIRT_PATH.defaultBlockState(), Blocks.DIRT.defaultBlockState());
 		for (int x = -SHOP_X - 6; x <= HOUSE_X + HOUSE_HALF + 1; x++) {
 			for (int z = -HALL_HALF_Z - 2; z <= HALL_HALF_Z + 5; z++) {
 				for (int dy = 1; dy <= ROOF + 4; dy++) {
@@ -178,8 +282,8 @@ public final class SettlementBuilds {
 				fillFoundation(level, plan, pos);
 			}
 		}
-		for (int x = -PLAZA_HALF_X; x <= PLAZA_HALF_X; x++) {
-			for (int z = -PLAZA_HALF_Z; z <= PLAZA_HALF_Z; z++) {
+		for (int x = -PLAZA_HALF_X / 2; x <= PLAZA_HALF_X / 2; x++) {
+			for (int z = -PLAZA_HALF_Z / 2; z <= PLAZA_HALF_Z / 2; z++) {
 				if (Math.abs(x) <= HALL_HALF_X && Math.abs(z) <= HALL_HALF_Z) {
 					continue;
 				}
@@ -191,8 +295,16 @@ public final class SettlementBuilds {
 		}
 		// колодец на площади — как в ванильной деревне (в стороне, чтобы не перекрыть входную дорожку)
 		well(plan, origin.offset(5, 0, HALL_HALF_Z + 3));
+
+		// 2а) площадки стартовых домов ГОТОВЯМ ДО дорог: каждая притирается к своему месту,
+		//     а дороги потом обходят готовые пятна и приводят к калитке каждого дома
+		List<BlockPos> plots = housePlots(level, settlement);
+		List<BlockPos> fresh = starterPlots(level, settlement, plots);
+		for (BlockPos plot : fresh) {
+			gradeHousePad(plan, ground, plot);
+		}
 		// улицы, переулки и дорожки к дверям
-		roads(plan, level, origin, settlement);
+		roads(plan, ground, level, origin, settlement);
 
 		// 3) ратуша: два этажа, много света, широкий вход
 		walls(plan, origin, 1, WALLS_1, Blocks.OAK_PLANKS.defaultBlockState());
@@ -289,29 +401,28 @@ public final class SettlementBuilds {
 		}
 
 		// 4) площадь: фонари по углам, лавка и склад, колодец у крыльца
-		for (int[] corner : new int[][]{{-PLAZA_HALF_X + 2, PLAZA_HALF_Z - 3}, {PLAZA_HALF_X - 2, PLAZA_HALF_Z - 3},
-				{-PLAZA_HALF_X + 2, -PLAZA_HALF_Z + 2}, {PLAZA_HALF_X - 2, -PLAZA_HALF_Z + 2}}) {
+		for (int[] corner : new int[][]{{-PLAZA_HALF_X / 2 + 1, PLAZA_HALF_Z / 2 - 1},
+				{PLAZA_HALF_X / 2 - 1, PLAZA_HALF_Z / 2 - 1},
+				{-PLAZA_HALF_X / 2 + 1, -PLAZA_HALF_Z / 2 + 1}, {PLAZA_HALF_X / 2 - 1, -PLAZA_HALF_Z / 2 + 1}}) {
 			lampPost(plan, origin.offset(corner[0], 1, corner[1]), level);
 		}
 		stall(plan, origin.offset(SHOP_X, 0, 0), true);
 		stall(plan, origin.offset(STORE_X, 0, 0), false);
 
-		// 5) жилые дома: ровно по участкам плана, вдоль улицы, с дорожкой к двери
-		int starter = Math.max(0, Math.min(4, Rl2dopConfig.starterHouses));
-		List<BlockPos> plots = housePlots(settlement);
-		for (int i = 0; i < starter && i < plots.size(); i++) {
-			houseOnPlot(plan, level, plots.get(i));
+		// 5) жилые дома: каждый на своей площадке, вдоль улицы, с дорожкой к калитке
+		for (BlockPos plot : fresh) {
+			houseOnPlot(plan, ground, level, plot);
 		}
 
 		// 6) таверна с прудом и рабочие постройки
 		if (Rl2dopConfig.tavernEnabled) {
-			tavernPlan(plan, level, settlement, origin.offset(TAVERN_X, 0, TAVERN_Z));
+			tavernPlan(plan, ground, level, settlement, origin.offset(TAVERN_X, 0, TAVERN_Z));
 			if (Rl2dopConfig.villagePond) {
-				pondPlan(plan, level, origin.offset(POND_X, 0, POND_Z));
+				pondPlan(plan, ground, level, origin.offset(POND_X, 0, POND_Z));
 			}
 		}
 		if (Rl2dopConfig.starterWorkshops) {
-			workshops(plan, level, settlement, origin);
+			workshops(plan, ground, level, settlement, origin);
 		}
 
 		return plan.entries;
@@ -399,19 +510,22 @@ public final class SettlementBuilds {
 	 * и к ней привязывается рабочая точка профессии ({@code Settlement.workSites}), так что
 	 * шахтёру не нужно ничего копать: он стоит у своей шахты и производит камень и руду.
 	 */
-	private static void workshops(Plan plan, ServerLevel level, Settlement settlement, BlockPos origin) {
-		farmPlan(plan, level, settlement, workPad(plan, level, origin, 0, 9, 8));
-		lumberPlan(plan, level, settlement, workPad(plan, level, origin, 1, 8, 7));
-		minePlan(plan, level, settlement, workPad(plan, level, origin, 2, 8, 7));
-		builderPlan(plan, level, settlement, workPad(plan, level, origin, 3, 8, 7));
+	private static void workshops(Plan plan, Ground ground, ServerLevel level, Settlement settlement,
+				BlockPos origin) {
+		farmPlan(plan, level, settlement, workPad(plan, ground, origin, 0, 9, 8));
+		lumberPlan(plan, level, settlement, workPad(plan, ground, origin, 1, 8, 7));
+		minePlan(plan, level, settlement, workPad(plan, ground, origin, 2, 8, 7));
+		builderPlan(plan, level, settlement, workPad(plan, ground, origin, 3, 8, 7));
 	}
 
 	/** Площадка мастерской: ровный участок того же уровня, что и ратуша (терраса на склоне). */
-	private static BlockPos workPad(Plan plan, ServerLevel level, BlockPos origin, int index, int halfX, int halfZ) {
-		BlockPos center = workBase(level, origin, index);
-		int y = gradePad(plan, level, center, halfX, halfZ, Blocks.GRASS_BLOCK.defaultBlockState(),
-				Blocks.DIRT.defaultBlockState());
-		return new BlockPos(center.getX(), y, center.getZ());
+	private static BlockPos workPad(Plan plan, Ground ground, BlockPos origin, int index, int halfX, int halfZ) {
+		BlockPos center = workBase(null, origin, index);
+		BlockPos spot = ground.pick(center.getX(), center.getZ(), halfX, halfZ);
+		BlockPos at = spot != null ? spot : center;
+		int y = ground.grade(plan, at.getX(), at.getZ(), halfX, halfZ, at.getY(),
+				Blocks.GRASS_BLOCK.defaultBlockState(), Blocks.DIRT.defaultBlockState());
+		return new BlockPos(at.getX(), y, at.getZ());
 	}
 
 	/** Расчистка объёма над пятном постройки (только природное). */
@@ -614,99 +728,15 @@ public final class SettlementBuilds {
 	// ---------- деревня: площадки, улицы, участки, таверна ----------
 
 	/**
-	 * Уровень куска дороги: среднему грунту по куску, но не дальше ROAD_TILT от уровня площади —
-	 * тогда улица идёт мягкими ступенями (как в ванильной деревне), а не рампой и не карьером.
+	 * Площадка жилого участка: выравниваем пятно вокруг ТОЧКИ УЧАСТКА по её же грунту — уровень
+	 * выбирает `Ground.pick()`, поэтому дом стоит на ровном, а не на «уровне ратуши любой ценой».
 	 */
-	private static int roadLevel(ServerLevel level, BlockPos center, int halfX, int halfZ, int targetY) {
-		long sum = 0L;
-		int n = 0;
-		for (int x = -halfX; x <= halfX; x += 2) {
-			for (int z = -halfZ; z <= halfZ; z += 2) {
-				sum += topSolidY(level, center.getX() + x, center.getZ() + z, targetY);
-				n++;
-			}
-		}
-		if (n == 0) {
-			return targetY;
-		}
-		int avg = (int) Math.round((double) sum / (double) n);
-		if (avg > targetY + ROAD_TILT) {
-			return targetY + ROAD_TILT;
-		}
-		if (avg < targetY - ROAD_TILT) {
-			return targetY - ROAD_TILT;
-		}
-		return targetY;
+	private static int gradeHousePad(Plan plan, Ground ground, BlockPos plot) {
+		return ground.grade(plan, plot.getX(), plot.getZ(), HOUSE_HALF + 2, HOUSE_HALF + 2, plot.getY(),
+				Blocks.GRASS_BLOCK.defaultBlockState(), Blocks.DIRT.defaultBlockState());
 	}
 
-	/**
-	 * Выравнивает пятно под постройку: срезает всё природное выше уровня, досыпает яму, сверху
-	 * кладёт `top`. Уровень всегда берётся тот же, что у ратуши, — поэтому посёлок выглядит одной
-	 * плоскостью (дома, дворы, площади), а не «на разных высотах», и ничего не висит в воздухе:
-	 * низины под площадкой досыпаны, холмы срезаны.
-	 *
-	 * @return уровень площадки
-	 */
-	public static int gradePad(Plan plan, ServerLevel level, BlockPos center, int halfX, int halfZ,
-								BlockState top, BlockState fill) {
-		int y = center.getY();
-		for (int x = -halfX; x <= halfX; x++) {
-			for (int z = -halfZ; z <= halfZ; z++) {
-				gradeColumn(plan, level, new BlockPos(center.getX() + x, y, center.getZ() + z), y, top, fill);
-			}
-		}
-		return y;
-	}
-
-	/** Один столбец площадки: всё лишнее срезать, недостающее досыпать, верх — `top`. */
-	private static void gradeColumn(Plan plan, ServerLevel level, BlockPos at, int y, BlockState top, BlockState fill) {
-		int ground = topSolidY(level, at.getX(), at.getZ(), y);
-		for (int yy = y + 1; yy <= Math.max(ground, y + 8); yy++) {
-			BlockPos pos = new BlockPos(at.getX(), yy, at.getZ());
-			if (removable(level, pos) && !level.getBlockState(pos).isAir()) {
-				plan.air(pos);
-			}
-		}
-		for (int yy = ground + 1; yy < y; yy++) {
-			plan.set(new BlockPos(at.getX(), yy, at.getZ()), fill);
-		}
-		plan.set(new BlockPos(at.getX(), y, at.getZ()), top);
-	}
-
-	/** Дорога: мощение прямоугольника, выровненное по кускам вдоль длинной оси (ступенями, как в деревне). */
-	private static void roadRect(Plan plan, ServerLevel level, BlockPos origin, int x0, int x1, int z0, int z1) {
-		boolean alongZ = z1 - z0 > x1 - x0;
-		int lo = alongZ ? z0 : x0;
-		int hi = alongZ ? z1 : x1;
-		for (int start = lo; start <= hi; start += 8) {
-			int end = Math.min(hi, start + 7);
-			int sx0 = alongZ ? x0 : start;
-			int sx1 = alongZ ? x1 : end;
-			int sz0 = alongZ ? start : z0;
-			int sz1 = alongZ ? end : z1;
-			BlockPos center = new BlockPos((sx0 + sx1) / 2, origin.getY(), (sz0 + sz1) / 2);
-			int y = roadLevel(level, center, Math.max(0, (sx1 - sx0) / 2), Math.max(0, (sz1 - sz0) / 2),
-					origin.getY());
-			for (int x = sx0; x <= sx1; x++) {
-				for (int z = sz0; z <= sz1; z++) {
-					gradeColumn(plan, level, new BlockPos(x, y, z), y, roadTop(x - origin.getX(), z - origin.getZ()),
-							Blocks.COBBLESTONE.defaultBlockState());
-				}
-			}
-		}
-	}
-
-	/** Полоса дороги вдоль X. */
-	private static void roadX(Plan plan, ServerLevel level, BlockPos origin, int x0, int x1, int z, int halfWidth) {
-		roadRect(plan, level, origin, x0, x1, z - halfWidth, z + halfWidth);
-	}
-
-	/** Полоса дороги вдоль Z. */
-	private static void roadZ(Plan plan, ServerLevel level, BlockPos origin, int z0, int z1, int x, int halfWidth) {
-		roadRect(plan, level, origin, x - halfWidth, x + halfWidth, z0, z1);
-	}
-
-	/** Мощность дорог: в основном тропинка, местами гравий и твёрдый грунт — как ваниль. */
+	/** Мощность дорог: в основном тропинка, местами гравий и твёрдый грунт — как в ваниле. */
 	private static BlockState roadTop(int x, int z) {
 		int hash = Math.abs(x * 73856093 ^ z * 19349663);
 		if (hash % 11 == 0) {
@@ -718,54 +748,138 @@ public final class SettlementBuilds {
 		return Blocks.DIRT_PATH.defaultBlockState();
 	}
 
-	/** Все улицы поселения: две продольные, две поперечные, выходы ратуши и переулок второго ряда. */
-	private static void roads(Plan plan, ServerLevel level, BlockPos origin, Settlement settlement) {
-		roadX(plan, level, origin, -ROAD_X, ROAD_X, STREET_SOUTH_Z, ROAD_HALF);
-		roadX(plan, level, origin, -ROAD_X, ROAD_X, STREET_NORTH_Z, ROAD_HALF);
-		roadZ(plan, level, origin, STREET_NORTH_Z, LANE_Z, -ROAD_X, ROAD_HALF);
-		roadZ(plan, level, origin, STREET_NORTH_Z, LANE_Z, ROAD_X, ROAD_HALF);
-		// выход из ратуши на главную улицу (от крыльца до тротуара) и переулок за вторым рядом домов
-		roadX(plan, level, origin, -2, 2, HALL_HALF_Z + 7, 3);
-		roadX(plan, level, origin, -ROAD_X, ROAD_X, LANE_Z, ROAD_HALF);
-		// дорожки от двери каждого дома до улицы (ряд 0 — главная, ряд 1 — переулок)
-		List<BlockPos> plots = housePlots(settlement);
-		for (int i = 0; i < plots.size(); i++) {
-			BlockPos plot = plots.get(i);
-			int frontZ = plot.getZ() - origin.getZ() + HOUSE_HALF + 2;
-			int toZ = i < PLOT_ROW_X[0].length ? STREET_SOUTH_Z - ROAD_HALF : LANE_Z + ROAD_HALF;
-			if (frontZ <= toZ) {
-				roadZ(plan, level, origin, frontZ, toZ - 1, plot.getX() - origin.getX(), 0);
-			}
+	/**
+	 * Сеть дорог. Это не «полосы мощения на весь посёлок», а ленты между точками: каждая идёт по
+	 * грунту и меняет высоту максимум на блок за шаг, поэтому улица на склоне — лесенка, а не
+	 * терраса и не рампа. Колонки, которые заняли площадки построек, дорога не перетирает: она
+	 * подходит к калитке и примыкает к уже готовому уровню.
+	 */
+	private static void roads(Plan plan, Ground ground, ServerLevel level, BlockPos origin, Settlement settlement) {
+		int cx = origin.getX();
+		int cz = origin.getZ();
+		// главная и рабочая улицы, две поперечные и переулок второго ряда
+		ground.path(plan, cx - ROAD_X, cz + STREET_SOUTH_Z, cx + ROAD_X, cz + STREET_SOUTH_Z, ROAD_HALF);
+		ground.path(plan, cx - ROAD_X, cz + STREET_NORTH_Z, cx + ROAD_X, cz + STREET_NORTH_Z, ROAD_HALF);
+		ground.path(plan, cx - ROAD_X, cz + STREET_NORTH_Z, cx - ROAD_X, cz + LANE_Z, ROAD_HALF);
+		ground.path(plan, cx + ROAD_X, cz + STREET_NORTH_Z, cx + ROAD_X, cz + LANE_Z, ROAD_HALF);
+		ground.path(plan, cx - ROAD_X, cz + LANE_Z, cx + ROAD_X, cz + LANE_Z, ROAD_HALF);
+		// выходы ратуши: на главную улицу и к рабочей
+		ground.path(plan, cx, cz + HALL_HALF_Z + 3, cx, cz + STREET_SOUTH_Z, 1);
+		ground.path(plan, cx, cz - HALL_HALF_Z - 2, cx, cz + STREET_NORTH_Z, 1);
+		// дорожка от калитки каждого участка до его улицы
+		for (BlockPos plot : housePlots(level, settlement)) {
+			int streetZ = nearestStreetZ(plot.getZ() - cz);
+			ground.path(plan, plot.getX(), plot.getZ() + HOUSE_HALF + 3, plot.getX(), cz + streetZ, 0);
 		}
-		// подвоз материала к мастерским
+		// подвоз материала к мастерским и дорожка вдоль двора таверны
 		for (int i = 0; i < 4; i++) {
-			int x = -30 + i * WORK_STEP_X;
-			roadZ(plan, level, origin, WORK_ROW_Z + 6, STREET_NORTH_Z + ROAD_HALF + 1, x, 0);
+			int x = cx - 30 + i * WORK_STEP_X;
+			ground.path(plan, x, cz + WORK_ROW_Z + 6, x, cz + STREET_NORTH_Z, 0);
 		}
-		// дорожка вдоль двора ратуши: от таверны к пруду (выход таверны и так смотрит на площадь)
-		roadX(plan, level, origin, TAVERN_X + 4, POND_X - 6, TAVERN_Z, 0);
+		if (Rl2dopConfig.tavernEnabled) {
+			ground.path(plan, cx + TAVERN_X + 4, cz + TAVERN_Z, cx + POND_X - 6, cz + TAVERN_Z, 0);
+		}
+	}
+
+	/** До какой улицы вести дорожку участка (ближайшая по z). */
+	private static int nearestStreetZ(int plotZRel) {
+		if (plotZRel >= (LANE_Z + STREET_SOUTH_Z) / 2) {
+			return LANE_Z;
+		}
+		if (plotZRel >= (STREET_SOUTH_Z + STREET_NORTH_Z) / 2) {
+			return STREET_SOUTH_Z;
+		}
+		return STREET_NORTH_Z;
 	}
 
 	/**
-	 * Жилые участки деревни: два ряда вдоль главной улицы и переулка. Список детерминированный,
-	 * поэтому строитель и `/house_add` всегда берут следующий свободный, а не случайную точку.
+	 * Участки под стартовые дома: первые N СВОБОДНЫХ (там, где дома ещё нет). Благодаря этому
+	 * `reset` и `settle_regrade` не плодят вторые дома на тех же местах — план пересчитывается,
+	 * а застраивается только то, что ещё пусто.
 	 */
-	public static List<BlockPos> housePlots(Settlement settlement) {
-		BlockPos origin = settlement.hall();
+	private static List<BlockPos> starterPlots(ServerLevel level, Settlement settlement, List<BlockPos> plots) {
+		int want = Math.max(0, Math.min(4, Rl2dopConfig.starterHouses));
 		List<BlockPos> out = new ArrayList<>();
+		for (BlockPos plot : plots) {
+			if (out.size() >= want) {
+				break;
+			}
+			if (settlement.hasHouseNear(plot)) {
+				continue;
+			}
+			out.add(plot);
+		}
+		return out;
+	}
+
+	/**
+	 * Жилые участки деревни: ряды вдоль главной улицы и переулка — но каждая точка плана
+	 * «притирается» к рельефу: `Ground.pick()` сдвигает её на пару блоков и берёт ровное место
+	 * рядом. Список детерминированный и кэшируется на игровой такт, поэтому `/house_add`,
+	 * самострой и дороги всегда говорят об одних и тех же участках.
+	 */
+	public static List<BlockPos> housePlots(ServerLevel level, Settlement settlement) {
+		BlockPos origin = settlement.hall();
+		long key = origin.asLong();
+		long tick = level == null ? 0L : level.getGameTime();
+		PlotCache cached = PLOT_CACHE.get(key);
+		if (cached != null && tick - cached.at < 400L) {
+			return cached.plots;
+		}
+		List<BlockPos> out = new ArrayList<>();
+		if (level == null) {
+			for (int row = 0; row < PLOT_ROW_Z.length; row++) {
+				for (int x : PLOT_ROW_X[row]) {
+					out.add(origin.offset(x, 0, PLOT_ROW_Z[row]));
+				}
+			}
+			return out;
+		}
+		Ground ground = new Ground(level, origin.getY());
 		for (int row = 0; row < PLOT_ROW_Z.length; row++) {
 			for (int x : PLOT_ROW_X[row]) {
-				out.add(origin.offset(x, 0, PLOT_ROW_Z[row]));
+				BlockPos ideal = origin.offset(x, 0, PLOT_ROW_Z[row]);
+				if (!level.hasChunkAt(ideal)) {
+					continue;   // участок за выгруженной зокой пока не считается местом для дома
+				}
+				BlockPos spot = ground.pick(ideal.getX(), ideal.getZ(), HOUSE_HALF + 2, HOUSE_HALF + 2);
+				out.add(spot != null ? spot : ideal);
 			}
 		}
 		// застраивается ближний круг, дальний — когда места рядом кончатся
 		out.sort(java.util.Comparator.<BlockPos>comparingDouble(pos -> pos.distSqr(origin)));
+		if (PLOT_CACHE.size() > 16) {
+			PLOT_CACHE.clear();
+		}
+		PLOT_CACHE.put(key, new PlotCache(out, tick));
 		return out;
+	}
+
+	/** Участки без привязки к рельефу — для расчётов, где мира под рукой нет. */
+	public static List<BlockPos> housePlots(Settlement settlement) {
+		return housePlots(null, settlement);
+	}
+
+	private static final class PlotCache {
+		private final List<BlockPos> plots;
+		private final long at;
+
+		private PlotCache(List<BlockPos> plots, long at) {
+			this.plots = plots;
+			this.at = at;
+		}
+	}
+
+	private static final Map<Long, PlotCache> PLOT_CACHE = new java.util.concurrent.ConcurrentHashMap<>();
+
+	/** Инвалидация кэша участков: /settle_build reset и ручная правка рельефа. */
+	public static void forgetPlots(Settlement settlement) {
+		PLOT_CACHE.remove(settlement.hall().asLong());
 	}
 
 	/** Первый участок, где дома ещё нет (null = деревня выросла до предела плана). */
 	public static BlockPos freePlot(ServerLevel level, Settlement settlement) {
-		for (BlockPos plot : housePlots(settlement)) {
+		for (BlockPos plot : housePlots(level, settlement)) {
 			if (settlement.hasHouseNear(plot)) {
 				continue;
 			}
@@ -787,12 +901,15 @@ public final class SettlementBuilds {
 	}
 
 	/** Таверна: общий дом у двора ратуши — тут ждут работу приезжие, тут же перерывы и сходки. */
-	private static void tavernPlan(Plan plan, ServerLevel level, Settlement settlement, BlockPos center) {
+	private static void tavernPlan(Plan plan, Ground ground, ServerLevel level, Settlement settlement,
+				BlockPos center) {
 		int halfX = 5;
 		int halfZ = 4;
-		int y = gradePad(plan, level, center, halfX + 1, halfZ + 2, Blocks.GRASS_BLOCK.defaultBlockState(),
-				Blocks.DIRT.defaultBlockState());
-		BlockPos base = new BlockPos(center.getX(), y, center.getZ());
+		BlockPos spot = ground.pick(center.getX(), center.getZ(), halfX + 1, halfZ + 2);
+		BlockPos at = spot != null ? spot : center;
+		int y = ground.grade(plan, at.getX(), at.getZ(), halfX + 1, halfZ + 2, at.getY(),
+				Blocks.GRASS_BLOCK.defaultBlockState(), Blocks.DIRT.defaultBlockState());
+		BlockPos base = new BlockPos(at.getX(), y, at.getZ());
 		carve(plan, level, base, halfX, halfZ, 8);
 		// пол
 		for (int x = -halfX; x <= halfX; x++) {
@@ -905,9 +1022,13 @@ public final class SettlementBuilds {
 	}
 
 	/** Пруд: копается на блок ниже площади, берег — песок, по краю камыш. Рядом с таверной. */
-	private static void pondPlan(Plan plan, ServerLevel level, BlockPos center) {
+	private static void pondPlan(Plan plan, Ground ground, ServerLevel level, BlockPos center) {
 		int halfX = 4;
 		int halfZ = 3;
+		BlockPos spot = ground.pick(center.getX(), center.getZ(), halfX + 1, halfZ + 1);
+		if (spot != null) {
+			center = spot;
+		}
 		int y = center.getY();
 		for (int x = -halfX; x <= halfX; x++) {
 			for (int z = -halfZ; z <= halfZ; z++) {
@@ -936,9 +1057,8 @@ public final class SettlementBuilds {
 	}
 
 	/** Дом на участке плана: сначала выравниваем площадку, потом кладём сруб 7x7. */
-	public static void houseOnPlot(Plan plan, ServerLevel level, BlockPos plot) {
-		int y = gradePad(plan, level, plot, HOUSE_HALF + 2, HOUSE_HALF + 2, Blocks.GRASS_BLOCK.defaultBlockState(),
-				Blocks.DIRT.defaultBlockState());
+	public static void houseOnPlot(Plan plan, Ground ground, ServerLevel level, BlockPos plot) {
+		int y = gradeHousePad(plan, ground, plot);
 		housePlan(plan, level, new BlockPos(plot.getX(), y, plot.getZ()));
 		// двор: забор по периметру участка с калиткой на дорогу
 		for (int x = -HOUSE_HALF - 2; x <= HOUSE_HALF + 2; x++) {
@@ -966,9 +1086,12 @@ public final class SettlementBuilds {
 	public static BlockPos buildTavern(ServerLevel level, Settlement settlement) {
 		BlockPos origin = settlement.hall();
 		Plan plan = new Plan();
-		tavernPlan(plan, level, settlement, origin.offset(TAVERN_X, 0, TAVERN_Z));
+		Ground ground = new Ground(level, origin.getY());
+		tavernPlan(plan, ground, level, settlement, origin.offset(TAVERN_X, 0, TAVERN_Z));
 		if (Rl2dopConfig.villagePond) {
-			pondPlan(plan, level, origin.offset(POND_X, 0, POND_Z));
+			pondPlan(plan, ground, level, origin.offset(POND_X, 0, POND_Z));
+			ground.path(plan, origin.getX() + TAVERN_X + 4, origin.getZ() + TAVERN_Z,
+					origin.getX() + POND_X - 6, origin.getZ() + TAVERN_Z, 0);
 		}
 		int placed = 0;
 		for (Entry entry : plan.entries) {
@@ -983,18 +1106,20 @@ public final class SettlementBuilds {
 	/** Построить дом мгновенно (команда /house_add). */
 	public static BlockPos buildHouse(ServerLevel level, Settlement settlement, BlockPos standing) {
 		BlockPos hall = settlement.hall();
-		// в пределах поселения пол дома берём на уровне ратуши (иначе дом «вразнобой» с площадью
-		// и свисает), за пределами — по верхнему твёрдому блоку столбца
-		boolean inPlot = Math.abs(standing.getX() - hall.getX()) <= 64
-				&& Math.abs(standing.getZ() - hall.getZ()) <= 48;
-		int y = inPlot ? hall.getY() : topSolidY(level, standing.getX(), standing.getZ(), standing.getY());
-		BlockPos standing0 = new BlockPos(standing.getX(), y, standing.getZ());
+		Ground ground = new Ground(level, hall.getY());
+		// ищем ровное место рядом с запрошенной точкой: дом сам выбирает поверхность, а не
+		// «уровень ратуши» — иначе на склоне он либо висел, либо резал холм котлованом
+		BlockPos spot = ground.pick(standing.getX(), standing.getZ(), HOUSE_HALF + 2, HOUSE_HALF + 2);
+		BlockPos at = spot != null ? spot : new BlockPos(standing.getX(),
+				topSolidY(level, standing.getX(), standing.getZ(), standing.getY()), standing.getZ());
 		Plan plan = new Plan();
-		// участок выравниваем так же, как в плане деревни: дом не должен стоять на склоне
-		int graded = gradePad(plan, level, standing0, HOUSE_HALF + 1, HOUSE_HALF + 1,
+		int graded = ground.grade(plan, at.getX(), at.getZ(), HOUSE_HALF + 2, HOUSE_HALF + 2, at.getY(),
 				Blocks.GRASS_BLOCK.defaultBlockState(), Blocks.DIRT.defaultBlockState());
-		BlockPos base = new BlockPos(standing0.getX(), graded, standing0.getZ());
+		BlockPos base = new BlockPos(at.getX(), graded, at.getZ());
 		housePlan(plan, level, base);
+		// и сразу связь с деревней: дорожка от калитки до ближайшей улицы
+		int streetZ = nearestStreetZ(base.getZ() - hall.getZ());
+		ground.path(plan, base.getX(), base.getZ() + HOUSE_HALF + 3, base.getX(), hall.getZ() + streetZ, 0);
 		int built = 0;
 		for (Entry entry : plan.entries) {
 			if (place(level, entry)) {
@@ -1002,6 +1127,7 @@ public final class SettlementBuilds {
 			}
 		}
 		settlement.addHouse(base);
+		forgetPlots(settlement);   // участок занят — список мест для следующих домов должен обновиться
 		EconomyState.get(level.getServer()).setDirty();
 		return built > 0 ? base : null;
 	}
@@ -1047,7 +1173,7 @@ public final class SettlementBuilds {
 		settlement.buildProgress = Math.min(100, end * 100 / total);
 		if (settlement.buildProgress >= 100) {
 			SignBoards.install(level, settlement);
-			registerStarterHouses(settlement);
+			registerStarterHouses(level, settlement);
 			rescueBuried(level, settlement);
 		}
 		return settlement.buildProgress;
@@ -1142,12 +1268,11 @@ public final class SettlementBuilds {
 	}
 
 	/** Зарегистрировать в поселении стартовые дома из плана (идемпотентно). */
-	private static void registerStarterHouses(Settlement settlement) {
-		int starter = Math.max(0, Math.min(4, Rl2dopConfig.starterHouses));
-		List<BlockPos> plots = housePlots(settlement);
-		for (int i = 0; i < starter && i < plots.size(); i++) {
-			BlockPos plot = plots.get(i);
-			settlement.addHouse(new BlockPos(plot.getX(), settlement.hall().getY(), plot.getZ()));
+	private static void registerStarterHouses(ServerLevel level, Settlement settlement) {
+		for (BlockPos plot : starterPlots(level, settlement, housePlots(level, settlement))) {
+			// уровень берём у самого участка: площадка дома может быть на блок-другой ниже/выше
+			// площади, и именно эта высота потом считается «полом» при расселении
+			settlement.addHouse(new BlockPos(plot.getX(), plot.getY(), plot.getZ()));
 		}
 	}
 
@@ -1379,6 +1504,261 @@ public final class SettlementBuilds {
 	}
 
 	/** Черновик плана. */
+	/**
+	 * Модель рельефа посёлка: натуральный грунт + уровни площадок, которые посёлок задал сам.
+	 * Нужна для того, чтобы каждая постройка выбирала РОВНОЕ место сама (как кусок ванильной
+	 * деревни), а дороги связывали эти места простыми ступенями: и постройка, и дорога считают
+	 * высоту по одной модели, поэтому они не спорят за один и тот же блок.
+	 */
+	private static final class Ground {
+		private final ServerLevel level;
+		private final int baseY;
+		/** x;z (как long) → уровень, который посёлок задал этой колонке. */
+		private final Map<Long, Integer> planned = new HashMap<>();
+		/** x;z → натуральный грунт: читаем один раз на колонку, план строится в одном тике. */
+		private final Map<Long, Integer> natural = new HashMap<>();
+
+		Ground(ServerLevel level, int baseY) {
+			this.level = level;
+			this.baseY = baseY;
+		}
+
+		private static long key(int x, int z) {
+			return ((long) x << 32) ^ (z & 0xFFFFFFFFL);
+		}
+
+		int natural(int x, int z) {
+			long k = key(x, z);
+			Integer cached = natural.get(k);
+			if (cached != null) {
+				return cached;
+			}
+			int y = topSolidY(level, x, z, baseY);
+			natural.put(k, y);
+			return y;
+		}
+
+		/** Текущий уровень колонки: либо тот, что задал посёлок, либо природный. */
+		int level(int x, int z) {
+			Integer set = planned.get(key(x, z));
+			return set != null ? set : natural(x, z);
+		}
+
+		/**
+		 * Уровень, при котором пятно halfX×halfZ требует меньше всего земли: мода высот грунта
+		 * (окна 2 блока), не выше +8 и не ниже -8 от уровня поселения.
+		 */
+		int padLevel(int cx, int cz, int halfX, int halfZ) {
+			int[] counts = new int[33];
+			int min = Integer.MAX_VALUE;
+			int max = Integer.MIN_VALUE;
+			int[] samples = new int[9 * 9];
+			int n = 0;
+			for (int z = cz - halfZ; z <= cz + halfZ; z += 2) {
+				for (int x = cx - halfX; x <= cx + halfX; x += 2) {
+					int y = level(x, z);
+					samples[n++] = y;
+					min = Math.min(min, y);
+					max = Math.max(max, y);
+				}
+			}
+			if (n == 0) {
+				return baseY;
+			}
+			if (max - min >= 32) {
+				return clampBase(min);
+			}
+			for (int i = 0; i < n; i++) {
+				counts[samples[i] - min + 16]++;
+			}
+			int best = 0;
+			int bestCount = -1;
+			for (int i = 0; i < counts.length; i++) {
+				if (counts[i] > bestCount) {
+					bestCount = counts[i];
+					best = i;
+				}
+			}
+			return clampBase(min + best - 16);
+		}
+
+		private int clampBase(int y) {
+			return Math.max(baseY - 8, Math.min(baseY + 8, y));
+		}
+
+		/** Перепад высот над пятном (0 = идеально ровно). */
+		int spread(int cx, int cz, int halfX, int halfZ) {
+			int min = Integer.MAX_VALUE;
+			int max = Integer.MIN_VALUE;
+			for (int z = cz - halfZ; z <= cz + halfZ; z += 2) {
+				for (int x = cx - halfX; x <= cx + halfX; x += 2) {
+					int y = level(x, z);
+					min = Math.min(min, y);
+					max = Math.max(max, y);
+				}
+			}
+			return max == Integer.MIN_VALUE ? 0 : max - min;
+		}
+
+		/** Объём земляных работ при выравнивании пятна в `y` (в блоках, по грубой сетке). */
+		private int work(int cx, int cz, int halfX, int halfZ, int y) {
+			int sum = 0;
+			for (int z = cz - halfZ; z <= cz + halfZ; z += 2) {
+				for (int x = cx - halfX; x <= cx + halfX; x += 2) {
+					sum += Math.abs(level(x, z) - y);
+				}
+			}
+			return sum;
+		}
+
+		/** Есть ли в пятне вода/лава — такое место построению не подходит. */
+		private boolean wet(int cx, int cz, int halfX, int halfZ) {
+			for (int z = cz - halfZ; z <= cz + halfZ; z += 2) {
+				for (int x = cx - halfX; x <= cx + halfX; x += 2) {
+					BlockPos pos = new BlockPos(x, level(x, z) + 1, z);
+					if (!level.hasChunkAt(pos)) {
+						continue;
+					}
+					net.minecraft.world.level.material.FluidState fluid = level.getFluidState(pos);
+					if (fluid.is(net.minecraft.registry.tag.FluidTags.WATER)
+							|| fluid.is(net.minecraft.registry.tag.FluidTags.LAVA)) {
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+
+		/**
+		 * Ищем место под пятно halfX×halfZ рядом с (cx,cz): сдвигаемся на пару блоков туда-сюда
+		 * и выбираем вариант с минимальным перепадом и минимальным объёмом работ. Так дом (или
+		 * таверна, или мастерская) встаёт на ровное, а не на «уровень ратуши любой ценой».
+		 */
+		BlockPos pick(int cx, int cz, int halfX, int halfZ) {
+			return pick(cx, cz, halfX, halfZ, 2, 2);
+		}
+
+		/**
+		 * @param radius насколько блоков можно сдвинуться (в клетках по `step`)
+		 * @param step   шаг поиска: 2 — точечно под дом, 3 — обзор под весь посёлок
+		 */
+		BlockPos pick(int cx, int cz, int halfX, int halfZ, int radius, int step) {
+			BlockPos ideal = new BlockPos(cx, baseY, cz);
+			if (!level.hasChunkAt(ideal)) {
+				return null;
+			}
+			BlockPos best = null;
+			int bestScore = Integer.MAX_VALUE;
+			for (int dz = -radius; dz <= radius; dz++) {
+				for (int dx = -radius; dx <= radius; dx++) {
+					int x = cx + dx * step;
+					int z = cz + dz * step;
+					if (!level.hasChunkAt(new BlockPos(x, baseY, z))) {
+						continue;
+					}
+					int y = padLevel(x, z, halfX, halfZ);
+					int score = spread(x, z, halfX, halfZ) * 10 + work(x, z, halfX, halfZ, y) * 3
+							+ (dx * dx + dz * dz) + Math.abs(y - baseY) * 4;
+					if (wet(x, z, halfX, halfZ)) {
+						score += 120;
+					}
+					if (score < bestScore) {
+						bestScore = score;
+						best = new BlockPos(x, y, z);
+					}
+				}
+			}
+			return best;
+		}
+
+		/** Ровняем пятно под `y`: срезаем холм, досыпаем яму, сверху `top`; помечаем колонки занятыми. */
+		int grade(Plan plan, int cx, int cz, int halfX, int halfZ, int y, BlockState top, BlockState fill) {
+			for (int x = cx - halfX; x <= cx + halfX; x++) {
+				for (int z = cz - halfZ; z <= cz + halfZ; z++) {
+					gradeCell(plan, x, z, y, top, fill, true);
+				}
+			}
+			// откос в 1 блок по краю: чтобы площадка не была обрывом, а скатывалась к грунту
+			for (int x = cx - halfX - 1; x <= cx + halfX + 1; x++) {
+				for (int z = cz - halfZ - 1; z <= cz + halfZ + 1; z++) {
+					boolean inside = x >= cx - halfX && x <= cx + halfX && z >= cz - halfZ && z <= cz + halfZ;
+					if (inside) {
+						continue;
+					}
+					int edge = Math.max(Math.abs(x - cx) - halfX, Math.abs(z - cz) - halfZ);
+					if (edge != 1) {
+						continue;
+					}
+					int want = Math.max(y - 1, Math.min(y + 1, natural(x, z)));
+					gradeCell(plan, x, z, want, Blocks.GRASS_BLOCK.defaultBlockState(), Blocks.DIRT.defaultBlockState(),
+							false);
+				}
+			}
+			return y;
+		}
+
+		/**
+		 * Одна колонка: всё природное выше `y` срезать, недосып досыпать, верх — `top`.
+		 * `force=false` не трогает колонку, которую уже заняла площадка постройки.
+		 */
+		void gradeCell(Plan plan, int x, int z, int y, BlockState top, BlockState fill, boolean force) {
+			long k = key(x, z);
+			if (!force && planned.containsKey(k)) {
+				return;
+			}
+			int ground = natural(x, z);
+			for (int yy = y + 1; yy <= ground; yy++) {
+				BlockPos pos = new BlockPos(x, yy, z);
+				if (removable(level, pos) && !level.getBlockState(pos).isAir()) {
+					plan.air(pos);
+				}
+			}
+			for (int yy = ground + 1; yy < y; yy++) {
+				plan.set(new BlockPos(x, yy, z), fill);
+			}
+			plan.set(new BlockPos(x, y, z), top);
+			planned.put(k, y);
+		}
+
+		/**
+		 * Дорога между точками: лента шириной 1 + 2*halfWidth, которая идёт по грунту и меняет
+		 * высоту не больше чем на блок на шаге. Никаких рамп и террас на 20 блоков — простая
+		 * лесенка, как в ванильной деревне. Колонки чужих площадок не перетираем.
+		 */
+		void path(Plan plan, int x0, int z0, int x1, int z1, int halfWidth) {
+			path(plan, x0, z0, x1, z1, halfWidth, null);
+		}
+
+		/** `top == null` — мостовая пёстрая (`roadTop`), как в ванильной деревне. */
+		void path(Plan plan, int x0, int z0, int x1, int z1, int halfWidth, BlockState top) {
+			int steps = Math.max(Math.abs(x1 - x0), Math.abs(z1 - z0));
+			if (steps < 0) {
+				return;
+			}
+			boolean alongX = Math.abs(x1 - x0) >= Math.abs(z1 - z0);
+			int prevY = level(x0, z0);
+			for (int i = 0; i <= steps; i++) {
+				double t = steps == 0 ? 1.0D : (double) i / (double) steps;
+				int cx = x0 + (int) Math.round((x1 - x0) * t);
+				int cz = z0 + (int) Math.round((z1 - z0) * t);
+				int want = level(cx, cz);
+				int y = Math.max(prevY - 1, Math.min(prevY + 1, want));
+				for (int w = -halfWidth; w <= halfWidth; w++) {
+					int px = alongX ? cx : cx + w;
+					int pz = alongX ? cz + w : cz;
+					gradeCell(plan, px, pz, y, top != null ? top : roadTop(px, pz),
+							Blocks.COBBLESTONE.defaultBlockState(), false);
+				}
+				prevY = y;
+			}
+		}
+
+		/** Ступенька между двумя уровнями, если соседняя площадка выше/ниже дороги на 2+ блока. */
+		void step(Plan plan, int x, int z, int y) {
+			gradeCell(plan, x, z, y, roadTop(x, z), Blocks.COBBLESTONE.defaultBlockState(), false);
+		}
+	}
+
 	public static final class Plan {
 		public final List<Entry> entries = new ArrayList<>();
 
