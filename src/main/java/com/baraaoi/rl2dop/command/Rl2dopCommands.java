@@ -520,13 +520,18 @@ public final class Rl2dopCommands {
 						source.sendSuccess(() -> Component.literal("§7NPC рядом нет."), false);
 						return 0;
 					}
+					EconomyState economy = EconomyState.get(source.getServer());
 					for (CitizenEntity citizen : citizens) {
+						Settlement settlement = citizen.getSettlementId() == null
+								? null
+								: economy.settlement(citizen.getSettlementId());
+						boolean housed = settlement != null && settlement.hasHouseNear(citizen.getHomePos());
 						String line = "§e" + citizen.getCitizenName() + "§7 " + citizen.getProfession().id()
 								+ " · §b" + citizen.getActivity().id() + "§7"
 								+ " · " + citizen.getCitizenState().id()
 								+ " · кошелёк " + citizen.getWallet() + "м"
 								+ " · голод " + citizen.getHunger() + "%"
-								+ " · дом " + (citizen.getHomePos() == null ? "нет" : "есть")
+								+ " · дом " + (housed ? "есть" : "нет — ночует в таверне")
 								+ " · до работы " + workDistance(citizen)
 								+ " · поселение " + citizen.getSettlementId();
 						source.sendSuccess(() -> Component.literal(line), false);

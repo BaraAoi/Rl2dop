@@ -62,7 +62,7 @@ public final class SettlementBuilds {
 	public static final int PLAZA_HALF_Z = 21;
 	/** Главная улица (южная, вдоль неё жилые дома) и рабочая улица (северная, за ней мастерские). */
 	public static final int STREET_SOUTH_Z = 16;
-	public static final int STREET_NORTH_Z = -27;
+	public static final int STREET_NORTH_Z = -24;
 	/** Продольные улицы идут от -ROAD_X до +ROAD_X, поперечные замыкают их с двух сторон. */
 	public static final int ROAD_X = 46;
 	public static final int ROAD_HALF = 1;
@@ -400,9 +400,9 @@ public final class SettlementBuilds {
 	 * шахтёру не нужно ничего копать: он стоит у своей шахты и производит камень и руду.
 	 */
 	private static void workshops(Plan plan, ServerLevel level, Settlement settlement, BlockPos origin) {
-		farmPlan(plan, level, settlement, workPad(plan, level, origin, 0, 9, 10));
-		lumberPlan(plan, level, settlement, workPad(plan, level, origin, 1, 8, 8));
-		minePlan(plan, level, settlement, workPad(plan, level, origin, 2, 8, 9));
+		farmPlan(plan, level, settlement, workPad(plan, level, origin, 0, 9, 8));
+		lumberPlan(plan, level, settlement, workPad(plan, level, origin, 1, 8, 7));
+		minePlan(plan, level, settlement, workPad(plan, level, origin, 2, 8, 7));
 		builderPlan(plan, level, settlement, workPad(plan, level, origin, 3, 8, 7));
 	}
 
@@ -724,8 +724,8 @@ public final class SettlementBuilds {
 		roadX(plan, level, origin, -ROAD_X, ROAD_X, STREET_NORTH_Z, ROAD_HALF);
 		roadZ(plan, level, origin, STREET_NORTH_Z, LANE_Z, -ROAD_X, ROAD_HALF);
 		roadZ(plan, level, origin, STREET_NORTH_Z, LANE_Z, ROAD_X, ROAD_HALF);
-		// выход из ратуши на главную улицу и переулок за вторым рядом домов
-		roadX(plan, level, origin, -2, 2, HALL_HALF_Z + 5, 1);
+		// выход из ратуши на главную улицу (от крыльца до тротуара) и переулок за вторым рядом домов
+		roadX(plan, level, origin, -2, 2, HALL_HALF_Z + 7, 3);
 		roadX(plan, level, origin, -ROAD_X, ROAD_X, LANE_Z, ROAD_HALF);
 		// дорожки от двери каждого дома до улицы (ряд 0 — главная, ряд 1 — переулок)
 		List<BlockPos> plots = housePlots(settlement);
@@ -742,9 +742,8 @@ public final class SettlementBuilds {
 			int x = -30 + i * WORK_STEP_X;
 			roadZ(plan, level, origin, WORK_ROW_Z + 6, STREET_NORTH_Z + ROAD_HALF + 1, x, 0);
 		}
-		// дорожки к таверне и пруду
-		roadZ(plan, level, origin, TAVERN_Z + 6, HALL_HALF_Z + 1, TAVERN_X, 1);
-		roadX(plan, level, origin, POND_X - 6, TAVERN_X + 4, TAVERN_Z, 0);
+		// дорожка вдоль двора ратуши: от таверны к пруду (выход таверны и так смотрит на площадь)
+		roadX(plan, level, origin, TAVERN_X + 4, POND_X - 6, TAVERN_Z, 0);
 	}
 
 	/**
@@ -759,6 +758,8 @@ public final class SettlementBuilds {
 				out.add(origin.offset(x, 0, PLOT_ROW_Z[row]));
 			}
 		}
+		// застраивается ближний круг, дальний — когда места рядом кончатся
+		out.sort(java.util.Comparator.comparingLong(pos -> pos.distSqr(origin)));
 		return out;
 	}
 

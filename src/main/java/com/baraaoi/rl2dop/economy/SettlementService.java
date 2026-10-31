@@ -13,6 +13,7 @@ import net.minecraft.world.level.levelgen.Heightmap;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /** Поиск/создание поселений, спавн NPC, привязка к ванильным деревням. */
 public final class SettlementService {
@@ -146,13 +147,18 @@ public final class SettlementService {
 		}
 	}
 
-	/** Раздать NPC жилые дома (точка сна). Возвращает число поселённых. */
+	/**
+	 * Раздать NPC жилые дома (точка сна). Дом вмещает {@code villagersPerHouse} жителей: лишних
+	 * селяне переезжают в таверну — именно нехватка жилья потом заставляет поселение строить дом.
+	 *
+	 * @return сколько жителей обеспечено домом
+	 */
 	public static int assignHomes(ServerLevel level, Settlement settlement) {
-		if (level == null || settlement == null || settlement.houses.isEmpty()) {
+		if (level == null || settlement == null) {
 			return 0;
 		}
-		int index = 0;
-		int settled = 0;
+		int perHouse = Math.max(1, Rl2dopConfig.villagersPerHouse);
+		List<CitizenEntity> people = new ArrayList<>();
 		for (String raw : new ArrayList<>(settlement.npcs)) {
 			net.minecraft.world.entity.Entity entity;
 			try {
@@ -160,21 +166,46 @@ public final class SettlementService {
 			} catch (IllegalArgumentException e) {
 				continue;
 			}
-			if (entity instanceof CitizenEntity citizen && !citizen.isMayor()) {
-				BlockPos home = citizen.getHomePos();
-				if (home != null && settlement.hasHouseNear(home)) {
-					continue; // уже живёт в доме — не трогаем
-				}
-				BlockPos house = settlement.houseFor(index++);
-				if (house != null) {
-					citizen.setHomePos(house);
-					settled++;
-				}
+			if (entity instanceof CitizenEntity citizen && !citizen.isRemoved() && !citizen.isMayor()) {
+				people.add(citizen);
 			}
 		}
-		if (settled > 0) {
-			EconomyState.get(level.getServer()).setDirty();
+		if (people.isEmpty()) {
+			return 0;
 		}
+		Map<String, Integer> used = new java.util.HashMap<>();
+		int settled = 0;
+		for (CitizenEntity citizen : people) {
+			String current = settlement.houseKeyNear(citizen.getHomePos());
+			if (current != null && used.getOrDefault(current, 0) < perHouse) {
+				used.merge(current, 1, Integer::sum);
+				settled++;
+				continue;   // уже живёт в доме, и в доме есть место — не трогаем
+			}
+			BlockPos free = null;
+			String freeKey = null;
+			for (int i = 0; i < settlement.houses.size(); i++) {
+				BlockPos house = settlement.houseFor(i);
+				if (house == null || !level.isLoaded(house)) {
+					continue;
+				}
+				String key = house.getX() + ";" + house.getZ();
+				if (used.getOrDefault(key, 0) < perHouse) {
+					free = house;
+					freeKey = key;
+					break;
+				}
+			}
+			if (free == null) {
+				// мест нет: ночёвка в таверне (а если её тоже нет — на площади у ратуши)
+				citizen.setHomePos(gatherPoint(level, settlement));
+				continue;
+			}
+			citizen.setHomePos(free);
+			used.merge(freeKey, 1, Integer::sum);
+			settled++;
+		}
+		EconomyState.get(level.getServer()).setDirty();
 		return settled;
 	}
 

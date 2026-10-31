@@ -286,6 +286,29 @@ public class Settlement {
 		this.houseGoal = pos == null ? "" : pos.getX() + ";" + pos.getY() + ";" + pos.getZ();
 	}
 
+	/** Ключ («x;z») дома, рядом с этим местом; null — если это не дом поселения. */
+	public String houseKeyNear(BlockPos pos) {
+		if (pos == null) {
+			return null;
+		}
+		for (String record : houses) {
+			String[] parts = record.split(";");
+			if (parts.length != 3) {
+				continue;
+			}
+			try {
+				int x = Integer.parseInt(parts[0]);
+				int z = Integer.parseInt(parts[2]);
+				if (Math.abs(pos.getX() - x) <= 5 && Math.abs(pos.getZ() - z) <= 5) {
+					return x + ";" + z;
+				}
+			} catch (NumberFormatException ignored) {
+				// битая запись
+			}
+		}
+		return null;
+	}
+
 	public boolean hasMayor() {
 		return mayor != null && !mayor.isEmpty();
 	}
