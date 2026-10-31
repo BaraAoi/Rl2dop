@@ -547,9 +547,10 @@ public final class Rl2dopCommands {
 						}
 					}
 					if (primary != null) {
-						int[] summary = SettlementService.housingSummary(level, primary);
-						source.sendSuccess(() -> Component.literal("§7" + primary.id + ": коек "
-								+ summary[0] + " из " + primary.houses.size() + " дом(ов) · размещено "
+						final Settlement report = primary;
+						final int[] summary = SettlementService.housingSummary(level, report);
+						source.sendSuccess(() -> Component.literal("§7" + report.id + ": коек "
+								+ summary[0] + " из " + report.houses.size() + " дом(ов) · размещено "
 								+ summary[2] + "/" + summary[1] + " · без дома " + (summary[1] - summary[2])
 								+ " · записей без NPC " + summary[3]), false);
 					}
