@@ -182,6 +182,13 @@ public final class SettlementBuilds {
 		}
 		BlockPos origin = settlement.hall();
 		Ground ground = new Ground(level, origin.getY());
+		int pads = 0;
+		int houses = 0;
+		int uneven = 0;
+		int floating = 0;
+		int noPath = 0;
+		// Ровность и опору проверяем у ратуши и жилых домов: у мастерской-шахты во дворе
+		// законный провал, у таверны крыльцо плитами — считать их «кривыми» было бы ложняком.
 		List<BlockPos> spots = new ArrayList<>();
 		spots.add(origin);
 		for (String record : settlement.houses) {
@@ -190,23 +197,13 @@ public final class SettlementBuilds {
 				continue;
 			}
 			try {
+				houses++;
 				spots.add(new BlockPos(Integer.parseInt(parts[0]), Integer.parseInt(parts[1]),
-						Integer.parseInt(parts[2])));
+							Integer.parseInt(parts[2])));
 			} catch (NumberFormatException ignored) {
 				// битую запись не считаем
 			}
 		}
-		if (settlement.hasTavern()) {
-			spots.add(settlement.tavern());
-		}
-		for (int i = 0; i < 4; i++) {
-			BlockPos base = workBase(level, origin, i);
-			BlockPos spot = ground.pick(base.getX(), base.getZ(), 8, 7);
-			spots.add(spot != null ? spot : base);
-		}
-		int pads = 0;
-		int uneven = 0;
-		int floating = 0;
 		for (BlockPos spot : spots) {
 			if (spot == null || !level.hasChunkAt(spot)) {
 				continue;
@@ -219,22 +216,37 @@ public final class SettlementBuilds {
 			if (!level.getBlockState(under).isRedstoneConductor(level, under)) {
 				floating++;   // под постройкой пустота/несплошной блок — «висит»
 			}
+			if (spot == origin) {
+				continue;   // у ратуши выходы свои, их в «дорожке к калитке» не мешаем
+			}
+			int gateZ = spot.getZ() + HOUSE_HALF + 3;
+			int outside = groundTopY(level, spot.getX(), gateZ, spot.getY());
+			if (Math.abs(outside - spot.getY()) > 2) {
+				noPath++;   // за калиткой обрыв: дорожка до улицы не построена или не дотянута
+			}
 		}
-		// шаг улицы: перепад соседних колонок мощения (2+ это ещё ступенька, 4+ уже обрыв)
+		// шаг улицы: перепад соседних колонок; незагруженные чанки пропускаем — там дороги нет по делу
 		int roadMaxStep = 0;
 		int cells = 0;
 		for (int z : new int[]{origin.getZ() + STREET_SOUTH_Z, origin.getZ() + STREET_NORTH_Z}) {
-			int prev = ground.level(origin.getX() - ROAD_X, z);
-			for (int x = origin.getX() - ROAD_X + 1; x <= origin.getX() + ROAD_X; x++) {
+			int prev = Integer.MIN_VALUE;
+			for (int x = origin.getX() - ROAD_X; x <= origin.getX() + ROAD_X; x++) {
+				if (!level.hasChunkAt(new BlockPos(x, origin.getY(), z))) {
+					prev = Integer.MIN_VALUE;
+					continue;
+				}
 				int now = ground.level(x, z);
-				roadMaxStep = Math.max(roadMaxStep, Math.abs(now - prev));
+				if (prev != Integer.MIN_VALUE) {
+					roadMaxStep = Math.max(roadMaxStep, Math.abs(now - prev));
+					cells++;
+				}
 				prev = now;
-				cells++;
 			}
 		}
-		int violations = uneven + floating + (roadMaxStep > 3 ? 1 : 0);
-		return "площадок " + pads + ", кривых " + uneven + ", висячих " + floating
-				+ " · шагов дороги " + cells + ", макс перепад " + roadMaxStep + " · нарушений " + violations;
+		int violations = uneven + floating + noPath + (roadMaxStep > 3 ? 1 : 0);
+		return "площадок " + pads + " (домов " + houses + "), кривых " + uneven + ", висячих " + floating
+				+ ", без дорожки " + noPath + " · шагов дороги " + cells + ", макс перепад " + roadMaxStep
+				+ " · нарушений " + violations;
 	}
 
 	/**
@@ -768,8 +780,8 @@ public final class SettlementBuilds {
 		ground.path(plan, cx, cz - HALL_HALF_Z - 2, cx, cz + STREET_NORTH_Z, 1);
 		// дорожка от калитки каждого участка до его улицы
 		for (BlockPos plot : housePlots(level, settlement)) {
-			int streetZ = nearestStreetZ(plot.getZ() - cz);
-			ground.path(plan, plot.getX(), plot.getZ() + HOUSE_HALF + 3, plot.getX(), cz + streetZ, 0);
+			int gateZ = plot.getZ() + HOUSE_HALF + 3;
+			ground.path(plan, plot.getX(), gateZ, plot.getX(), cz + nearestStreetZ(gateZ - cz), 0);
 		}
 		// подвоз материала к мастерским и дорожка вдоль двора таверны
 		for (int i = 0; i < 4; i++) {
@@ -781,15 +793,34 @@ public final class SettlementBuilds {
 		}
 	}
 
-	/** До какой улицы вести дорожку участка (ближайшая по z). */
-	private static int nearestStreetZ(int plotZRel) {
-		if (plotZRel >= (LANE_Z + STREET_SOUTH_Z) / 2) {
-			return LANE_Z;
+	/**
+	 * До какой улицы вести дорожку участка: калитка смотрит на +z, поэтому цель — ближайшая улица,
+	 * которая лежит ЮЖНЕЕ калитки. Иначе дорошка полезла бы через дом (так и было с дальним рядом:
+	 * участок z=22 тянулся к улице z=16 через собственную стену).
+	 */
+	private static int nearestStreetZ(int gateZRel) {
+		int best = LANE_Z;
+		int bestDist = Integer.MAX_VALUE;
+		for (int street : new int[]{STREET_SOUTH_Z, LANE_Z, STREET_NORTH_Z}) {
+			if (street < gateZRel) {
+				continue;
+			}
+			int dist = street - gateZRel;
+			if (dist < bestDist) {
+				bestDist = dist;
+				best = street;
+			}
 		}
-		if (plotZRel >= (STREET_SOUTH_Z + STREET_NORTH_Z) / 2) {
-			return STREET_SOUTH_Z;
+		if (bestDist == Integer.MAX_VALUE) {
+			// южнее калитки улиц нет — идём к ближайшей вообще, хоть и в другую сторону
+			for (int street : new int[]{STREET_SOUTH_Z, LANE_Z, STREET_NORTH_Z}) {
+				if (Math.abs(street - gateZRel) < bestDist) {
+					bestDist = Math.abs(street - gateZRel);
+					best = street;
+				}
+			}
 		}
-		return STREET_NORTH_Z;
+		return best;
 	}
 
 	/**
@@ -1118,8 +1149,8 @@ public final class SettlementBuilds {
 		BlockPos base = new BlockPos(at.getX(), graded, at.getZ());
 		housePlan(plan, level, base);
 		// и сразу связь с деревней: дорожка от калитки до ближайшей улицы
-		int streetZ = nearestStreetZ(base.getZ() - hall.getZ());
-		ground.path(plan, base.getX(), base.getZ() + HOUSE_HALF + 3, base.getX(), hall.getZ() + streetZ, 0);
+		int gateZ = base.getZ() + HOUSE_HALF + 3;
+		ground.path(plan, base.getX(), gateZ, base.getX(), hall.getZ() + nearestStreetZ(gateZ - hall.getZ()), 0);
 		int built = 0;
 		for (Entry entry : plan.entries) {
 			if (place(level, entry)) {
