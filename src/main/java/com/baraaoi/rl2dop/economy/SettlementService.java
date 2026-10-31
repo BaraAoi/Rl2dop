@@ -5,7 +5,6 @@ import com.baraaoi.rl2dop.entity.CitizenEntity;
 import com.baraaoi.rl2dop.entity.Profession;
 import com.baraaoi.rl2dop.registry.ModEntities;
 import net.minecraft.core.BlockPos;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -183,9 +182,5 @@ public final class SettlementService {
 			}
 		}
 		return best;
-	}
-
-	public static MinecraftServer serverOf(ServerLevel level) {
-		return level.getServer();
 	}
 }

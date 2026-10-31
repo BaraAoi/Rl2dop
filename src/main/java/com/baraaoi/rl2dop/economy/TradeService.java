@@ -1,6 +1,5 @@
 package com.baraaoi.rl2dop.economy;
 
-import com.baraaoi.rl2dop.Rl2dop;
 import com.baraaoi.rl2dop.Rl2dopConfig;
 import com.baraaoi.rl2dop.entity.CitizenEntity;
 import com.baraaoi.rl2dop.net.ModPackets;
@@ -240,9 +239,5 @@ public final class TradeService {
 
 	public static void message(ServerPlayer player, String text) {
 		player.displayClientMessage(Component.literal(text).withStyle(ChatFormatting.WHITE), false);
-	}
-
-	static void log(String text) {
-		Rl2dop.LOGGER.info("[rl2dop] {}", text);
 	}
 }

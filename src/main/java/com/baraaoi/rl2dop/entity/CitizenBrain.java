@@ -117,6 +117,12 @@ public final class CitizenBrain {
 			return true;
 		}
 		int price = MarketMath.buyPrice(settlement, good, 0, 1.0D);
+		if (citizen.getWallet() < price && settlement.treasury >= (long) price * 4L) {
+			// соцпомощь из казны: житель не должен умирать с голоду
+			settlement.treasury -= price;
+			citizen.addWallet(price);
+			citizen.setMood(citizen.getMood() - 1);
+		}
 		if (citizen.getWallet() < price || settlement.stock(food) <= 0) {
 			citizen.setMood(citizen.getMood() - 2);
 			citizen.setCitizenState(citizen.getHunger() <= 0 ? CitizenState.PANIC : CitizenState.IDLE);

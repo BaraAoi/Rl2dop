@@ -57,3 +57,54 @@ jobs:
           files: build/libs/*.jar
           prerelease: true
           make_latest: true
+
+  smoke:
+    name: smoke (dedicated server)
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    continue-on-error: true
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v4
+
+      - name: setup jdk
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'microsoft'
+
+      - name: setup gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: run dedicated server
+        run: |
+          chmod +x ./gradlew
+          mkdir -p run ci
+          echo "eula=true" > run/eula.txt
+          printf 'online-mode=false\nlevel-type=minecraft\\:flat\nspawn-protection=0\nmax-tick-time=-1\n' > run/server.properties
+          (./gradlew runServer --console=plain > ci/smoke.log 2>&1 &)
+          for i in $(seq 1 150); do
+            if grep -q "Done (" ci/smoke.log 2>/dev/null; then echo "SERVER_STARTED" >> ci/smoke.log; break; fi
+            if grep -qE "Failed to start the minecraft server|ModResolutionException" ci/smoke.log 2>/dev/null; then echo "SERVER_FAILED" >> ci/smoke.log; break; fi
+            sleep 2
+          done
+          sleep 8
+          pkill -f devlaunchinjector || true
+          pkill -f "net.minecraft.server" || true
+          sleep 3
+          {
+            echo "=== rl2dop: строки мода ==="
+            grep -a "rl2dop" ci/smoke.log | tail -30 || true
+            echo "=== ошибки/исключения ==="
+            grep -aE "ERROR|Exception|Caused by" ci/smoke.log | grep -av "ExceptionHandler" | tail -60 || true
+          } >> ci/smoke.log
+
+      - name: save smoke log
+        if: always()
+        run: |
+          git config user.name "rl2dop-ci"
+          git config user.email "ci@users.noreply.github.com"
+          git add -A ci
+          git commit -m "ci: smoke log [skip ci]" || true
+          git push || true

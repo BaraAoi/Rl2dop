@@ -16,7 +16,6 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.minecraft.ChatFormatting;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
@@ -451,10 +450,5 @@ public final class Rl2dopCommands {
 			throws CommandSyntaxException {
 		ServerPlayer player = context.getSource().getPlayerOrException();
 		return SettlementService.forPlayer(player);
-	}
-
-	@SuppressWarnings("unused")
-	private static Component plain(String text) {
-		return Component.literal(text).withStyle(ChatFormatting.WHITE);
 	}
 }

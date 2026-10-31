@@ -4,7 +4,6 @@ import com.baraaoi.rl2dop.Rl2dopConfig;
 import com.baraaoi.rl2dop.entity.CitizenEntity;
 import com.baraaoi.rl2dop.entity.Profession;
 import com.baraaoi.rl2dop.net.ModPackets;
-import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 
@@ -100,9 +99,5 @@ public final class ShopService {
 		}
 		String list = needed.isEmpty() ? "всё есть" : String.join(", ", needed);
 		return "§6Ратуша §7· казна §f" + settlement.treasury + "м §7· нужно: §e" + list;
-	}
-
-	public static Component colored(String text, ChatFormatting color) {
-		return Component.literal(text).withStyle(color);
 	}
 }

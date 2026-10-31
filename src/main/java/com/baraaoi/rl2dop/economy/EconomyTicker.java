@@ -4,7 +4,6 @@ import com.baraaoi.rl2dop.Rl2dopConfig;
 import net.minecraft.server.MinecraftServer;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.Map;
 
 /** Серверный такт экономики: не каждый тик, а раз в marketIntervalTicks. */
@@ -56,9 +55,5 @@ public final class EconomyTicker {
 			}
 		}
 		state.setDirty();
-	}
-
-	@SuppressWarnings("unused")
-	private static void unused(Iterator<?> iterator) {
 	}
 }
